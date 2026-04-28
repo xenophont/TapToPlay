@@ -85,12 +85,7 @@ Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR code
   "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
   "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
   "store": "YOUR_STORE_REFERENCE",
-  "tenderOption": "ReceiptHandler,AskGratuity",
-  "additionalData": {
-    "authorisationType": "PreAuth",
-    "manualCapture": "false",
-    "taxfree.indicator": false
-  }
+  "tenderOption": "ReceiptHandler,AskGratuity"
 }
 ```
 
