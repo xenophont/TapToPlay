@@ -141,6 +141,18 @@ For demos, you can save frequently used `SaleToAcquirerData` setups as favorites
 
 Favorites are stored locally with encrypted Android preferences. They are demo presets for faster testing; do not store sensitive production-only data in demo APKs.
 
+## Transaction History, Responses, and Refunds
+
+Each payment or refund attempt is saved in the `Transactions` panel. Tap `Inspect` to review:
+
+- The raw Terminal API request sent to the Adyen Payments app.
+- The raw return URI.
+- The decoded Terminal API response when available.
+- A readable field view with key response values at the top.
+- Decoded `AdditionalResponse` data, including Base64 JSON or Base64 values inside key-value responses.
+
+If an approved payment response includes a Terminal API transaction identifier, the transaction inspector enables `Refund`. This launches a referenced refund using a `ReversalRequest` against the original transaction. Refund outcomes can still require Adyen webhooks or Customer Area checks depending on your Adyen setup.
+
 ## Build and Deploy
 
 From Android Studio:
@@ -170,4 +182,3 @@ This is still a demo security model because credentials live on-device. For prod
 
 - `docs/ADYEN_SETUP.md`: boarding, reboarding, test/live setup, and troubleshooting.
 - `docs/QR_CREDENTIALS.md`: QR JSON schema and examples.
-- `AGENTS.md`: implementation guidance for future coding agents.
