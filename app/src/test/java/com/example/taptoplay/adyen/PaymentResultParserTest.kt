@@ -98,7 +98,7 @@ class PaymentResultParserTest {
         val encoded = Base64.getEncoder().encodeToString(responseJson.toByteArray(Charsets.UTF_8))
         val result = PaymentResultParser.parse("taptoplay://adyen-return?response=${encoded.urlEncode()}")
 
-        assertEquals(PaymentResult.Refused("Refusal | refusalReasonRaw=Not enough funds", responseJson), result)
+        assertEquals(PaymentResult.Refused("Refusal | Not enough funds", responseJson), result)
     }
 
     @Test

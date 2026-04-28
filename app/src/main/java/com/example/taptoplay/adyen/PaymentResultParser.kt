@@ -114,32 +114,37 @@ object PaymentResultParser {
     }
 
     private fun parseTerminalApiResponse(responseJson: String): PaymentResult? {
-        val paymentResponse = runCatching {
-            json.parseToJsonElement(responseJson)
-                .jsonObject["SaleToPOIResponse"]
-                ?.jsonObject
-                ?.get("PaymentResponse")
-                ?.jsonObject
+        val saleToPoi = runCatching {
+            json.parseToJsonElement(responseJson).jsonObject["SaleToPOIResponse"]?.jsonObject
         }.getOrNull() ?: return null
+        val responseKey = saleToPoi.keys.firstOrNull { it.endsWith("Response") && it != "MessageHeader" } ?: return null
+        val terminalResponse = saleToPoi[responseKey]?.jsonObject ?: return null
 
-        val response = paymentResponse["Response"]?.jsonObject
+        val response = terminalResponse["Response"]?.jsonObject
         val result = response?.string("Result")
         val errorCondition = response?.string("ErrorCondition")
         val additionalResponse = response?.string("AdditionalResponse")
-        val transactionId = paymentResponse["POIData"]
+        val insight = TerminalApiResponseInspector.inspect(responseJson)
+        val transactionId = terminalResponse["POIData"]
             ?.jsonObject
             ?.get("POITransactionID")
             ?.jsonObject
             ?.string("TransactionID")
+        val pspReference = transactionId ?: insight?.let { TerminalApiResponseInspector.importantAdditional("pspReference", it) }
+        val refusalReason = insight?.let {
+            TerminalApiResponseInspector.importantAdditional("refusalReason", it)
+                ?: TerminalApiResponseInspector.importantAdditional("refusalReasonRaw", it)
+                ?: TerminalApiResponseInspector.importantAdditional("message", it)
+        }
 
         return when (result?.lowercase()) {
             "success" -> PaymentResult.Success(
-                pspReference = transactionId,
+                pspReference = pspReference,
                 rawResult = result,
                 responseJson = responseJson,
             )
             "failure" -> {
-                val reason = listOfNotNull(errorCondition, additionalResponse).joinToString(" | ").ifBlank { null }
+                val reason = listOfNotNull(errorCondition, refusalReason ?: additionalResponse).joinToString(" | ").ifBlank { null }
                 if (errorCondition.equals("Refusal", ignoreCase = true) || errorCondition.equals("Refused", ignoreCase = true)) {
                     PaymentResult.Refused(reason, responseJson)
                 } else {

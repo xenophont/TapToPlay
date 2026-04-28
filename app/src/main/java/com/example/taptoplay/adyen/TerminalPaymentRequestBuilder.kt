@@ -50,5 +50,36 @@ object TerminalPaymentRequestBuilder {
         """.trimIndent()
     }
 
+    fun buildReferencedRefundRequest(
+        installationId: String,
+        originalTransactionId: String,
+        originalTimestamp: String,
+    ): String {
+        return """
+            {
+              "SaleToPOIRequest": {
+                "MessageHeader": {
+                  "ProtocolVersion": "3.0",
+                  "MessageClass": "Service",
+                  "MessageCategory": "Reversal",
+                  "MessageType": "Request",
+                  "ServiceID": "${UUID.randomUUID().toString().take(10)}",
+                  "SaleID": "TapToPlay",
+                  "POIID": "${installationId.escapeJson()}"
+                },
+                "ReversalRequest": {
+                  "OriginalPOITransaction": {
+                    "POITransactionID": {
+                      "TransactionID": "${originalTransactionId.escapeJson()}",
+                      "TimeStamp": "${originalTimestamp.escapeJson()}"
+                    }
+                  },
+                  "ReversalReason": "MerchantCancel"
+                }
+              }
+            }
+        """.trimIndent()
+    }
+
     private fun String.escapeJson(): String = replace("\\", "\\\\").replace("\"", "\\\"")
 }

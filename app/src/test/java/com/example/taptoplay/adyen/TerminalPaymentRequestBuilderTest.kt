@@ -41,6 +41,20 @@ class TerminalPaymentRequestBuilderTest {
         assertEquals("qr", decoded["metadata"]?.jsonObject?.get("experiment")?.jsonPrimitive?.content)
     }
 
+    @Test
+    fun buildsReferencedRefundReversalRequest() {
+        val request = TerminalPaymentRequestBuilder.buildReferencedRefundRequest(
+            installationId = "install-1",
+            originalTransactionId = "tender.PSP123",
+            originalTimestamp = "2026-04-29T12:00:00Z",
+        )
+
+        assertEquals(true, request.contains("\"MessageCategory\": \"Reversal\""))
+        assertEquals(true, request.contains("\"ReversalReason\": \"MerchantCancel\""))
+        assertEquals(true, request.contains("\"TransactionID\": \"tender.PSP123\""))
+        assertEquals(true, request.contains("\"POIID\": \"install-1\""))
+    }
+
     private fun profile() = AdyenProfile(
         displayName = "Demo",
         environment = PaymentEnvironment.TEST,

@@ -62,6 +62,7 @@ import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
 import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.example.taptoplay.adyen.SaleToAcquirerDataQrParser
+import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
 import com.example.taptoplay.adyen.TransactionRecord
 import com.example.taptoplay.adyen.TransactionStatus
@@ -69,6 +70,7 @@ import com.example.taptoplay.adyen.failureReasonOrNull
 import com.example.taptoplay.adyen.responseJsonOrNull
 import com.example.taptoplay.adyen.toTransactionStatus
 import com.example.taptoplay.adyen.toTransactionSummary
+import com.example.taptoplay.adyen.transactionIdOrNull
 import com.example.taptoplay.cart.Cart
 import com.example.taptoplay.cart.CartLine
 import com.example.taptoplay.catalog.Product
@@ -183,6 +185,7 @@ class MainActivity : ComponentActivity() {
                     onBoard = { profile -> board(profile) },
                     onReboard = { profile -> launchLink(AdyenLinks.startReboard(profile)) },
                     onPay = { profile, lines, totalMinor -> pay(profile, lines, totalMinor) },
+                    onRefund = { record -> refund(record) },
                 )
             }
         }
@@ -259,15 +262,65 @@ class MainActivity : ComponentActivity() {
             id = transactionId,
             createdAt = Instant.now().toString(),
             amountLabel = formatMoney(totalMinor),
+            amountMinor = totalMinor,
             itemCount = lines.sumOf { it.quantity },
             saleToAcquirerDataName = saleToAcquirerDataConfigState.displayName,
             requestJson = requestJson,
+            profileId = profile.id,
+            installationId = installationId,
         )
         transactionStore.save(record)
         pendingTransactionIdState = transactionId
         reloadTransactions()
         val encoded = nexoCrypto.encryptToBase64Url(profile, requestJson)
         statusState = "Opening Adyen payment app with encrypted Terminal API request..."
+        launchLink(AdyenLinks.nexo(profile, encoded))
+    }
+
+    private fun refund(record: TransactionRecord) {
+        val originalTransactionId = record.adyenTransactionId
+            ?: TerminalApiResponseInspector.inspect(record.responseBody)?.transactionId
+        if (originalTransactionId.isNullOrBlank()) {
+            statusState = "Cannot refund yet: the Adyen transaction identifier is missing."
+            return
+        }
+        val profile = record.profileId?.let { profileId -> profilesState.firstOrNull { it.id == profileId } }
+            ?: profilesState.firstOrNull { it.id == activeProfileIdState }
+        if (profile == null) {
+            statusState = "Cannot refund: select the Adyen profile used for the original payment."
+            return
+        }
+        val installationId = record.installationId ?: installationIdState
+        if (installationId.isNullOrBlank()) {
+            statusState = "Cannot refund: no installation ID is available for the Payments app."
+            return
+        }
+        val requestJson = TerminalPaymentRequestBuilder.buildReferencedRefundRequest(
+            installationId = installationId,
+            originalTransactionId = originalTransactionId,
+            originalTimestamp = record.createdAt,
+        )
+        val refundRecordId = UUID.randomUUID().toString()
+        transactionStore.save(
+            TransactionRecord(
+                id = refundRecordId,
+                createdAt = Instant.now().toString(),
+                amountLabel = record.amountLabel,
+                amountMinor = record.amountMinor,
+                itemCount = record.itemCount,
+                saleToAcquirerDataName = "Referenced refund",
+                requestJson = requestJson,
+                profileId = profile.id,
+                installationId = installationId,
+                adyenTransactionId = originalTransactionId,
+                refundOfTransactionId = record.id,
+                status = TransactionStatus.REFUND_LAUNCHED,
+            ),
+        )
+        pendingTransactionIdState = refundRecordId
+        reloadTransactions()
+        val encoded = nexoCrypto.encryptToBase64Url(profile, requestJson)
+        statusState = "Opening Adyen with a referenced refund request..."
         launchLink(AdyenLinks.nexo(profile, encoded))
     }
 
@@ -294,11 +347,16 @@ class MainActivity : ComponentActivity() {
             if (transactionId != null) {
                 transactionStore.update(transactionId) { record ->
                     record.copy(
-                        status = parsed.toTransactionStatus(),
+                        status = if (record.refundOfTransactionId != null && parsed is PaymentResult.Success) {
+                            TransactionStatus.REFUNDED
+                        } else {
+                            parsed.toTransactionStatus()
+                        },
                         responseUri = rawUri,
                         responseBody = parsed.responseJsonOrNull(),
                         responseSummary = parsed.toTransactionSummary(),
                         failureReason = parsed.failureReasonOrNull(),
+                        adyenTransactionId = parsed.transactionIdOrNull() ?: record.adyenTransactionId,
                     )
                 }
                 pendingTransactionIdState = null
@@ -328,6 +386,7 @@ private fun TapToPlayApp(
     onBoard: (AdyenProfile) -> Unit,
     onReboard: (AdyenProfile) -> Unit,
     onPay: (AdyenProfile, List<CartLine>, Long) -> Unit,
+    onRefund: (TransactionRecord) -> Unit,
 ) {
     val cart = remember { Cart() }
     var cartVersion by remember { mutableStateOf(0) }
@@ -446,6 +505,7 @@ private fun TapToPlayApp(
     inspectedTransaction?.let { record ->
         TransactionDialog(
             record = record,
+            onRefund = { onRefund(record) },
             onDismiss = { inspectedTransaction = null },
         )
     }
@@ -512,9 +572,23 @@ private fun ProfilePanel(
                 Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text("Scan QR") }
             }
             if (expanded && activeProfile != null) {
-                Text("API key ${activeProfile.maskedApiKey()} | passphrase ${activeProfile.maskedPassphrase()}")
-                Text("Installation ${installationId ?: "not returned yet"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Boarding request token ${boardingRequestToken?.let { "received" } ?: "not received"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Secure device vault", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Scanned QR profiles are stored with Android encrypted preferences. Secrets stay masked in the app.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        KeyValueLine("Merchant", activeProfile.merchantId)
+                        activeProfile.storeId?.let { KeyValueLine("Store ID", it) }
+                        KeyValueLine("Environment", activeProfile.environment.name.lowercase())
+                        KeyValueLine("API key", activeProfile.maskedApiKey())
+                        KeyValueLine("Terminal key", "${activeProfile.terminalKeyIdentifier} v${activeProfile.terminalKeyVersion}")
+                        KeyValueLine("Passphrase", activeProfile.maskedPassphrase())
+                        KeyValueLine("Installation", installationId ?: "not returned yet")
+                        KeyValueLine("Boarding request token", boardingRequestToken?.let { "received" } ?: "not received")
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { onCheckBoarding(activeProfile) }) { Text("Check") }
                     Button(onClick = { onBoard(activeProfile) }) { Text("Board") }
@@ -761,6 +835,8 @@ private fun TransactionStatusChip(status: TransactionStatus) {
         TransactionStatus.APPROVED -> "Approved"
         TransactionStatus.REFUSED -> "Refused"
         TransactionStatus.FAILED -> "Failed"
+        TransactionStatus.REFUND_LAUNCHED -> "Refunding"
+        TransactionStatus.REFUNDED -> "Refunded"
     }
     AssistChip(onClick = {}, label = { Text(label) })
 }
@@ -793,9 +869,15 @@ private fun PaymentResultDialog(result: PaymentResult, onDismiss: () -> Unit) {
 @Composable
 private fun TransactionDialog(
     record: TransactionRecord,
+    onRefund: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     var selectedSection by remember { mutableStateOf("Request") }
+    val responseInsight = remember(record.responseBody) { TerminalApiResponseInspector.inspect(record.responseBody) }
+    val highlights = remember(record.responseBody) { TerminalApiResponseInspector.compactSummary(record.responseBody) }
+    val canRefund = record.status == TransactionStatus.APPROVED &&
+        record.refundOfTransactionId == null &&
+        (record.adyenTransactionId != null || responseInsight?.transactionId != null)
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(8.dp),
@@ -819,9 +901,22 @@ private fun TransactionDialog(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(onClick = onRefund, enabled = canRefund) { Text("Refund") }
+                        TextButton(onClick = onDismiss) { Text("Close") }
+                    }
                 }
                 TransactionStatusChip(record.status)
+                if (highlights.isNotEmpty()) {
+                    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Important response fields", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            highlights.forEach { (label, value) ->
+                                KeyValueLine(label = label, value = value)
+                            }
+                        }
+                    }
+                }
                 record.failureReason?.let {
                     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -860,11 +955,93 @@ private fun TransactionDialog(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
+                            responseInsight?.let { insight ->
+                                item {
+                                    ResponseFieldList(insight)
+                                }
+                            }
+                            record.responseBody?.let { body ->
+                                item {
+                                    Text("Raw Terminal API response", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                }
+                                item { MonospaceBlock(body) }
+                            }
                             record.responseUri?.let { response ->
-                                item { MonospaceBlock(record.responseBody ?: response) }
+                                item {
+                                    Text("Raw return URI", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                }
+                                item { MonospaceBlock(response) }
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResponseFieldList(insight: com.example.taptoplay.adyen.TerminalApiResponseInsight) {
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Readable response", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            KeyValueLine("Category", insight.category)
+            insight.result?.let { KeyValueLine("Result", it) }
+            insight.transactionId?.let { KeyValueLine("Transaction ID", it) }
+            insight.errorCondition?.let { KeyValueLine("Error condition", it) }
+            if (insight.additionalResponseFields.isNotEmpty()) {
+                Text("AdditionalResponse", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                insight.additionalResponseFields.forEach { field ->
+                    ExpandableValueRow(
+                        label = field.name,
+                        value = field.decodedValue?.let { "${field.value}\n\nDecoded:\n$it" } ?: field.value,
+                    )
+                }
+            } else if (!insight.additionalResponseRaw.isNullOrBlank()) {
+                ExpandableValueRow("AdditionalResponse raw", insight.additionalResponseRaw)
+            }
+            insight.additionalResponseDecoded?.let { decoded ->
+                Text("AdditionalResponse decoded JSON", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                JsonNodeRow(name = "additionalResponse", value = decoded, depth = 0)
+            }
+        }
+    }
+}
+
+@Composable
+private fun KeyValueLine(label: String, value: String) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+        Text(
+            value,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun ExpandableValueRow(label: String, value: String) {
+    var expanded by remember { mutableStateOf(false) }
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        value,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = if (expanded) Int.MAX_VALUE else 2,
+                        overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis,
+                    )
+                }
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Hide" else "View")
                 }
             }
         }

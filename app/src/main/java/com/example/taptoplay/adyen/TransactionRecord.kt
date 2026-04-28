@@ -8,6 +8,8 @@ enum class TransactionStatus {
     APPROVED,
     REFUSED,
     FAILED,
+    REFUND_LAUNCHED,
+    REFUNDED,
 }
 
 @Serializable
@@ -15,9 +17,14 @@ data class TransactionRecord(
     val id: String,
     val createdAt: String,
     val amountLabel: String,
+    val amountMinor: Long? = null,
     val itemCount: Int,
     val saleToAcquirerDataName: String,
     val requestJson: String,
+    val profileId: String? = null,
+    val installationId: String? = null,
+    val adyenTransactionId: String? = null,
+    val refundOfTransactionId: String? = null,
     val status: TransactionStatus = TransactionStatus.LAUNCHED,
     val responseUri: String? = null,
     val responseBody: String? = null,
@@ -37,6 +44,11 @@ fun PaymentResult.toTransactionSummary(): String = when (this) {
     is PaymentResult.Refused -> "Refused${reason?.let { " | $it" }.orEmpty()}"
     is PaymentResult.Failure -> "Failed | $message"
     is PaymentResult.BoardingStatus -> "Boarding response"
+}
+
+fun PaymentResult.transactionIdOrNull(): String? = when (this) {
+    is PaymentResult.Success -> pspReference
+    else -> null
 }
 
 fun PaymentResult.failureReasonOrNull(): String? = when (this) {
