@@ -76,6 +76,36 @@ To create the QR:
 
 Do not commit QR images or JSON files with real credentials. For more detail and a live example shape, see `docs/QR_CREDENTIALS.md`.
 
+## Create a SaleToAcquirerData QR Code
+
+TapToPlay can also scan a QR code to add or override properties inside `SaleToAcquirerData` for the next payment requests. This is useful for testing Adyen features that are controlled through `SaleToAcquirerData`.
+
+The QR contains raw JSON. TapToPlay merges these properties with the default retail demo metadata, converts the merged object to JSON, Base64-encodes it, and writes it into `PaymentRequest.SaleData.SaleToAcquirerData`.
+
+Example payload:
+
+```json
+{
+  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+  "displayName": "Preauth experiment",
+  "properties": {
+    "authorisationType": "PreAuth",
+    "metadata.experiment": "qr-sale-to-acquirer-data",
+    "metadata.operator": "demo-user"
+  }
+}
+```
+
+To use it:
+
+1. Generate a QR code from the raw JSON above, replacing properties with the values you want to test.
+2. Open TapToPlay and add products to the cart.
+3. In `Checkout`, tap `Scan data QR`.
+4. Confirm the checkout panel shows the loaded `displayName`.
+5. Start payment. The encrypted Terminal API request will include your Base64 JSON in `SaleToAcquirerData`.
+
+Use `Reset` in the checkout panel to go back to the default retail demo metadata.
+
 ## Build and Deploy
 
 From Android Studio:

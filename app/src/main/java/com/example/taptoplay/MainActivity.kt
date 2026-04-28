@@ -55,6 +55,8 @@ import com.example.taptoplay.adyen.BoardingApiClient
 import com.example.taptoplay.adyen.NexoCrypto
 import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
+import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
+import com.example.taptoplay.adyen.SaleToAcquirerDataQrParser
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
 import com.example.taptoplay.cart.Cart
 import com.example.taptoplay.cart.CartLine
@@ -75,6 +77,7 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
     private lateinit var profileStore: AndroidProfileStore
     private val qrParser = ProfileQrParser()
+    private val saleToAcquirerDataQrParser = SaleToAcquirerDataQrParser()
     private val boardingApiClient = BoardingApiClient()
     private val nexoCrypto = NexoCrypto()
 
@@ -84,6 +87,7 @@ class MainActivity : ComponentActivity() {
     private var statusState by mutableStateOf("Ready for boutique checkout")
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
+    private var saleToAcquirerDataConfigState by mutableStateOf(SaleToAcquirerDataConfig.default())
 
     private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
         val contents = result.contents ?: return@registerForActivityResult
@@ -95,6 +99,16 @@ class MainActivity : ComponentActivity() {
                 statusState = "Scanned ${profile.displayName}. Active profile updated."
             }
             .onFailure { statusState = "QR rejected: ${it.message}" }
+    }
+
+    private val saleToAcquirerDataQrLauncher = registerForActivityResult(ScanContract()) { result ->
+        val contents = result.contents ?: return@registerForActivityResult
+        saleToAcquirerDataQrParser.parse(contents)
+            .onSuccess { config ->
+                saleToAcquirerDataConfigState = config
+                statusState = "SaleToAcquirerData QR loaded: ${config.displayName}."
+            }
+            .onFailure { statusState = "SaleToAcquirerData QR rejected: ${it.message}" }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,10 +129,16 @@ class MainActivity : ComponentActivity() {
                     activeProfileId = activeProfileIdState,
                     installationId = installationIdState,
                     boardingRequestToken = boardingRequestTokenState,
+                    saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
                     status = statusState,
                     paymentResult = paymentResultState,
                     onDismissResult = { paymentResultState = null },
                     onScanProfile = { scanQr() },
+                    onScanSaleToAcquirerData = { scanSaleToAcquirerDataQr() },
+                    onClearSaleToAcquirerData = {
+                        saleToAcquirerDataConfigState = SaleToAcquirerDataConfig.default()
+                        statusState = "SaleToAcquirerData reset to retail demo defaults."
+                    },
                     onSelectProfile = {
                         profileStore.setActive(it)
                         reloadProfiles()
@@ -154,6 +174,15 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun scanSaleToAcquirerDataQr() {
+        saleToAcquirerDataQrLauncher.launch(
+            ScanOptions()
+                .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                .setPrompt("Scan a SaleToAcquirerData properties QR")
+                .setBeepEnabled(false),
+        )
+    }
+
     private fun board(profile: AdyenProfile) {
         val requestToken = boardingRequestTokenState
         if (requestToken.isNullOrBlank()) {
@@ -181,7 +210,13 @@ class MainActivity : ComponentActivity() {
             launchLink(AdyenLinks.boarded(profile))
             return
         }
-        val requestJson = TerminalPaymentRequestBuilder.buildDemoRequest(profile, installationId, lines, totalMinor)
+        val requestJson = TerminalPaymentRequestBuilder.buildDemoRequest(
+            profile = profile,
+            installationId = installationId,
+            lines = lines,
+            totalMinor = totalMinor,
+            saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
+        )
         val encoded = nexoCrypto.encryptToBase64Url(profile, requestJson)
         statusState = "Opening Adyen payment app with encrypted Terminal API request..."
         launchLink(AdyenLinks.nexo(profile, encoded))
@@ -213,10 +248,13 @@ private fun TapToPlayApp(
     activeProfileId: String?,
     installationId: String?,
     boardingRequestToken: String?,
+    saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
     status: String,
     paymentResult: PaymentResult?,
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
+    onScanSaleToAcquirerData: () -> Unit,
+    onClearSaleToAcquirerData: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onCheckBoarding: (AdyenProfile) -> Unit,
     onBoard: (AdyenProfile) -> Unit,
@@ -298,6 +336,7 @@ private fun TapToPlayApp(
                     lines = lines,
                     totalMinor = cart.totalMinor(),
                     activeProfile = activeProfile,
+                    saleToAcquirerDataConfig = saleToAcquirerDataConfig,
                     onRemove = {
                         cart.removeOne(it)
                         cartVersion++
@@ -306,6 +345,8 @@ private fun TapToPlayApp(
                         cart.clear()
                         cartVersion++
                     },
+                    onScanSaleToAcquirerData = onScanSaleToAcquirerData,
+                    onClearSaleToAcquirerData = onClearSaleToAcquirerData,
                     onPay = { profile -> onPay(profile, lines, cart.totalMinor()) },
                 )
             }
@@ -416,8 +457,11 @@ private fun CartPanel(
     lines: List<CartLine>,
     totalMinor: Long,
     activeProfile: AdyenProfile?,
+    saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
+    onScanSaleToAcquirerData: () -> Unit,
+    onClearSaleToAcquirerData: () -> Unit,
     onPay: (AdyenProfile) -> Unit,
 ) {
     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
@@ -446,6 +490,19 @@ private fun CartPanel(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Total", style = MaterialTheme.typography.titleLarge)
                 Text(formatMoney(totalMinor), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            }
+            OutlinedCard(shape = RoundedCornerShape(8.dp)) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("SaleToAcquirerData", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.properties.size} custom propert${if (saleToAcquirerDataConfig.properties.size == 1) "y" else "ies"}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = onScanSaleToAcquirerData) { Text("Scan data QR") }
+                        TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset") }
+                    }
+                }
             }
             Button(
                 onClick = { activeProfile?.let(onPay) },

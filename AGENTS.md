@@ -19,6 +19,8 @@ Use official Adyen docs as source of truth for Android Payments app links, Manag
 
 The current `TerminalPaymentRequestBuilder` and `NexoCrypto` boundary exists so Terminal API payload construction and encryption stay isolated from catalog/cart UI. The payment App Link must use the documented `request` query parameter, and boarding must keep the documented check-token-finish sequence. Do not spread payment payload construction or crypto code across Compose code.
 
+SaleToAcquirerData QR support is intentionally separate from credential QR support. Keep its schema as `taptoplay.adyen.saleToAcquirerData.v1`, merge scanned properties over retail demo defaults, and keep the Base64 JSON encoding inside the `adyen` package.
+
 ## Implementation Rules
 
 - Keep domain code in `catalog`, `cart`, `profiles`, and `adyen`.

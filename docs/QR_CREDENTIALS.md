@@ -55,3 +55,27 @@ TapToPlay can import Adyen payment profiles by scanning a QR code that contains 
 Use any trusted QR generator that accepts raw text, paste the JSON payload, and generate a QR code. Treat the QR image like a secret because it contains API keys and terminal encryption material.
 
 For production-like demos, generate separate QR codes for test and live profiles so switching remains explicit in the app.
+
+## SaleToAcquirerData QR Codes
+
+Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR codes use a separate schema so they can be scanned from checkout without changing the active payment profile.
+
+```json
+{
+  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+  "displayName": "Preauth experiment",
+  "properties": {
+    "authorisationType": "PreAuth",
+    "metadata.experiment": "qr-sale-to-acquirer-data",
+    "metadata.operator": "demo-user"
+  }
+}
+```
+
+Rules:
+
+- `schema` must be `taptoplay.adyen.saleToAcquirerData.v1`.
+- `displayName` is shown in the checkout panel.
+- `properties` must be a non-empty JSON object.
+- Values may be strings, numbers, booleans, arrays, or nested objects.
+- TapToPlay merges these properties over the default retail demo metadata, serializes the result as JSON, Base64-encodes it, and sends it as `PaymentRequest.SaleData.SaleToAcquirerData`.
