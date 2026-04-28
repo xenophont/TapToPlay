@@ -1,8 +1,8 @@
-# QR Credential Profiles
+# Perfiles de Credenciales QR
 
-TapToPlay can import Adyen payment profiles by scanning a QR code that contains a JSON payload. Profiles are stored in encrypted local storage and selected explicitly in the app.
+TapToPlay puede importar perfiles de pago de Adyen escaneando un QR que contiene un payload JSON. Los perfiles se guardan en almacenamiento local cifrado y se seleccionan explicitamente en la app.
 
-## JSON Format
+## Formato JSON
 
 ```json
 {
@@ -21,7 +21,7 @@ TapToPlay can import Adyen payment profiles by scanning a QR code that contains 
 }
 ```
 
-## Live Example
+## Ejemplo Live
 
 ```json
 {
@@ -40,25 +40,25 @@ TapToPlay can import Adyen payment profiles by scanning a QR code that contains 
 }
 ```
 
-## Validation Rules
+## Reglas de Validacion
 
-- `schema` must be `taptoplay.adyen.profile.v1`.
-- `environment` must be `test` or `live`.
-- `displayName`, `merchantId`, `apiKey`, `clientKey`, terminal key fields, `currency`, and `countryCode` are required.
-- `storeId` is optional. When present, TapToPlay requests store-routed boarding.
-- `currency` must be an uppercase ISO 4217 code such as `EUR`.
-- `countryCode` must be an uppercase ISO 3166-1 alpha-2 code such as `ES`.
-- `terminalKeyIdentifier`, `terminalKeyVersion`, and `terminalPassphrase` must match the shared key configured in the Adyen Customer Area for Terminal API encryption.
+- `schema` debe ser `taptoplay.adyen.profile.v1`.
+- `environment` debe ser `test` o `live`.
+- `displayName`, `merchantId`, `apiKey`, `clientKey`, los campos de terminal key, `currency` y `countryCode` son obligatorios.
+- `storeId` es opcional. Cuando esta presente, TapToPlay solicita boarding enrutado por store.
+- `currency` debe ser un codigo ISO 4217 en mayusculas, como `EUR`.
+- `countryCode` debe ser un codigo ISO 3166-1 alpha-2 en mayusculas, como `ES`.
+- `terminalKeyIdentifier`, `terminalKeyVersion` y `terminalPassphrase` deben coincidir con la shared key configurada en Adyen Customer Area para el cifrado de Terminal API.
 
-## Creating a QR Code
+## Crear un QR
 
-Use any trusted QR generator that accepts raw text, paste the JSON payload, and generate a QR code. Treat the QR image like a secret because it contains API keys and terminal encryption material.
+Usa cualquier generador QR de confianza que acepte texto en crudo, pega el payload JSON y genera el codigo QR. Trata la imagen QR como un secreto porque contiene API keys y material de cifrado de terminal.
 
-For production-like demos, generate separate QR codes for test and live profiles so switching remains explicit in the app.
+Para demos parecidas a produccion, genera codigos QR separados para perfiles test y live para que el cambio siga siendo explicito en la app.
 
-## SaleToAcquirerData QR Codes
+## Codigos QR de SaleToAcquirerData
 
-Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR codes should contain the plain Adyen SaleToAcquirerData JSON object so they can be scanned from checkout without changing the active payment profile.
+Los QR de credenciales usan `taptoplay.adyen.profile.v1`. Los QR de SaleToAcquirerData deben contener el objeto JSON plano de Adyen SaleToAcquirerData para poder escanearlos desde checkout sin cambiar el perfil de pago activo.
 
 ```json
 {
@@ -89,9 +89,9 @@ Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR code
 }
 ```
 
-Rules:
+Reglas:
 
-- The root object is the SaleToAcquirerData object itself.
-- TapToPlay Base64-encodes this object exactly as scanned and sends it as `PaymentRequest.SaleData.SaleToAcquirerData`.
-- Legacy QR codes with `schema`, `displayName`, and `saleToAcquirerData` or `properties` are still accepted, but newly generated QRs should use the plain object shape.
-- Values may be strings, numbers, booleans, arrays, or nested objects.
+- El objeto raiz es el propio objeto SaleToAcquirerData.
+- TapToPlay codifica este objeto exactamente como se ha escaneado en Base64 y lo envia como `PaymentRequest.SaleData.SaleToAcquirerData`.
+- Los QR antiguos con `schema`, `displayName` y `saleToAcquirerData` o `properties` siguen siendo aceptados, pero los QR nuevos deberian usar el objeto plano.
+- Los valores pueden ser strings, numeros, booleanos, arrays u objetos anidados.
