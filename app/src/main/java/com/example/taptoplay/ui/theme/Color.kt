@@ -2,10 +2,13 @@ package com.example.taptoplay.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val Ink = Color(0xFF1F2421)
+val Porcelain = Color(0xFFFBF8F2)
+val WarmStone = Color(0xFFE7DED2)
+val Moss = Color(0xFF52665B)
+val Copper = Color(0xFFB76E4B)
+val Brass = Color(0xFFC6A15B)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val Night = Color(0xFF171A18)
+val Charcoal = Color(0xFF242A27)
+val Sage = Color(0xFF9BAEA2)
