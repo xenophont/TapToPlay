@@ -54,6 +54,33 @@ class TerminalPaymentRequestBuilderTest {
     }
 
     @Test
+    fun scannedAcquirerDataPaymentRequestDoesNotSendLocalCartItemsAsSaleItems() {
+        val scannedConfig = SaleToAcquirerDataQrParser().parse(
+            """
+                {
+                  "metadata": {
+                    "qr": "scanned"
+                  },
+                  "additionalData": {
+                    "authorisationType": "PreAuth"
+                  }
+                }
+            """.trimIndent(),
+        ).getOrThrow()
+        val request = TerminalPaymentRequestBuilder.buildDemoRequest(
+            profile = profile(),
+            installationId = "install-1",
+            lines = listOf(CartLine(product(), 2)),
+            totalMinor = 25800,
+            saleToAcquirerDataConfig = scannedConfig,
+        )
+
+        assertEquals(false, request.contains("SaleItem"))
+        assertEquals(false, request.contains("saleItem"))
+        assertEquals(true, TerminalApiRequestInspector.inspect(request).saleToAcquirerDataJson?.contains("\"qr\"") == true)
+    }
+
+    @Test
     fun requestInspectorDecodesSaleToAcquirerData() {
         val request = TerminalPaymentRequestBuilder.buildDemoRequest(
             profile = profile(),

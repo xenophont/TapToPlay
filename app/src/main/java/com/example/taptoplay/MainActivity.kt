@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.lifecycleScope
 import com.example.taptoplay.adyen.AdyenLinks
+import com.example.taptoplay.adyen.AndroidBoardingStateStore
 import com.example.taptoplay.adyen.AndroidTransactionStore
 import com.example.taptoplay.adyen.BoardingApiClient
 import com.example.taptoplay.adyen.NexoCrypto
@@ -105,6 +106,7 @@ import java.util.UUID
 class MainActivity : ComponentActivity() {
     private lateinit var profileStore: AndroidProfileStore
     private lateinit var transactionStore: AndroidTransactionStore
+    private lateinit var boardingStateStore: AndroidBoardingStateStore
     private lateinit var saleToAcquirerDataFavoriteStore: SaleToAcquirerDataFavoriteStore
     private val qrParser = ProfileQrParser()
     private val saleToAcquirerDataQrParser = SaleToAcquirerDataQrParser()
@@ -129,6 +131,7 @@ class MainActivity : ComponentActivity() {
                 profileStore.save(profile)
                 profileStore.setActive(profile.id)
                 reloadProfiles()
+                reloadBoardingState()
                 statusState = "Scanned ${profile.displayName}. Active profile updated."
             }
             .onFailure { statusState = "QR rejected: ${it.message}" }
@@ -149,12 +152,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         profileStore = AndroidProfileStore(this)
         transactionStore = AndroidTransactionStore(this)
+        boardingStateStore = AndroidBoardingStateStore(this)
         saleToAcquirerDataFavoriteStore = SaleToAcquirerDataFavoriteStore(this)
         LocalProfileBootstrap.profileOrNull()?.let { bootstrap ->
             if (profileStore.profiles().none { it.id == bootstrap.id }) profileStore.save(bootstrap)
             if (profileStore.activeProfileId() == null) profileStore.setActive(bootstrap.id)
         }
         reloadProfiles()
+        reloadBoardingState()
         reloadSaleToAcquirerDataFavorites()
         reloadTransactions()
         handleReturnIntent(intent)
@@ -205,8 +210,7 @@ class MainActivity : ComponentActivity() {
                     onSelectProfile = {
                         profileStore.setActive(it)
                         reloadProfiles()
-                        installationIdState = null
-                        boardingRequestTokenState = null
+                        reloadBoardingState()
                         statusState = "Active profile switched deliberately."
                     },
                     onCheckBoarding = { profile -> launchLink(AdyenLinks.boarded(profile)) },
@@ -227,6 +231,12 @@ class MainActivity : ComponentActivity() {
     private fun reloadProfiles() {
         profilesState = profileStore.profiles()
         activeProfileIdState = profileStore.activeProfileId()
+    }
+
+    private fun reloadBoardingState() {
+        val activeProfileId = activeProfileIdState
+        installationIdState = activeProfileId?.let { boardingStateStore.installationId(it) }
+        boardingRequestTokenState = activeProfileId?.let { boardingStateStore.boardingRequestToken(it) }
     }
 
     private fun reloadTransactions() {
@@ -268,6 +278,7 @@ class MainActivity : ComponentActivity() {
             tokenResult
                 .onSuccess { response ->
                     installationIdState = response.installationId ?: installationIdState
+                    response.installationId?.let { boardingStateStore.saveInstallationId(profile.id, it) }
                     statusState = "Opening Adyen to finish boarding..."
                     launchLink(AdyenLinks.board(profile, response.boardingToken))
                 }
@@ -366,8 +377,15 @@ class MainActivity : ComponentActivity() {
         val parsed = PaymentResultParser.parse(rawUri ?: return, activeProfile, nexoCrypto) ?: return
         paymentResultState = parsed
         if (parsed is PaymentResult.BoardingStatus) {
-            installationIdState = parsed.installationId ?: installationIdState
-            boardingRequestTokenState = parsed.boardingRequestToken ?: boardingRequestTokenState
+            val activeProfileId = activeProfile?.id
+            parsed.installationId?.let { installationId ->
+                installationIdState = installationId
+                activeProfileId?.let { boardingStateStore.saveInstallationId(it, installationId) }
+            }
+            parsed.boardingRequestToken?.let { token ->
+                boardingRequestTokenState = token
+                activeProfileId?.let { boardingStateStore.saveBoardingRequestToken(it, token) }
+            }
             statusState = when {
                 parsed.boarded -> "Adyen app is boarded and ready."
                 parsed.boardingRequestToken != null -> "Boarding request token received. Tap Board to finish setup."
