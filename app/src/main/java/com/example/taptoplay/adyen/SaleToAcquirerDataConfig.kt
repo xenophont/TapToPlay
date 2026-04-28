@@ -1,6 +1,7 @@
 package com.example.taptoplay.adyen
 
 import java.util.Base64
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -10,6 +11,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
+@Serializable
 data class SaleToAcquirerDataConfig(
     val schema: String = SCHEMA,
     val displayName: String,

@@ -63,6 +63,7 @@ import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
 import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.example.taptoplay.adyen.SaleToAcquirerDataEditor
+import com.example.taptoplay.adyen.SaleToAcquirerDataFavoriteStore
 import com.example.taptoplay.adyen.SaleToAcquirerDataQrParser
 import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
@@ -102,6 +103,7 @@ import java.util.UUID
 class MainActivity : ComponentActivity() {
     private lateinit var profileStore: AndroidProfileStore
     private lateinit var transactionStore: AndroidTransactionStore
+    private lateinit var saleToAcquirerDataFavoriteStore: SaleToAcquirerDataFavoriteStore
     private val qrParser = ProfileQrParser()
     private val saleToAcquirerDataQrParser = SaleToAcquirerDataQrParser()
     private val boardingApiClient = BoardingApiClient()
@@ -114,6 +116,7 @@ class MainActivity : ComponentActivity() {
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
     private var saleToAcquirerDataConfigState by mutableStateOf(SaleToAcquirerDataConfig.default())
+    private var saleToAcquirerDataFavoritesState by mutableStateOf(emptyList<SaleToAcquirerDataConfig>())
     private var transactionHistoryState by mutableStateOf(emptyList<TransactionRecord>())
     private var pendingTransactionIdState by mutableStateOf<String?>(null)
 
@@ -144,11 +147,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         profileStore = AndroidProfileStore(this)
         transactionStore = AndroidTransactionStore(this)
+        saleToAcquirerDataFavoriteStore = SaleToAcquirerDataFavoriteStore(this)
         LocalProfileBootstrap.profileOrNull()?.let { bootstrap ->
             if (profileStore.profiles().none { it.id == bootstrap.id }) profileStore.save(bootstrap)
             if (profileStore.activeProfileId() == null) profileStore.setActive(bootstrap.id)
         }
         reloadProfiles()
+        reloadSaleToAcquirerDataFavorites()
         reloadTransactions()
         handleReturnIntent(intent)
 
@@ -160,6 +165,7 @@ class MainActivity : ComponentActivity() {
                     installationId = installationIdState,
                     boardingRequestToken = boardingRequestTokenState,
                     saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
+                    saleToAcquirerDataFavorites = saleToAcquirerDataFavoritesState,
                     transactionHistory = transactionHistoryState,
                     status = statusState,
                     paymentResult = paymentResultState,
@@ -169,6 +175,20 @@ class MainActivity : ComponentActivity() {
                     onUpdateSaleToAcquirerData = { config ->
                         saleToAcquirerDataConfigState = config
                         statusState = "SaleToAcquirerData updated from the field editor."
+                    },
+                    onSaveSaleToAcquirerDataFavorite = { config ->
+                        saleToAcquirerDataFavoriteStore.save(config)
+                        reloadSaleToAcquirerDataFavorites()
+                        statusState = "Saved ${config.displayName} as a SaleToAcquirerData favorite."
+                    },
+                    onApplySaleToAcquirerDataFavorite = { config ->
+                        saleToAcquirerDataConfigState = config
+                        statusState = "SaleToAcquirerData favorite applied: ${config.displayName}."
+                    },
+                    onRemoveSaleToAcquirerDataFavorite = { config ->
+                        saleToAcquirerDataFavoriteStore.remove(config.displayName)
+                        reloadSaleToAcquirerDataFavorites()
+                        statusState = "Removed SaleToAcquirerData favorite: ${config.displayName}."
                     },
                     onClearSaleToAcquirerData = {
                         saleToAcquirerDataConfigState = SaleToAcquirerDataConfig.default()
@@ -209,6 +229,10 @@ class MainActivity : ComponentActivity() {
 
     private fun reloadTransactions() {
         transactionHistoryState = transactionStore.records()
+    }
+
+    private fun reloadSaleToAcquirerDataFavorites() {
+        saleToAcquirerDataFavoritesState = saleToAcquirerDataFavoriteStore.favorites()
     }
 
     private fun scanQr() {
@@ -379,6 +403,7 @@ private fun TapToPlayApp(
     installationId: String?,
     boardingRequestToken: String?,
     saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
+    saleToAcquirerDataFavorites: List<SaleToAcquirerDataConfig>,
     transactionHistory: List<TransactionRecord>,
     status: String,
     paymentResult: PaymentResult?,
@@ -386,6 +411,9 @@ private fun TapToPlayApp(
     onScanProfile: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
     onUpdateSaleToAcquirerData: (SaleToAcquirerDataConfig) -> Unit,
+    onSaveSaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
+    onApplySaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
+    onRemoveSaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
     onClearSaleToAcquirerData: () -> Unit,
     onClearTransactions: () -> Unit,
     onSelectProfile: (String) -> Unit,
@@ -474,6 +502,7 @@ private fun TapToPlayApp(
                     totalMinor = cart.totalMinor(),
                     activeProfile = activeProfile,
                     saleToAcquirerDataConfig = saleToAcquirerDataConfig,
+                    saleToAcquirerDataFavorites = saleToAcquirerDataFavorites,
                     onRemove = {
                         cart.removeOne(it)
                         cartVersion++
@@ -483,6 +512,9 @@ private fun TapToPlayApp(
                         cartVersion++
                     },
                     onScanSaleToAcquirerData = onScanSaleToAcquirerData,
+                    onSaveSaleToAcquirerDataFavorite = { onSaveSaleToAcquirerDataFavorite(saleToAcquirerDataConfig) },
+                    onApplySaleToAcquirerDataFavorite = onApplySaleToAcquirerDataFavorite,
+                    onRemoveSaleToAcquirerDataFavorite = onRemoveSaleToAcquirerDataFavorite,
                     onClearSaleToAcquirerData = onClearSaleToAcquirerData,
                     onInspectSaleToAcquirerData = { showSaleToAcquirerData = true },
                     onPay = { profile -> onPay(profile, lines, cart.totalMinor()) },
@@ -515,6 +547,9 @@ private fun TapToPlayApp(
             onApply = {
                 onUpdateSaleToAcquirerData(editableSaleToAcquirerData)
                 showSaleToAcquirerData = false
+            },
+            onSaveFavorite = {
+                onSaveSaleToAcquirerDataFavorite(editableSaleToAcquirerData)
             },
             onDismiss = { showSaleToAcquirerData = false },
         )
@@ -716,9 +751,13 @@ private fun CartPanel(
     totalMinor: Long,
     activeProfile: AdyenProfile?,
     saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
+    saleToAcquirerDataFavorites: List<SaleToAcquirerDataConfig>,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
+    onSaveSaleToAcquirerDataFavorite: () -> Unit,
+    onApplySaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
+    onRemoveSaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
     onClearSaleToAcquirerData: () -> Unit,
     onInspectSaleToAcquirerData: () -> Unit,
     onPay: (AdyenProfile) -> Unit,
@@ -760,7 +799,35 @@ private fun CartPanel(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = onScanSaleToAcquirerData) { Text("Scan data QR") }
                         OutlinedButton(onClick = onInspectSaleToAcquirerData) { Text("View") }
+                        OutlinedButton(onClick = onSaveSaleToAcquirerDataFavorite) { Text("Save") }
                         TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset") }
+                    }
+                    if (saleToAcquirerDataFavorites.isNotEmpty()) {
+                        Text("Favorites", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                            items(saleToAcquirerDataFavorites) { favorite ->
+                                OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.width(220.dp)) {
+                                    Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            favorite.displayName,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Text(
+                                            "${favorite.fieldCount} JSON field${if (favorite.fieldCount == 1) "" else "s"}",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                        )
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            TextButton(onClick = { onApplySaleToAcquirerDataFavorite(favorite) }) { Text("Use") }
+                                            TextButton(onClick = { onRemoveSaleToAcquirerDataFavorite(favorite) }) { Text("Remove") }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1106,6 +1173,7 @@ private fun SaleToAcquirerDataDialog(
     onEdit: (List<String>, String) -> Unit,
     onRemove: (List<String>) -> Unit,
     onApply: () -> Unit,
+    onSaveFavorite: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -1132,6 +1200,7 @@ private fun SaleToAcquirerDataDialog(
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(onClick = onSaveFavorite) { Text("Save", maxLines = 1) }
                         OutlinedButton(onClick = onApply) { Text("Apply", maxLines = 1) }
                         TextButton(onClick = onDismiss) { Text("Close") }
                     }
