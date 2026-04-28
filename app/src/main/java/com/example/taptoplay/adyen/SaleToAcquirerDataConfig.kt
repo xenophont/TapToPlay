@@ -83,21 +83,34 @@ class SaleToAcquirerDataQrParser(
 }
 
 object SaleToAcquirerDataEncoder {
-    private val json = Json { explicitNulls = false }
+    private val json = Json {
+        explicitNulls = false
+        prettyPrint = true
+    }
 
     fun encodeBase64(config: SaleToAcquirerDataConfig): String {
-        val payload = if (config.mergeWithDefaults) {
-            SaleToAcquirerDataConfig.default().data.deepMerge(config.data)
-        } else {
-            config.data
-        }
+        val payload = payload(config)
         val rawJson = json.encodeToString(JsonObject.serializer(), payload)
         return Base64.getEncoder().encodeToString(rawJson.toByteArray(Charsets.UTF_8))
     }
 
-    fun decodeBase64ForTest(encoded: String): JsonObject {
+    fun payload(config: SaleToAcquirerDataConfig): JsonObject =
+        if (config.mergeWithDefaults) {
+            SaleToAcquirerDataConfig.default().data.deepMerge(config.data)
+        } else {
+            config.data
+        }
+
+    fun decodeBase64(encoded: String): Result<JsonObject> = runCatching {
         val rawJson = Base64.getDecoder().decode(encoded).toString(Charsets.UTF_8)
-        return json.parseToJsonElement(rawJson) as JsonObject
+        json.parseToJsonElement(rawJson) as JsonObject
+    }
+
+    fun prettyPrint(payload: JsonObject): String =
+        json.encodeToString(JsonObject.serializer(), payload)
+
+    fun decodeBase64ForTest(encoded: String): JsonObject {
+        return decodeBase64(encoded).getOrThrow()
     }
 }
 

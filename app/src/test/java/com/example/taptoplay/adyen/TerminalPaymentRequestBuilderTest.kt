@@ -55,6 +55,27 @@ class TerminalPaymentRequestBuilderTest {
         assertEquals(true, request.contains("\"POIID\": \"install-1\""))
     }
 
+    @Test
+    fun decodedSaleToAcquirerDataCanBePrettyPrinted() {
+        val encoded = SaleToAcquirerDataEncoder.encodeBase64(
+            SaleToAcquirerDataConfig(
+                displayName = "Plain",
+                mergeWithDefaults = false,
+                data = buildJsonObject {
+                    put("metadata", buildJsonObject {
+                        put("order", "demo")
+                    })
+                },
+            ),
+        )
+
+        val decoded = SaleToAcquirerDataEncoder.decodeBase64(encoded).getOrThrow()
+        val pretty = SaleToAcquirerDataEncoder.prettyPrint(decoded)
+
+        assertEquals("demo", decoded["metadata"]?.jsonObject?.get("order")?.jsonPrimitive?.content)
+        assertEquals(true, pretty.contains("\"metadata\""))
+    }
+
     private fun profile() = AdyenProfile(
         displayName = "Demo",
         environment = PaymentEnvironment.TEST,

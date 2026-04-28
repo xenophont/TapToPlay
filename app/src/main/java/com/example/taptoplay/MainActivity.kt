@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -63,6 +64,7 @@ import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
 import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.example.taptoplay.adyen.SaleToAcquirerDataEditor
+import com.example.taptoplay.adyen.SaleToAcquirerDataEncoder
 import com.example.taptoplay.adyen.SaleToAcquirerDataFavoriteStore
 import com.example.taptoplay.adyen.SaleToAcquirerDataQrParser
 import com.example.taptoplay.adyen.TerminalApiResponseInspector
@@ -975,6 +977,7 @@ private fun TransactionDialog(
     var selectedSection by remember { mutableStateOf("Request") }
     val responseInsight = remember(record.responseBody) { TerminalApiResponseInspector.inspect(record.responseBody) }
     val highlights = remember(record.responseBody) { TerminalApiResponseInspector.compactSummary(record.responseBody) }
+    val decodedSaleToAcquirerData = remember(record.requestJson) { decodedSaleToAcquirerDataFromRequest(record.requestJson) }
     val canRefund = record.status == TransactionStatus.APPROVED &&
         record.refundOfTransactionId == null &&
         (record.adyenTransactionId != null || responseInsight?.transactionId != null)
@@ -1028,6 +1031,11 @@ private fun TransactionDialog(
                             }
                             item {
                                 Text("Terminal API request", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                            decodedSaleToAcquirerData?.let { decoded ->
+                                item {
+                                    DecodedSaleToAcquirerDataCard(decoded)
+                                }
                             }
                             item { MonospaceBlock(record.requestJson) }
                         }
@@ -1097,6 +1105,36 @@ private fun RequestSummary(record: TransactionRecord) {
             KeyValueLine("Items", record.itemCount.toString())
             record.adyenTransactionId?.let { KeyValueLine("Adyen transaction", it) }
             record.refundOfTransactionId?.let { KeyValueLine("Refund of", it) }
+        }
+    }
+}
+
+@Composable
+private fun DecodedSaleToAcquirerDataCard(decodedJson: String) {
+    var expanded by remember { mutableStateOf(false) }
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Decoded SaleToAcquirerData", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Raw JSON sent inside PaymentRequest.SaleData.SaleToAcquirerData",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Hide" else "Decode")
+                }
+            }
+            if (expanded) {
+                MonospaceBlock(decodedJson)
+            }
         }
     }
 }
@@ -1172,13 +1210,15 @@ private fun ExpandableValueRow(label: String, value: String) {
 @Composable
 private fun MonospaceBlock(text: String) {
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(12.dp),
-            style = MaterialTheme.typography.bodySmall,
-            fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        SelectionContainer {
+            Text(
+                text = text,
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -1369,6 +1409,17 @@ private fun JsonElement.summary(): String = when (this) {
 private fun JsonElement.editableText(): String = when (this) {
     is JsonPrimitive -> contentOrNull ?: toString()
     else -> toString()
+}
+
+private fun decodedSaleToAcquirerDataFromRequest(requestJson: String): String? {
+    val encoded = Regex("\"SaleToAcquirerData\"\\s*:\\s*\"([^\"]+)\"")
+        .find(requestJson)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?: return null
+    return SaleToAcquirerDataEncoder.decodeBase64(encoded)
+        .map { SaleToAcquirerDataEncoder.prettyPrint(it) }
+        .getOrNull()
 }
 
 private fun formatMoney(minor: Long): String = "EUR %.2f".format(minor / 100.0)
