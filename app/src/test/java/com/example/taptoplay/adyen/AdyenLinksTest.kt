@@ -20,8 +20,17 @@ class AdyenLinksTest {
         val profile = profile(PaymentEnvironment.LIVE)
 
         assertTrue(AdyenLinks.boarded(profile).startsWith("https://www.adyen.com/boarded"))
-        assertTrue(AdyenLinks.reboard(profile, "token").contains("forceReboard=true"))
+        assertTrue(AdyenLinks.startReboard(profile).contains("reboard=true"))
         assertTrue(AdyenLinks.nexo(profile, "blob").startsWith("https://www.adyen.com/nexo"))
+    }
+
+    @Test
+    fun paymentLinkUsesDocumentedRequestParameter() {
+        val profile = profile(PaymentEnvironment.TEST)
+
+        val link = AdyenLinks.nexo(profile, "blob")
+
+        assertTrue(link.contains("request=blob"))
     }
 
     private fun profile(environment: PaymentEnvironment) = AdyenProfile(

@@ -81,6 +81,7 @@ class MainActivity : ComponentActivity() {
     private var paymentResultState by mutableStateOf<PaymentResult?>(null)
     private var statusState by mutableStateOf("Ready for boutique checkout")
     private var installationIdState by mutableStateOf<String?>(null)
+    private var boardingRequestTokenState by mutableStateOf<String?>(null)
 
     private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
         val contents = result.contents ?: return@registerForActivityResult
@@ -111,6 +112,7 @@ class MainActivity : ComponentActivity() {
                     profiles = profilesState,
                     activeProfileId = activeProfileIdState,
                     installationId = installationIdState,
+                    boardingRequestToken = boardingRequestTokenState,
                     status = statusState,
                     paymentResult = paymentResultState,
                     onDismissResult = { paymentResultState = null },
@@ -118,10 +120,13 @@ class MainActivity : ComponentActivity() {
                     onSelectProfile = {
                         profileStore.setActive(it)
                         reloadProfiles()
+                        installationIdState = null
+                        boardingRequestTokenState = null
                         statusState = "Active profile switched deliberately."
                     },
                     onCheckBoarding = { profile -> launchLink(AdyenLinks.boarded(profile)) },
-                    onBoard = { profile, force -> board(profile, force) },
+                    onBoard = { profile -> board(profile) },
+                    onReboard = { profile -> launchLink(AdyenLinks.startReboard(profile)) },
                     onPay = { profile, lines, totalMinor -> pay(profile, lines, totalMinor) },
                 )
             }
@@ -147,21 +152,34 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun board(profile: AdyenProfile, force: Boolean) {
+    private fun board(profile: AdyenProfile) {
+        val requestToken = boardingRequestTokenState
+        if (requestToken.isNullOrBlank()) {
+            statusState = "Check boarding first so Adyen can return a boarding request token."
+            launchLink(AdyenLinks.boarded(profile))
+            return
+        }
         statusState = "Requesting Adyen boarding token..."
         lifecycleScope.launch {
-            val tokenResult = withContext(Dispatchers.IO) { boardingApiClient.createBoardingToken(profile) }
+            val tokenResult = withContext(Dispatchers.IO) { boardingApiClient.createBoardingToken(profile, requestToken) }
             tokenResult
-                .onSuccess { token ->
-                    statusState = if (force) "Opening Adyen reboarding..." else "Opening Adyen boarding..."
-                    launchLink(if (force) AdyenLinks.reboard(profile, token) else AdyenLinks.board(profile, token))
+                .onSuccess { response ->
+                    installationIdState = response.installationId ?: installationIdState
+                    statusState = "Opening Adyen to finish boarding..."
+                    launchLink(AdyenLinks.board(profile, response.boardingToken))
                 }
                 .onFailure { statusState = "Boarding token failed: ${it.message}" }
         }
     }
 
     private fun pay(profile: AdyenProfile, lines: List<CartLine>, totalMinor: Long) {
-        val requestJson = TerminalPaymentRequestBuilder.buildDemoRequest(profile, lines, totalMinor)
+        val installationId = installationIdState
+        if (installationId.isNullOrBlank()) {
+            statusState = "Check boarding first. Payments require an installation ID as POIID."
+            launchLink(AdyenLinks.boarded(profile))
+            return
+        }
+        val requestJson = TerminalPaymentRequestBuilder.buildDemoRequest(profile, installationId, lines, totalMinor)
         val encoded = AdyenLinks.encodeDemoNexoRequest(requestJson)
         statusState = "Opening Adyen payment app. For production, replace demo encoding with Adyen encryption."
         launchLink(AdyenLinks.nexo(profile, encoded))
@@ -174,9 +192,15 @@ class MainActivity : ComponentActivity() {
     private fun handleReturnIntent(intent: Intent?) {
         val parsed = PaymentResultParser.parse(intent?.data) ?: return
         paymentResultState = parsed
-        if (parsed is PaymentResult.Boarding) {
-            installationIdState = parsed.installationId
-            statusState = "Boarding return received."
+        if (parsed is PaymentResult.BoardingStatus) {
+            installationIdState = parsed.installationId ?: installationIdState
+            boardingRequestTokenState = parsed.boardingRequestToken ?: boardingRequestTokenState
+            statusState = when {
+                parsed.boarded -> "Adyen app is boarded and ready."
+                parsed.boardingRequestToken != null -> "Boarding request token received. Tap Board to finish setup."
+                parsed.error != null -> "Boarding error: ${parsed.error}"
+                else -> "Adyen app is not boarded yet."
+            }
         }
     }
 }
@@ -186,13 +210,15 @@ private fun TapToPlayApp(
     profiles: List<AdyenProfile>,
     activeProfileId: String?,
     installationId: String?,
+    boardingRequestToken: String?,
     status: String,
     paymentResult: PaymentResult?,
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onCheckBoarding: (AdyenProfile) -> Unit,
-    onBoard: (AdyenProfile, Boolean) -> Unit,
+    onBoard: (AdyenProfile) -> Unit,
+    onReboard: (AdyenProfile) -> Unit,
     onPay: (AdyenProfile, List<CartLine>, Long) -> Unit,
 ) {
     val cart = remember { Cart() }
@@ -221,10 +247,12 @@ private fun TapToPlayApp(
                     profiles = profiles,
                     activeProfile = activeProfile,
                     installationId = installationId,
+                    boardingRequestToken = boardingRequestToken,
                     onScanProfile = onScanProfile,
                     onSelectProfile = onSelectProfile,
                     onCheckBoarding = onCheckBoarding,
                     onBoard = onBoard,
+                    onReboard = onReboard,
                 )
             }
             item {
@@ -306,10 +334,12 @@ private fun ProfilePanel(
     profiles: List<AdyenProfile>,
     activeProfile: AdyenProfile?,
     installationId: String?,
+    boardingRequestToken: String?,
     onScanProfile: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onCheckBoarding: (AdyenProfile) -> Unit,
-    onBoard: (AdyenProfile, Boolean) -> Unit,
+    onBoard: (AdyenProfile) -> Unit,
+    onReboard: (AdyenProfile) -> Unit,
 ) {
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -326,10 +356,11 @@ private fun ProfilePanel(
             if (activeProfile != null) {
                 Text("API key ${activeProfile.maskedApiKey()} | passphrase ${activeProfile.maskedPassphrase()}")
                 Text("Installation ${installationId ?: "not returned yet"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Boarding request token ${boardingRequestToken?.let { "received" } ?: "not received"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { onCheckBoarding(activeProfile) }) { Text("Check") }
-                    Button(onClick = { onBoard(activeProfile, false) }) { Text("Board") }
-                    OutlinedButton(onClick = { onBoard(activeProfile, true) }) { Text("Reboard") }
+                    Button(onClick = { onBoard(activeProfile) }) { Text("Board") }
+                    OutlinedButton(onClick = { onReboard(activeProfile) }) { Text("Reboard") }
                 }
             }
             if (profiles.isNotEmpty()) {
@@ -428,13 +459,16 @@ private fun CartPanel(
 @Composable
 private fun PaymentResultDialog(result: PaymentResult, onDismiss: () -> Unit) {
     val title = when (result) {
-        is PaymentResult.Boarding -> "Boarding returned"
+        is PaymentResult.BoardingStatus -> "Boarding returned"
         is PaymentResult.Success -> "Payment approved"
         is PaymentResult.Refused -> "Payment refused"
         is PaymentResult.Failure -> "Adyen result"
     }
     val message = when (result) {
-        is PaymentResult.Boarding -> "Installation ID: ${result.installationId ?: "not supplied"}"
+        is PaymentResult.BoardingStatus -> {
+            val state = if (result.boarded) "boarded" else "not boarded"
+            "Adyen app is $state. Installation ID: ${result.installationId ?: "not supplied"}"
+        }
         is PaymentResult.Success -> "Reference: ${result.pspReference ?: "not supplied"}"
         is PaymentResult.Refused -> result.reason ?: "No refusal reason supplied."
         is PaymentResult.Failure -> result.message

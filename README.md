@@ -15,7 +15,9 @@ Use this architecture for demos only. A production app should move API keys, boa
 3. Add optional bootstrap credentials to `local.properties`.
 4. Run the debug app on device.
 5. Scan a QR credential profile or use the local bootstrap profile.
-6. Board or reboard the Adyen Payments app, add catalog items, and start checkout.
+6. Tap `Check` so the Adyen Payments app returns boarding status.
+7. If the app is not boarded, tap `Board` to exchange the returned boarding request token and finish setup.
+8. Add catalog items and start checkout.
 
 Example `local.properties` keys:
 
@@ -44,7 +46,7 @@ ADYEN_COUNTRY_CODE=ES
 
 ## Current Payment Boundary
 
-The app builds real Adyen app links for test/live environments and performs the Management API boarding-token call from the demo app. The Terminal API request builder is isolated in `adyen/TerminalPaymentRequestBuilder.kt`; replace the demo Base64URL encoding with Adyen-compatible encrypted `nexoBlob` handling before relying on live payments.
+The app builds real Adyen app links for test/live environments and performs the Management API boarding-token call from the demo app. The Terminal API request builder is isolated in `adyen/TerminalPaymentRequestBuilder.kt`; replace the demo Base64URL encoding with Adyen-compatible encrypted `request` payload handling before relying on live payments.
 
 ## More Docs
 

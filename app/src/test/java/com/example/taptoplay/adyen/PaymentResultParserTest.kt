@@ -7,9 +7,34 @@ import org.junit.Test
 class PaymentResultParserTest {
     @Test
     fun parsesBoardingReturn() {
-        val result = PaymentResultParser.parse("taptoplay://adyen-return?installationId=abc")
+        val result = PaymentResultParser.parse("taptoplay://adyen-return?boarded=false&installationId=abc&boardingRequestToken=req")
 
-        assertEquals(PaymentResult.Boarding("abc"), result)
+        assertEquals(
+            PaymentResult.BoardingStatus(
+                boarded = false,
+                installationId = "abc",
+                boardingRequestToken = "req",
+                error = null,
+                data = null,
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun parsesAlreadyBoardedReturn() {
+        val result = PaymentResultParser.parse("taptoplay://adyen-return?boarded=true&installationId=abc")
+
+        assertEquals(
+            PaymentResult.BoardingStatus(
+                boarded = true,
+                installationId = "abc",
+                boardingRequestToken = null,
+                error = null,
+                data = null,
+            ),
+            result,
+        )
     }
 
     @Test

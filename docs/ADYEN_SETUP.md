@@ -29,12 +29,14 @@ Switching test/live is deliberate: scan profiles, then select the active one in 
 ## Boarding
 
 1. Select the target profile.
-2. Tap `Board`.
-3. TapToPlay calls the Adyen Management API for a boarding token.
-4. TapToPlay opens the Adyen Payments app board link.
-5. The Adyen app returns to `taptoplay://adyen-return`.
+2. Tap `Check`.
+3. If the Payments app is not boarded, it returns `installationId` and `boardingRequestToken`.
+4. Tap `Board`.
+5. TapToPlay calls the Adyen Management API `generatePaymentsAppBoardingToken` endpoint with the `boardingRequestToken`.
+6. TapToPlay opens the Adyen Payments app `board` link with the Base64URL-encoded `boardingToken`.
+7. The Adyen app returns `boarded=true` and an `installationId` to `taptoplay://adyen-return`.
 
-Use `Reboard` to force a new boarding flow when changing merchant/store context.
+Use `Reboard` to open `boarded?reboard=true`, receive a fresh `boardingRequestToken`, and then tap `Board` to finish setup for the newly selected merchant/store context.
 
 ## Live Checklist
 
@@ -42,7 +44,7 @@ Use `Reboard` to force a new boarding flow when changing merchant/store context.
 - Verify the selected profile chip is live before checkout.
 - Confirm the Adyen Payments app is live-capable and properly boarded.
 - Do not ship this in-app secret model to production users.
-- Replace demo `nexoBlob` encoding with the Adyen-required encrypted Terminal API payload before real live payment use.
+- Replace demo `request` encoding with the Adyen-required encrypted Terminal API payload before real live payment use.
 
 ## Troubleshooting
 

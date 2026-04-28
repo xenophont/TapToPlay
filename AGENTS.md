@@ -17,7 +17,7 @@ Keep TapToPlay as a premium boutique retail POS demo. The first screen should be
 
 Use official Adyen docs as source of truth for Android Payments app links, Management API boarding tokens, and Terminal API payload/encryption behavior. Test and live environments must stay visibly distinct in the UI and code.
 
-The current `TerminalPaymentRequestBuilder` and `AdyenLinks.encodeDemoNexoRequest` boundary exists so real Adyen encryption can be implemented without changing catalog/cart UI. Do not spread payment payload construction across Compose code.
+The current `TerminalPaymentRequestBuilder` and `AdyenLinks.encodeDemoNexoRequest` boundary exists so real Adyen encryption can be implemented without changing catalog/cart UI. The payment App Link must use the documented `request` query parameter, and boarding must keep the documented check-token-finish sequence. Do not spread payment payload construction across Compose code.
 
 ## Implementation Rules
 

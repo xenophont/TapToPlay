@@ -5,7 +5,7 @@ import com.example.taptoplay.profiles.AdyenProfile
 import java.util.UUID
 
 object TerminalPaymentRequestBuilder {
-    fun buildDemoRequest(profile: AdyenProfile, lines: List<CartLine>, totalMinor: Long): String {
+    fun buildDemoRequest(profile: AdyenProfile, installationId: String, lines: List<CartLine>, totalMinor: Long): String {
         val amount = totalMinor / 100.0
         val items = lines.joinToString(separator = ",") {
             """{"name":"${it.product.name.escapeJson()}","quantity":${it.quantity},"amount":${it.lineTotalMinor / 100.0}}"""
@@ -20,7 +20,7 @@ object TerminalPaymentRequestBuilder {
                   "MessageType": "Request",
                   "ServiceID": "${UUID.randomUUID().toString().take(10)}",
                   "SaleID": "TapToPlay",
-                  "POIID": "PaymentsApp"
+                  "POIID": "${installationId.escapeJson()}"
                 },
                 "PaymentRequest": {
                   "SaleData": {

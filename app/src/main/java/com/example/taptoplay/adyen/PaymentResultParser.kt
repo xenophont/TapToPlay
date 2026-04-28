@@ -4,7 +4,14 @@ import android.net.Uri
 import java.net.URLDecoder
 
 sealed interface PaymentResult {
-    data class Boarding(val installationId: String?) : PaymentResult
+    data class BoardingStatus(
+        val boarded: Boolean,
+        val installationId: String?,
+        val boardingRequestToken: String?,
+        val error: String?,
+        val data: String?,
+    ) : PaymentResult
+
     data class Success(val pspReference: String?, val rawResult: String?) : PaymentResult
     data class Refused(val reason: String?) : PaymentResult
     data class Failure(val message: String) : PaymentResult
@@ -20,9 +27,19 @@ object PaymentResultParser {
         val parsed = runCatching { java.net.URI(rawUri) }.getOrNull() ?: return null
         if (parsed.scheme != "taptoplay" || parsed.host != "adyen-return") return null
         val params = parseQuery(parsed.rawQuery.orEmpty())
-        val result = params["result"] ?: params["Result"] ?: params["event"]
+        val boarded = params["boarded"]
         val installationId = params["installationId"]
-        if (installationId != null) return PaymentResult.Boarding(installationId)
+        if (boarded != null || params["boardingRequestToken"] != null) {
+            return PaymentResult.BoardingStatus(
+                boarded = boarded.equals("true", ignoreCase = true),
+                installationId = installationId,
+                boardingRequestToken = params["boardingRequestToken"],
+                error = params["error"],
+                data = params["data"],
+            )
+        }
+
+        val result = params["result"] ?: params["Result"] ?: params["event"]
         return when (result?.lowercase()) {
             "success", "approved", "authorised", "authorized" -> PaymentResult.Success(
                 pspReference = params["pspReference"],
