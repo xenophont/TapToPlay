@@ -796,11 +796,22 @@ private fun CartPanel(
                         "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.fieldCount} JSON field${if (saleToAcquirerDataConfig.fieldCount == 1) "" else "s"}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onScanSaleToAcquirerData) { Text("Scan data QR") }
-                        OutlinedButton(onClick = onInspectSaleToAcquirerData) { Text("View") }
-                        OutlinedButton(onClick = onSaveSaleToAcquirerDataFavorite) { Text("Save") }
-                        TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset") }
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        item {
+                            OutlinedButton(onClick = onScanSaleToAcquirerData) { Text("Scan data QR", maxLines = 1) }
+                        }
+                        item {
+                            OutlinedButton(onClick = onInspectSaleToAcquirerData) { Text("View", maxLines = 1) }
+                        }
+                        item {
+                            OutlinedButton(onClick = onSaveSaleToAcquirerDataFavorite) { Text("Save", maxLines = 1) }
+                        }
+                        item {
+                            TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset", maxLines = 1) }
+                        }
                     }
                     if (saleToAcquirerDataFavorites.isNotEmpty()) {
                         Text("Favorites", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
@@ -1185,12 +1196,8 @@ private fun SaleToAcquirerDataDialog(
                 .height(620.dp),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(Modifier.fillMaxWidth()) {
                         Text("SaleToAcquirerData", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text(
                             "${config.displayName} | ${config.fieldCount} fields",
@@ -1199,10 +1206,19 @@ private fun SaleToAcquirerDataDialog(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedButton(onClick = onSaveFavorite) { Text("Save", maxLines = 1) }
-                        OutlinedButton(onClick = onApply) { Text("Apply", maxLines = 1) }
-                        TextButton(onClick = onDismiss) { Text("Close") }
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        item {
+                            OutlinedButton(onClick = onSaveFavorite) { Text("Save", maxLines = 1) }
+                        }
+                        item {
+                            OutlinedButton(onClick = onApply) { Text("Apply", maxLines = 1) }
+                        }
+                        item {
+                            TextButton(onClick = onDismiss) { Text("Close", maxLines = 1) }
+                        }
                     }
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
