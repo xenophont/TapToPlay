@@ -44,6 +44,57 @@ ADYEN_COUNTRY_CODE=ES
 .\gradlew assembleDebug
 ```
 
+## Create a Credential QR Code
+
+TapToPlay imports Adyen profiles by scanning a QR code that contains raw JSON. Use one QR per environment, for example one for test and one for live.
+
+Example test payload:
+
+```json
+{
+  "schema": "taptoplay.adyen.profile.v1",
+  "displayName": "Demo Store TEST",
+  "environment": "test",
+  "merchantId": "YourMerchantAccount",
+  "storeId": "ST322LJ223223K5F",
+  "apiKey": "AQE...",
+  "clientKey": "test_...",
+  "terminalKeyIdentifier": "CryptoKeyIdentifier",
+  "terminalKeyVersion": 1,
+  "terminalPassphrase": "shared-key-passphrase",
+  "currency": "EUR",
+  "countryCode": "ES"
+}
+```
+
+To create the QR:
+
+1. Fill the JSON with your Adyen test or live values.
+2. Generate a QR code from the raw JSON text using a trusted offline QR tool, or an internal tool you control.
+3. Treat the QR image like a password because it contains API keys and terminal encryption material.
+4. Install and open TapToPlay, tap `Scan QR`, scan the profile, and select it in the payment profile panel.
+
+Do not commit QR images or JSON files with real credentials. For more detail and a live example shape, see `docs/QR_CREDENTIALS.md`.
+
+## Build and Deploy
+
+From Android Studio:
+
+1. Open this project folder.
+2. Let Gradle sync complete.
+3. Select the `app` run configuration.
+4. Connect a compatible Android device with NFC.
+5. Press Run.
+
+From PowerShell:
+
+```powershell
+.\gradlew assembleDebug
+adb install -r app\build\outputs\apk\debug\app-debug.apk
+```
+
+For test payments, install the Adyen Payments Test app on the same device. For live payments, install the live Adyen Payments app, scan a live QR profile, explicitly select it, then run `Check`, `Board`, and checkout.
+
 ## Current Payment Boundary
 
 The app builds real Adyen app links for test/live environments and performs the Management API boarding-token call from the demo app. Terminal API requests are wrapped by `adyen/NexoCrypto.kt` using the Adyen local-communications protection shape: encrypted `NexoBlob`, `SecurityTrailer`, and Base64URL encoding for the `request` App Link parameter.
