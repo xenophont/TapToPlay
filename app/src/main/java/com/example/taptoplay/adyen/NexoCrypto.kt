@@ -54,11 +54,11 @@ class NexoCrypto(
         return json.encodeToString(JsonObject.serializer(), wrapped)
     }
 
-    internal fun decryptForTest(profile: AdyenProfile, encryptedEnvelopeJson: String): String {
-        val saleToPoi = json.parseToJsonElement(encryptedEnvelopeJson)
-            .jsonObject["SaleToPOIRequest"]
-            ?.jsonObject
-            ?: error("Missing SaleToPOIRequest")
+    fun decrypt(profile: AdyenProfile, encryptedEnvelopeJson: String): String {
+        val root = json.parseToJsonElement(encryptedEnvelopeJson).jsonObject
+        val saleToPoi = root["SaleToPOIRequest"]?.jsonObject
+            ?: root["SaleToPOIResponse"]?.jsonObject
+            ?: error("Missing SaleToPOIRequest or SaleToPOIResponse")
         val blob = saleToPoi["NexoBlob"]?.toStringValue() ?: error("Missing NexoBlob")
         val trailer = saleToPoi["SecurityTrailer"]?.jsonObject ?: error("Missing SecurityTrailer")
         val nonce = Base64.getDecoder().decode(trailer["Nonce"]?.toStringValue() ?: error("Missing Nonce"))
@@ -68,6 +68,9 @@ class NexoCrypto(
         require(hmac(decrypted, keyMaterial.hmacKey).contentEquals(expectedHmac)) { "HMAC validation failed" }
         return decrypted.toString(Charsets.UTF_8)
     }
+
+    internal fun decryptForTest(profile: AdyenProfile, encryptedEnvelopeJson: String): String =
+        decrypt(profile, encryptedEnvelopeJson)
 
     private fun encryptPayload(message: ByteArray, keyMaterial: KeyMaterial, nonce: ByteArray): ByteArray {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")

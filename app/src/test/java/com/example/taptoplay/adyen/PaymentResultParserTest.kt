@@ -1,5 +1,7 @@
 package com.example.taptoplay.adyen
 
+import java.net.URLEncoder
+import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -52,9 +54,59 @@ class PaymentResultParserTest {
     }
 
     @Test
+    fun parsesFullTerminalApiResponsePayload() {
+        val responseJson = """
+            {
+              "SaleToPOIResponse": {
+                "PaymentResponse": {
+                  "Response": {
+                    "Result": "Success",
+                    "AdditionalResponse": "tid=123&pspReference=PSP123"
+                  },
+                  "POIData": {
+                    "POITransactionID": {
+                      "TransactionID": "PSP123"
+                    }
+                  }
+                }
+              }
+            }
+        """.trimIndent()
+        val encoded = Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(responseJson.toByteArray(Charsets.UTF_8))
+        val result = PaymentResultParser.parse("taptoplay://adyen-return?response=${encoded.urlEncode()}")
+
+        assertEquals(PaymentResult.Success("PSP123", "Success", responseJson), result)
+    }
+
+    @Test
+    fun parsesFullTerminalApiRefusalPayload() {
+        val responseJson = """
+            {
+              "SaleToPOIResponse": {
+                "PaymentResponse": {
+                  "Response": {
+                    "Result": "Failure",
+                    "ErrorCondition": "Refusal",
+                    "AdditionalResponse": "refusalReasonRaw=Not enough funds"
+                  }
+                }
+              }
+            }
+        """.trimIndent()
+        val encoded = Base64.getEncoder().encodeToString(responseJson.toByteArray(Charsets.UTF_8))
+        val result = PaymentResultParser.parse("taptoplay://adyen-return?response=${encoded.urlEncode()}")
+
+        assertEquals(PaymentResult.Refused("Refusal | refusalReasonRaw=Not enough funds", responseJson), result)
+    }
+
+    @Test
     fun malformedReturnFailsSoftly() {
         val result = PaymentResultParser.parse("taptoplay://adyen-return")
 
         assertTrue(result is PaymentResult.Failure)
     }
+
+    private fun String.urlEncode(): String = URLEncoder.encode(this, Charsets.UTF_8.name())
 }

@@ -66,6 +66,7 @@ import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
 import com.example.taptoplay.adyen.TransactionRecord
 import com.example.taptoplay.adyen.TransactionStatus
 import com.example.taptoplay.adyen.failureReasonOrNull
+import com.example.taptoplay.adyen.responseJsonOrNull
 import com.example.taptoplay.adyen.toTransactionStatus
 import com.example.taptoplay.adyen.toTransactionSummary
 import com.example.taptoplay.cart.Cart
@@ -276,7 +277,8 @@ class MainActivity : ComponentActivity() {
 
     private fun handleReturnIntent(intent: Intent?) {
         val rawUri = intent?.data?.toString()
-        val parsed = PaymentResultParser.parse(rawUri ?: return) ?: return
+        val activeProfile = profilesState.firstOrNull { it.id == activeProfileIdState }
+        val parsed = PaymentResultParser.parse(rawUri ?: return, activeProfile, nexoCrypto) ?: return
         paymentResultState = parsed
         if (parsed is PaymentResult.BoardingStatus) {
             installationIdState = parsed.installationId ?: installationIdState
@@ -294,6 +296,7 @@ class MainActivity : ComponentActivity() {
                     record.copy(
                         status = parsed.toTransactionStatus(),
                         responseUri = rawUri,
+                        responseBody = parsed.responseJsonOrNull(),
                         responseSummary = parsed.toTransactionSummary(),
                         failureReason = parsed.failureReasonOrNull(),
                     )
@@ -837,7 +840,7 @@ private fun TransactionDialog(
                                 )
                             }
                             record.responseUri?.let { response ->
-                                item { MonospaceBlock(response) }
+                                item { MonospaceBlock(record.responseBody ?: response) }
                             }
                         }
                     }

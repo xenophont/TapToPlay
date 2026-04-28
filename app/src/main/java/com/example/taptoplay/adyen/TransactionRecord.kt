@@ -20,6 +20,7 @@ data class TransactionRecord(
     val requestJson: String,
     val status: TransactionStatus = TransactionStatus.LAUNCHED,
     val responseUri: String? = null,
+    val responseBody: String? = null,
     val responseSummary: String? = null,
     val failureReason: String? = null,
 )
@@ -42,4 +43,11 @@ fun PaymentResult.failureReasonOrNull(): String? = when (this) {
     is PaymentResult.Refused -> reason ?: "Adyen refused the payment without a reason."
     is PaymentResult.Failure -> message
     else -> null
+}
+
+fun PaymentResult.responseJsonOrNull(): String? = when (this) {
+    is PaymentResult.Success -> responseJson
+    is PaymentResult.Refused -> responseJson
+    is PaymentResult.Failure -> responseJson
+    is PaymentResult.BoardingStatus -> null
 }
