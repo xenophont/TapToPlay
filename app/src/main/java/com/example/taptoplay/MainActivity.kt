@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.example.taptoplay.adyen.AdyenLinks
 import com.example.taptoplay.adyen.BoardingApiClient
+import com.example.taptoplay.adyen.NexoCrypto
 import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
@@ -75,6 +76,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var profileStore: AndroidProfileStore
     private val qrParser = ProfileQrParser()
     private val boardingApiClient = BoardingApiClient()
+    private val nexoCrypto = NexoCrypto()
 
     private var profilesState by mutableStateOf(emptyList<AdyenProfile>())
     private var activeProfileIdState by mutableStateOf<String?>(null)
@@ -180,8 +182,8 @@ class MainActivity : ComponentActivity() {
             return
         }
         val requestJson = TerminalPaymentRequestBuilder.buildDemoRequest(profile, installationId, lines, totalMinor)
-        val encoded = AdyenLinks.encodeDemoNexoRequest(requestJson)
-        statusState = "Opening Adyen payment app. For production, replace demo encoding with Adyen encryption."
+        val encoded = nexoCrypto.encryptToBase64Url(profile, requestJson)
+        statusState = "Opening Adyen payment app with encrypted Terminal API request..."
         launchLink(AdyenLinks.nexo(profile, encoded))
     }
 

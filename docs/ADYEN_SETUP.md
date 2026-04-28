@@ -44,7 +44,8 @@ Use `Reboard` to open `boarded?reboard=true`, receive a fresh `boardingRequestTo
 - Verify the selected profile chip is live before checkout.
 - Confirm the Adyen Payments app is live-capable and properly boarded.
 - Do not ship this in-app secret model to production users.
-- Replace demo `request` encoding with the Adyen-required encrypted Terminal API payload before real live payment use.
+- Confirm a real encrypted `request` payload is being sent. TapToPlay uses `NexoCrypto` to create an encrypted `NexoBlob` envelope and Base64URL-encode it for the App Link.
+- Do not ship the current in-app credential model to production users.
 
 ## Troubleshooting
 

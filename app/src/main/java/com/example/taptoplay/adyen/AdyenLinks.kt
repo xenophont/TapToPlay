@@ -22,7 +22,7 @@ object AdyenLinks {
     fun board(profile: AdyenProfile, boardingToken: String): String = withParams(
         base(profile.environment, "board"),
         "returnUrl" to RETURN_URL,
-        "boardingToken" to encodeBase64Url(boardingToken),
+        "boardingToken" to boardingToken.base64Url(),
     )
 
     fun nexo(profile: AdyenProfile, encodedRequest: String): String = withParams(
@@ -30,9 +30,6 @@ object AdyenLinks {
         "returnUrl" to RETURN_URL,
         "request" to encodedRequest,
     )
-
-    fun encodeDemoNexoRequest(requestJson: String): String =
-        encodeBase64Url(requestJson)
 
     private fun base(environment: PaymentEnvironment, action: String): String = when (environment) {
         PaymentEnvironment.TEST -> "https://www.adyen.com/test/$action"
@@ -44,8 +41,8 @@ object AdyenLinks {
             "${key.encode()}=${value.encode()}"
         }
 
-    private fun encodeBase64Url(value: String): String =
-        Base64.getUrlEncoder().withoutPadding().encodeToString(value.toByteArray(Charsets.UTF_8))
-
     private fun String.encode(): String = URLEncoder.encode(this, Charsets.UTF_8.name())
+
+    private fun String.base64Url(): String =
+        Base64.getUrlEncoder().withoutPadding().encodeToString(toByteArray(Charsets.UTF_8))
 }

@@ -46,7 +46,9 @@ ADYEN_COUNTRY_CODE=ES
 
 ## Current Payment Boundary
 
-The app builds real Adyen app links for test/live environments and performs the Management API boarding-token call from the demo app. The Terminal API request builder is isolated in `adyen/TerminalPaymentRequestBuilder.kt`; replace the demo Base64URL encoding with Adyen-compatible encrypted `request` payload handling before relying on live payments.
+The app builds real Adyen app links for test/live environments and performs the Management API boarding-token call from the demo app. Terminal API requests are wrapped by `adyen/NexoCrypto.kt` using the Adyen local-communications protection shape: encrypted `NexoBlob`, `SecurityTrailer`, and Base64URL encoding for the `request` App Link parameter.
+
+This is still a demo security model because credentials live on-device. For production, move credential storage and token/session work to a backend or hardened secure component.
 
 ## More Docs
 

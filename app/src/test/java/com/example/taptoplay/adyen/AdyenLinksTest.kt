@@ -28,9 +28,9 @@ class AdyenLinksTest {
     fun paymentLinkUsesDocumentedRequestParameter() {
         val profile = profile(PaymentEnvironment.TEST)
 
-        val link = AdyenLinks.nexo(profile, "blob")
+        val link = AdyenLinks.nexo(profile, "encryptedPayload")
 
-        assertTrue(link.contains("request=blob"))
+        assertTrue(link.contains("request=encryptedPayload"))
     }
 
     private fun profile(environment: PaymentEnvironment) = AdyenProfile(

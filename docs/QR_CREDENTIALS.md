@@ -48,6 +48,7 @@ TapToPlay can import Adyen payment profiles by scanning a QR code that contains 
 - `storeId` is optional. When present, TapToPlay requests store-routed boarding.
 - `currency` must be an uppercase ISO 4217 code such as `EUR`.
 - `countryCode` must be an uppercase ISO 3166-1 alpha-2 code such as `ES`.
+- `terminalKeyIdentifier`, `terminalKeyVersion`, and `terminalPassphrase` must match the shared key configured in the Adyen Customer Area for Terminal API encryption.
 
 ## Creating a QR Code
 
