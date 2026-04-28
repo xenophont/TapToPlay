@@ -42,6 +42,43 @@ class TerminalPaymentRequestBuilderTest {
     }
 
     @Test
+    fun paymentRequestDoesNotSendLocalCartItemsAsTerminalApiSaleItems() {
+        val request = TerminalPaymentRequestBuilder.buildDemoRequest(
+            profile = profile(),
+            installationId = "install-1",
+            lines = listOf(CartLine(product(), 2)),
+            totalMinor = 25800,
+        )
+
+        assertEquals(false, request.contains("SaleItem"))
+    }
+
+    @Test
+    fun requestInspectorDecodesSaleToAcquirerData() {
+        val request = TerminalPaymentRequestBuilder.buildDemoRequest(
+            profile = profile(),
+            installationId = "install-1",
+            lines = listOf(CartLine(product(), 1)),
+            totalMinor = 12900,
+            saleToAcquirerDataConfig = SaleToAcquirerDataConfig(
+                displayName = "Plain",
+                mergeWithDefaults = false,
+                data = buildJsonObject {
+                    put("metadata", buildJsonObject {
+                        put("order", "demo")
+                    })
+                },
+            ),
+        )
+
+        val insight = TerminalApiRequestInspector.inspect(request)
+
+        assertEquals("Payment", insight.messageCategory)
+        assertEquals(true, insight.saleToAcquirerDataJson?.contains("\"order\"") == true)
+        assertEquals(true, insight.saleToAcquirerDataJson?.contains("\"demo\"") == true)
+    }
+
+    @Test
     fun buildsReferencedRefundReversalRequest() {
         val request = TerminalPaymentRequestBuilder.buildReferencedRefundRequest(
             installationId = "install-1",

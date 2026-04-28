@@ -14,9 +14,6 @@ object TerminalPaymentRequestBuilder {
     ): String {
         val amount = totalMinor / 100.0
         val saleToAcquirerData = SaleToAcquirerDataEncoder.encodeBase64(saleToAcquirerDataConfig)
-        val items = lines.joinToString(separator = ",") {
-            """{"name":"${it.product.name.escapeJson()}","quantity":${it.quantity},"amount":${it.lineTotalMinor / 100.0}}"""
-        }
         return """
             {
               "SaleToPOIRequest": {
@@ -41,8 +38,7 @@ object TerminalPaymentRequestBuilder {
                     "AmountsReq": {
                       "Currency": "${profile.currency}",
                       "RequestedAmount": $amount
-                    },
-                    "SaleItem": [$items]
+                    }
                   }
                 }
               }

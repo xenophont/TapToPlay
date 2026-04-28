@@ -64,9 +64,9 @@ import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
 import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.example.taptoplay.adyen.SaleToAcquirerDataEditor
-import com.example.taptoplay.adyen.SaleToAcquirerDataEncoder
 import com.example.taptoplay.adyen.SaleToAcquirerDataFavoriteStore
 import com.example.taptoplay.adyen.SaleToAcquirerDataQrParser
+import com.example.taptoplay.adyen.TerminalApiRequestInspector
 import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
 import com.example.taptoplay.adyen.TransactionRecord
@@ -798,8 +798,22 @@ private fun CartPanel(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("SaleToAcquirerData", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset", maxLines = 1) }
+                        Text(
+                            "SaleToAcquirerData",
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        OutlinedButton(
+                            onClick = onClearSaleToAcquirerData,
+                            modifier = Modifier
+                                .width(96.dp)
+                                .height(40.dp),
+                        ) {
+                            Text("Reset", maxLines = 1)
+                        }
                     }
                     Text(
                         "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.fieldCount} JSON field${if (saleToAcquirerDataConfig.fieldCount == 1) "" else "s"}",
@@ -975,9 +989,9 @@ private fun TransactionDialog(
     onDismiss: () -> Unit,
 ) {
     var selectedSection by remember { mutableStateOf("Request") }
+    val requestInsight = remember(record.requestJson) { TerminalApiRequestInspector.inspect(record.requestJson) }
     val responseInsight = remember(record.responseBody) { TerminalApiResponseInspector.inspect(record.responseBody) }
     val highlights = remember(record.responseBody) { TerminalApiResponseInspector.compactSummary(record.responseBody) }
-    val decodedSaleToAcquirerData = remember(record.requestJson) { decodedSaleToAcquirerDataFromRequest(record.requestJson) }
     val canRefund = record.status == TransactionStatus.APPROVED &&
         record.refundOfTransactionId == null &&
         (record.adyenTransactionId != null || responseInsight?.transactionId != null)
@@ -1032,10 +1046,8 @@ private fun TransactionDialog(
                             item {
                                 Text("Terminal API request", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             }
-                            decodedSaleToAcquirerData?.let { decoded ->
-                                item {
-                                    DecodedSaleToAcquirerDataCard(decoded)
-                                }
+                            item {
+                                DecodedSaleToAcquirerDataCard(requestInsight)
                             }
                             item { MonospaceBlock(record.requestJson) }
                         }
@@ -1110,7 +1122,7 @@ private fun RequestSummary(record: TransactionRecord) {
 }
 
 @Composable
-private fun DecodedSaleToAcquirerDataCard(decodedJson: String) {
+private fun DecodedSaleToAcquirerDataCard(insight: com.example.taptoplay.adyen.TerminalApiRequestInsight) {
     var expanded by remember { mutableStateOf(false) }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1122,18 +1134,33 @@ private fun DecodedSaleToAcquirerDataCard(decodedJson: String) {
                 Column(Modifier.weight(1f)) {
                     Text("Decoded SaleToAcquirerData", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Raw JSON sent inside PaymentRequest.SaleData.SaleToAcquirerData",
+                        if (insight.saleToAcquirerDataJson == null) {
+                            "This request does not include PaymentRequest.SaleData.SaleToAcquirerData."
+                        } else {
+                            "Raw JSON sent inside PaymentRequest.SaleData.SaleToAcquirerData"
+                        },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                TextButton(onClick = { expanded = !expanded }) {
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    enabled = insight.saleToAcquirerDataJson != null || insight.saleToAcquirerDataBase64 != null,
+                ) {
                     Text(if (expanded) "Hide" else "Decode")
                 }
             }
             if (expanded) {
-                MonospaceBlock(decodedJson)
+                insight.saleToAcquirerDataJson?.let { decoded ->
+                    MonospaceBlock(decoded)
+                }
+                if (insight.saleToAcquirerDataJson == null) {
+                    insight.saleToAcquirerDataBase64?.let { encoded ->
+                        Text("Base64 value could not be decoded as JSON.", color = MaterialTheme.colorScheme.error)
+                        MonospaceBlock(encoded)
+                    }
+                }
             }
         }
     }
@@ -1409,17 +1436,6 @@ private fun JsonElement.summary(): String = when (this) {
 private fun JsonElement.editableText(): String = when (this) {
     is JsonPrimitive -> contentOrNull ?: toString()
     else -> toString()
-}
-
-private fun decodedSaleToAcquirerDataFromRequest(requestJson: String): String? {
-    val encoded = Regex("\"SaleToAcquirerData\"\\s*:\\s*\"([^\"]+)\"")
-        .find(requestJson)
-        ?.groupValues
-        ?.getOrNull(1)
-        ?: return null
-    return SaleToAcquirerDataEncoder.decodeBase64(encoded)
-        .map { SaleToAcquirerDataEncoder.prettyPrint(it) }
-        .getOrNull()
 }
 
 private fun formatMoney(minor: Long): String = "EUR %.2f".format(minor / 100.0)
