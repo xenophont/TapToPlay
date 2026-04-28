@@ -47,12 +47,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.lifecycleScope
 import com.example.taptoplay.adyen.AdyenLinks
+import com.example.taptoplay.adyen.AndroidTransactionStore
 import com.example.taptoplay.adyen.BoardingApiClient
 import com.example.taptoplay.adyen.NexoCrypto
 import com.example.taptoplay.adyen.PaymentResult
@@ -60,6 +62,11 @@ import com.example.taptoplay.adyen.PaymentResultParser
 import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.example.taptoplay.adyen.SaleToAcquirerDataQrParser
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
+import com.example.taptoplay.adyen.TransactionRecord
+import com.example.taptoplay.adyen.TransactionStatus
+import com.example.taptoplay.adyen.failureReasonOrNull
+import com.example.taptoplay.adyen.toTransactionStatus
+import com.example.taptoplay.adyen.toTransactionSummary
 import com.example.taptoplay.cart.Cart
 import com.example.taptoplay.cart.CartLine
 import com.example.taptoplay.catalog.Product
@@ -83,9 +90,12 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.longOrNull
+import java.time.Instant
+import java.util.UUID
 
 class MainActivity : ComponentActivity() {
     private lateinit var profileStore: AndroidProfileStore
+    private lateinit var transactionStore: AndroidTransactionStore
     private val qrParser = ProfileQrParser()
     private val saleToAcquirerDataQrParser = SaleToAcquirerDataQrParser()
     private val boardingApiClient = BoardingApiClient()
@@ -98,6 +108,8 @@ class MainActivity : ComponentActivity() {
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
     private var saleToAcquirerDataConfigState by mutableStateOf(SaleToAcquirerDataConfig.default())
+    private var transactionHistoryState by mutableStateOf(emptyList<TransactionRecord>())
+    private var pendingTransactionIdState by mutableStateOf<String?>(null)
 
     private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
         val contents = result.contents ?: return@registerForActivityResult
@@ -125,11 +137,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         profileStore = AndroidProfileStore(this)
+        transactionStore = AndroidTransactionStore(this)
         LocalProfileBootstrap.profileOrNull()?.let { bootstrap ->
             if (profileStore.profiles().none { it.id == bootstrap.id }) profileStore.save(bootstrap)
             if (profileStore.activeProfileId() == null) profileStore.setActive(bootstrap.id)
         }
         reloadProfiles()
+        reloadTransactions()
         handleReturnIntent(intent)
 
         setContent {
@@ -140,6 +154,7 @@ class MainActivity : ComponentActivity() {
                     installationId = installationIdState,
                     boardingRequestToken = boardingRequestTokenState,
                     saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
+                    transactionHistory = transactionHistoryState,
                     status = statusState,
                     paymentResult = paymentResultState,
                     onDismissResult = { paymentResultState = null },
@@ -148,6 +163,12 @@ class MainActivity : ComponentActivity() {
                     onClearSaleToAcquirerData = {
                         saleToAcquirerDataConfigState = SaleToAcquirerDataConfig.default()
                         statusState = "SaleToAcquirerData reset to retail demo defaults."
+                    },
+                    onClearTransactions = {
+                        transactionStore.clear()
+                        pendingTransactionIdState = null
+                        reloadTransactions()
+                        statusState = "Transaction history cleared."
                     },
                     onSelectProfile = {
                         profileStore.setActive(it)
@@ -173,6 +194,10 @@ class MainActivity : ComponentActivity() {
     private fun reloadProfiles() {
         profilesState = profileStore.profiles()
         activeProfileIdState = profileStore.activeProfileId()
+    }
+
+    private fun reloadTransactions() {
+        transactionHistoryState = transactionStore.records()
     }
 
     private fun scanQr() {
@@ -227,6 +252,18 @@ class MainActivity : ComponentActivity() {
             totalMinor = totalMinor,
             saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
         )
+        val transactionId = UUID.randomUUID().toString()
+        val record = TransactionRecord(
+            id = transactionId,
+            createdAt = Instant.now().toString(),
+            amountLabel = formatMoney(totalMinor),
+            itemCount = lines.sumOf { it.quantity },
+            saleToAcquirerDataName = saleToAcquirerDataConfigState.displayName,
+            requestJson = requestJson,
+        )
+        transactionStore.save(record)
+        pendingTransactionIdState = transactionId
+        reloadTransactions()
         val encoded = nexoCrypto.encryptToBase64Url(profile, requestJson)
         statusState = "Opening Adyen payment app with encrypted Terminal API request..."
         launchLink(AdyenLinks.nexo(profile, encoded))
@@ -237,7 +274,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleReturnIntent(intent: Intent?) {
-        val parsed = PaymentResultParser.parse(intent?.data) ?: return
+        val rawUri = intent?.data?.toString()
+        val parsed = PaymentResultParser.parse(rawUri ?: return) ?: return
         paymentResultState = parsed
         if (parsed is PaymentResult.BoardingStatus) {
             installationIdState = parsed.installationId ?: installationIdState
@@ -247,6 +285,20 @@ class MainActivity : ComponentActivity() {
                 parsed.boardingRequestToken != null -> "Boarding request token received. Tap Board to finish setup."
                 parsed.error != null -> "Boarding error: ${parsed.error}"
                 else -> "Adyen app is not boarded yet."
+            }
+        } else {
+            val transactionId = pendingTransactionIdState ?: transactionHistoryState.firstOrNull { it.status == TransactionStatus.LAUNCHED }?.id
+            if (transactionId != null) {
+                transactionStore.update(transactionId) { record ->
+                    record.copy(
+                        status = parsed.toTransactionStatus(),
+                        responseUri = rawUri,
+                        responseSummary = parsed.toTransactionSummary(),
+                        failureReason = parsed.failureReasonOrNull(),
+                    )
+                }
+                pendingTransactionIdState = null
+                reloadTransactions()
             }
         }
     }
@@ -259,12 +311,14 @@ private fun TapToPlayApp(
     installationId: String?,
     boardingRequestToken: String?,
     saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
+    transactionHistory: List<TransactionRecord>,
     status: String,
     paymentResult: PaymentResult?,
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
     onClearSaleToAcquirerData: () -> Unit,
+    onClearTransactions: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onCheckBoarding: (AdyenProfile) -> Unit,
     onBoard: (AdyenProfile) -> Unit,
@@ -275,6 +329,7 @@ private fun TapToPlayApp(
     var cartVersion by remember { mutableStateOf(0) }
     var selectedCategory by remember { mutableStateOf("All") }
     var showSaleToAcquirerData by remember { mutableStateOf(false) }
+    var inspectedTransaction by remember { mutableStateOf<TransactionRecord?>(null) }
     val activeProfile = profiles.firstOrNull { it.id == activeProfileId }
     val lines = remember(cartVersion) { cart.lines() }
     val products = ProductCatalog.products.filter {
@@ -362,6 +417,13 @@ private fun TapToPlayApp(
                     onPay = { profile -> onPay(profile, lines, cart.totalMinor()) },
                 )
             }
+            item {
+                TransactionHistoryPanel(
+                    records = transactionHistory,
+                    onInspect = { inspectedTransaction = it },
+                    onClear = onClearTransactions,
+                )
+            }
             item { Spacer(Modifier.height(18.dp)) }
         }
     }
@@ -374,6 +436,13 @@ private fun TapToPlayApp(
         SaleToAcquirerDataDialog(
             config = saleToAcquirerDataConfig,
             onDismiss = { showSaleToAcquirerData = false },
+        )
+    }
+
+    inspectedTransaction?.let { record ->
+        TransactionDialog(
+            record = record,
+            onDismiss = { inspectedTransaction = null },
         )
     }
 }
@@ -565,6 +634,88 @@ private fun CartPanel(
 }
 
 @Composable
+private fun TransactionHistoryPanel(
+    records: List<TransactionRecord>,
+    onInspect: (TransactionRecord) -> Unit,
+    onClear: () -> Unit,
+) {
+    OutlinedCard(shape = RoundedCornerShape(8.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text("Transactions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (records.isEmpty()) "No payment attempts yet" else "${records.size} saved payment attempt${if (records.size == 1) "" else "s"}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TextButton(onClick = onClear, enabled = records.isNotEmpty()) { Text("Clear") }
+            }
+            if (records.isEmpty()) {
+                Text(
+                    "Each checkout attempt will appear here with its Terminal API request and Adyen response.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                records.forEach { record ->
+                    TransactionRow(record = record, onInspect = { onInspect(record) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(record.amountLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    TransactionStatusChip(record.status)
+                }
+                Text(
+                    "${record.itemCount} item${if (record.itemCount == 1) "" else "s"} | ${record.saleToAcquirerDataName}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                record.failureReason?.let {
+                    Text(
+                        "Adyen issue: $it",
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            TextButton(onClick = onInspect) { Text("Inspect") }
+        }
+    }
+}
+
+@Composable
+private fun TransactionStatusChip(status: TransactionStatus) {
+    val label = when (status) {
+        TransactionStatus.LAUNCHED -> "Pending"
+        TransactionStatus.APPROVED -> "Approved"
+        TransactionStatus.REFUSED -> "Refused"
+        TransactionStatus.FAILED -> "Failed"
+    }
+    AssistChip(onClick = {}, label = { Text(label) })
+}
+
+@Composable
 private fun PaymentResultDialog(result: PaymentResult, onDismiss: () -> Unit) {
     val title = when (result) {
         is PaymentResult.BoardingStatus -> "Boarding returned"
@@ -587,6 +738,100 @@ private fun PaymentResultDialog(result: PaymentResult, onDismiss: () -> Unit) {
         title = { Text(title) },
         text = { Text(message) },
     )
+}
+
+@Composable
+private fun TransactionDialog(
+    record: TransactionRecord,
+    onDismiss: () -> Unit,
+) {
+    var selectedSection by remember { mutableStateOf("Request") }
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(660.dp),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Transaction", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "${record.amountLabel} | ${record.createdAt}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    TextButton(onClick = onDismiss) { Text("Close") }
+                }
+                TransactionStatusChip(record.status)
+                record.failureReason?.let {
+                    OutlinedCard(shape = RoundedCornerShape(8.dp)) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Adyen failure detail", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
+                            Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = selectedSection == "Request",
+                        onClick = { selectedSection = "Request" },
+                        label = { Text("Request") },
+                    )
+                    FilterChip(
+                        selected = selectedSection == "Response",
+                        onClick = { selectedSection = "Response" },
+                        label = { Text("Response") },
+                    )
+                }
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                    when (selectedSection) {
+                        "Request" -> {
+                            item {
+                                Text("Terminal API request", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                            item { MonospaceBlock(record.requestJson) }
+                        }
+                        else -> {
+                            item {
+                                Text("Adyen response", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                            item {
+                                Text(
+                                    record.responseSummary ?: "No response has been received yet.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            record.responseUri?.let { response ->
+                                item { MonospaceBlock(response) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonospaceBlock(text: String) {
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable
