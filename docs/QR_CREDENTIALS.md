@@ -98,11 +98,11 @@ Rules:
 
 ---
 
-## Espanol
+## Español
 
 # Perfiles de Credenciales QR
 
-TapToPlay puede importar perfiles de pago de Adyen escaneando un QR que contiene un payload JSON. Los perfiles se guardan en almacenamiento local cifrado y se seleccionan explicitamente en la app.
+TapToPlay puede importar perfiles de pago de Adyen escaneando un QR que contiene un payload JSON. Los perfiles se guardan en almacenamiento local cifrado y se seleccionan explícitamente en la app.
 
 ## Formato JSON
 
@@ -142,23 +142,23 @@ TapToPlay puede importar perfiles de pago de Adyen escaneando un QR que contiene
 }
 ```
 
-## Reglas de Validacion
+## Reglas de Validación
 
 - `schema` debe ser `taptoplay.adyen.profile.v1`.
 - `environment` debe ser `test` o `live`.
 - `displayName`, `merchantId`, `apiKey`, `clientKey`, los campos de terminal key, `currency` y `countryCode` son obligatorios.
-- `storeId` es opcional. Cuando esta presente, TapToPlay solicita boarding enrutado por store.
-- `currency` debe ser un codigo ISO 4217 en mayusculas, como `EUR`.
-- `countryCode` debe ser un codigo ISO 3166-1 alpha-2 en mayusculas, como `ES`.
+- `storeId` es opcional. Cuando está presente, TapToPlay solicita boarding enrutado por store.
+- `currency` debe ser un código ISO 4217 en mayúsculas, como `EUR`.
+- `countryCode` debe ser un código ISO 3166-1 alpha-2 en mayúsculas, como `ES`.
 - `terminalKeyIdentifier`, `terminalKeyVersion` y `terminalPassphrase` deben coincidir con la shared key configurada en Adyen Customer Area para el cifrado de Terminal API.
 
 ## Crear un QR
 
-Usa cualquier generador QR de confianza que acepte texto en crudo, pega el payload JSON y genera el codigo QR. Trata la imagen QR como un secreto porque contiene API keys y material de cifrado de terminal.
+Usa cualquier generador QR de confianza que acepte texto en crudo, pega el payload JSON y genera el código QR. Trata la imagen QR como un secreto porque contiene API keys y material de cifrado de terminal.
 
-Para demos parecidas a produccion, genera codigos QR separados para perfiles test y live para que el cambio siga siendo explicito en la app.
+Para demos parecidas a producción, genera códigos QR separados para perfiles test y live para que el cambio siga siendo explícito en la app.
 
-## Codigos QR de SaleToAcquirerData
+## Códigos QR de SaleToAcquirerData
 
 Los QR de credenciales usan `taptoplay.adyen.profile.v1`. Los QR de SaleToAcquirerData deben contener el objeto JSON plano de Adyen SaleToAcquirerData para poder escanearlos desde checkout sin cambiar el perfil de pago activo.
 
@@ -193,7 +193,7 @@ Los QR de credenciales usan `taptoplay.adyen.profile.v1`. Los QR de SaleToAcquir
 
 Reglas:
 
-- El objeto raiz es el propio objeto SaleToAcquirerData.
-- TapToPlay codifica este objeto exactamente como se ha escaneado en Base64 y lo envia como `PaymentRequest.SaleData.SaleToAcquirerData`.
-- Los QR antiguos con `schema`, `displayName` y `saleToAcquirerData` o `properties` siguen siendo aceptados, pero los QR nuevos deberian usar el objeto plano.
-- Los valores pueden ser strings, numeros, booleanos, arrays u objetos anidados.
+- El objeto raíz es el propio objeto SaleToAcquirerData.
+- TapToPlay codifica este objeto exactamente como se ha escaneado en Base64 y lo envía como `PaymentRequest.SaleData.SaleToAcquirerData`.
+- Los QR antiguos con `schema`, `displayName` y `saleToAcquirerData` o `properties` siguen siendo aceptados, pero los QR nuevos deberían usar el objeto plano.
+- Los valores pueden ser strings, números, booleanos, arrays u objetos anidados.
