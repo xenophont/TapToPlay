@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -472,9 +473,22 @@ private fun ProfilePanel(
     onBoard: (AdyenProfile) -> Unit,
     onReboard: (AdyenProfile) -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    val boardingState = when {
+        activeProfile == null -> "No profile"
+        installationId != null -> "Boarded"
+        boardingRequestToken != null -> "Ready to board"
+        else -> "Collapsed setup"
+    }
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Column {
                     Text("Payment profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(
@@ -482,9 +496,19 @@ private fun ProfilePanel(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Button(onClick = onScanProfile) { Text("Scan QR") }
+                Column(horizontalAlignment = Alignment.End) {
+                    AssistChip(onClick = { expanded = !expanded }, label = { Text(boardingState) })
+                    Text(
+                        if (expanded) "Hide" else "Setup",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
             }
-            if (activeProfile != null) {
+            if (expanded) {
+                Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text("Scan QR") }
+            }
+            if (expanded && activeProfile != null) {
                 Text("API key ${activeProfile.maskedApiKey()} | passphrase ${activeProfile.maskedPassphrase()}")
                 Text("Installation ${installationId ?: "not returned yet"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Boarding request token ${boardingRequestToken?.let { "received" } ?: "not received"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -494,14 +518,16 @@ private fun ProfilePanel(
                     OutlinedButton(onClick = { onReboard(activeProfile) }) { Text("Reboard") }
                 }
             }
-            if (profiles.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            if (expanded && profiles.isNotEmpty()) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     profiles.forEach { profile ->
-                        FilterChip(
-                            selected = profile.id == activeProfile?.id,
-                            onClick = { onSelectProfile(profile.id) },
-                            label = { Text(profile.displayName, maxLines = 1) },
-                        )
+                        item {
+                            FilterChip(
+                                selected = profile.id == activeProfile?.id,
+                                onClick = { onSelectProfile(profile.id) },
+                                label = { Text(profile.displayName, maxLines = 1) },
+                            )
+                        }
                     }
                 }
             }
