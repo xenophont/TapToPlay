@@ -791,7 +791,14 @@ private fun CartPanel(
             }
             OutlinedCard(shape = RoundedCornerShape(8.dp)) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("SaleToAcquirerData", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("SaleToAcquirerData", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset", maxLines = 1) }
+                    }
                     Text(
                         "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.fieldCount} JSON field${if (saleToAcquirerDataConfig.fieldCount == 1) "" else "s"}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -808,9 +815,6 @@ private fun CartPanel(
                         }
                         item {
                             OutlinedButton(onClick = onSaveSaleToAcquirerDataFavorite) { Text("Save", maxLines = 1) }
-                        }
-                        item {
-                            TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset", maxLines = 1) }
                         }
                     }
                     if (saleToAcquirerDataFavorites.isNotEmpty()) {
