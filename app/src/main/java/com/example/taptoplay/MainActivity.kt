@@ -38,6 +38,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,7 @@ import com.example.taptoplay.adyen.NexoCrypto
 import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
 import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
+import com.example.taptoplay.adyen.SaleToAcquirerDataEditor
 import com.example.taptoplay.adyen.SaleToAcquirerDataQrParser
 import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
@@ -164,6 +166,10 @@ class MainActivity : ComponentActivity() {
                     onDismissResult = { paymentResultState = null },
                     onScanProfile = { scanQr() },
                     onScanSaleToAcquirerData = { scanSaleToAcquirerDataQr() },
+                    onUpdateSaleToAcquirerData = { config ->
+                        saleToAcquirerDataConfigState = config
+                        statusState = "SaleToAcquirerData updated from the field editor."
+                    },
                     onClearSaleToAcquirerData = {
                         saleToAcquirerDataConfigState = SaleToAcquirerDataConfig.default()
                         statusState = "SaleToAcquirerData reset to retail demo defaults."
@@ -379,6 +385,7 @@ private fun TapToPlayApp(
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
+    onUpdateSaleToAcquirerData: (SaleToAcquirerDataConfig) -> Unit,
     onClearSaleToAcquirerData: () -> Unit,
     onClearTransactions: () -> Unit,
     onSelectProfile: (String) -> Unit,
@@ -392,6 +399,7 @@ private fun TapToPlayApp(
     var cartVersion by remember { mutableStateOf(0) }
     var selectedCategory by remember { mutableStateOf("All") }
     var showSaleToAcquirerData by remember { mutableStateOf(false) }
+    var editableSaleToAcquirerData by remember(saleToAcquirerDataConfig) { mutableStateOf(saleToAcquirerDataConfig) }
     var inspectedTransaction by remember { mutableStateOf<TransactionRecord?>(null) }
     val activeProfile = profiles.firstOrNull { it.id == activeProfileId }
     val lines = remember(cartVersion) { cart.lines() }
@@ -497,7 +505,17 @@ private fun TapToPlayApp(
 
     if (showSaleToAcquirerData) {
         SaleToAcquirerDataDialog(
-            config = saleToAcquirerDataConfig,
+            config = editableSaleToAcquirerData,
+            onEdit = { path, value ->
+                editableSaleToAcquirerData = SaleToAcquirerDataEditor.update(editableSaleToAcquirerData, path, value)
+            },
+            onRemove = { path ->
+                editableSaleToAcquirerData = SaleToAcquirerDataEditor.remove(editableSaleToAcquirerData, path)
+            },
+            onApply = {
+                onUpdateSaleToAcquirerData(editableSaleToAcquirerData)
+                showSaleToAcquirerData = false
+            },
             onDismiss = { showSaleToAcquirerData = false },
         )
     }
@@ -884,7 +902,8 @@ private fun TransactionDialog(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(660.dp),
+                .fillMaxSize()
+                .padding(vertical = 24.dp),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(
@@ -902,27 +921,8 @@ private fun TransactionDialog(
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedButton(onClick = onRefund, enabled = canRefund) { Text("Refund") }
+                        OutlinedButton(onClick = onRefund, enabled = canRefund) { Text("Refund", maxLines = 1) }
                         TextButton(onClick = onDismiss) { Text("Close") }
-                    }
-                }
-                TransactionStatusChip(record.status)
-                if (highlights.isNotEmpty()) {
-                    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Important response fields", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            highlights.forEach { (label, value) ->
-                                KeyValueLine(label = label, value = value)
-                            }
-                        }
-                    }
-                }
-                record.failureReason?.let {
-                    OutlinedCard(shape = RoundedCornerShape(8.dp)) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Adyen failure detail", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
-                            Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -938,14 +938,40 @@ private fun TransactionDialog(
                     )
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                    item { TransactionStatusChip(record.status) }
                     when (selectedSection) {
                         "Request" -> {
+                            item {
+                                RequestSummary(record)
+                            }
                             item {
                                 Text("Terminal API request", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             }
                             item { MonospaceBlock(record.requestJson) }
                         }
                         else -> {
+                            if (highlights.isNotEmpty()) {
+                                item {
+                                    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("Important response fields", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                            highlights.forEach { (label, value) ->
+                                                KeyValueLine(label = label, value = value)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            record.failureReason?.let {
+                                item {
+                                    OutlinedCard(shape = RoundedCornerShape(8.dp)) {
+                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Text("Adyen failure detail", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
+                                            Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
+                                }
+                            }
                             item {
                                 Text("Adyen response", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             }
@@ -976,6 +1002,19 @@ private fun TransactionDialog(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RequestSummary(record: TransactionRecord) {
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Request summary", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            KeyValueLine("Amount", record.amountLabel)
+            KeyValueLine("Items", record.itemCount.toString())
+            record.adyenTransactionId?.let { KeyValueLine("Adyen transaction", it) }
+            record.refundOfTransactionId?.let { KeyValueLine("Refund of", it) }
         }
     }
 }
@@ -1064,6 +1103,9 @@ private fun MonospaceBlock(text: String) {
 @Composable
 private fun SaleToAcquirerDataDialog(
     config: SaleToAcquirerDataConfig,
+    onEdit: (List<String>, String) -> Unit,
+    onRemove: (List<String>) -> Unit,
+    onApply: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -1089,11 +1131,22 @@ private fun SaleToAcquirerDataDialog(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(onClick = onApply) { Text("Apply", maxLines = 1) }
+                        TextButton(onClick = onDismiss) { Text("Close") }
+                    }
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                     items(config.data.entries.toList()) { (key, value) ->
-                        JsonNodeRow(name = key, value = value, depth = 0)
+                        JsonNodeRow(
+                            name = key,
+                            value = value,
+                            depth = 0,
+                            path = listOf(key),
+                            editable = true,
+                            onEdit = onEdit,
+                            onRemove = onRemove,
+                        )
                     }
                 }
             }
@@ -1103,7 +1156,30 @@ private fun SaleToAcquirerDataDialog(
 
 @Composable
 private fun JsonNodeRow(name: String, value: JsonElement, depth: Int) {
+    JsonNodeRow(
+        name = name,
+        value = value,
+        depth = depth,
+        path = emptyList(),
+        editable = false,
+        onEdit = { _, _ -> },
+        onRemove = {},
+    )
+}
+
+@Composable
+private fun JsonNodeRow(
+    name: String,
+    value: JsonElement,
+    depth: Int,
+    path: List<String>,
+    editable: Boolean,
+    onEdit: (List<String>, String) -> Unit,
+    onRemove: (List<String>) -> Unit,
+) {
     var expanded by remember { mutableStateOf(depth == 0) }
+    var editing by remember { mutableStateOf(false) }
+    var editedValue by remember(value) { mutableStateOf(value.editableText()) }
     val isExpandable = value is JsonObject || value is JsonArray
     val summary = value.summary()
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -1126,16 +1202,63 @@ private fun JsonNodeRow(name: String, value: JsonElement, depth: Int) {
                     TextButton(onClick = { expanded = !expanded }) {
                         Text(if (expanded) "Hide" else "View")
                     }
+                } else if (editable) {
+                    TextButton(onClick = { editing = !editing }) {
+                        Text(if (editing) "Cancel" else "Edit")
+                    }
+                }
+            }
+            if (editing && editable && !isExpandable) {
+                OutlinedTextField(
+                    value = editedValue,
+                    onValueChange = { editedValue = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Value") },
+                    singleLine = false,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            onEdit(path, editedValue)
+                            editing = false
+                        },
+                    ) {
+                        Text("Save")
+                    }
+                    TextButton(onClick = { onRemove(path) }) {
+                        Text("Remove")
+                    }
+                }
+            }
+            if (editable && isExpandable && depth > 0) {
+                TextButton(onClick = { onRemove(path) }) {
+                    Text("Remove group")
                 }
             }
             if (expanded && value is JsonObject) {
                 value.entries.forEach { (childKey, childValue) ->
-                    JsonNodeRow(name = childKey, value = childValue, depth = depth + 1)
+                    JsonNodeRow(
+                        name = childKey,
+                        value = childValue,
+                        depth = depth + 1,
+                        path = path + childKey,
+                        editable = editable,
+                        onEdit = onEdit,
+                        onRemove = onRemove,
+                    )
                 }
             }
             if (expanded && value is JsonArray) {
                 value.forEachIndexed { index, childValue ->
-                    JsonNodeRow(name = "[$index]", value = childValue, depth = depth + 1)
+                    JsonNodeRow(
+                        name = "[$index]",
+                        value = childValue,
+                        depth = depth + 1,
+                        path = path + index.toString(),
+                        editable = false,
+                        onEdit = onEdit,
+                        onRemove = onRemove,
+                    )
                 }
             }
         }
@@ -1152,6 +1275,11 @@ private fun JsonElement.summary(): String = when (this) {
         doubleOrNull != null -> doubleOrNull.toString()
         else -> toString()
     }
+}
+
+private fun JsonElement.editableText(): String = when (this) {
+    is JsonPrimitive -> contentOrNull ?: toString()
+    else -> toString()
 }
 
 private fun formatMoney(minor: Long): String = "EUR %.2f".format(minor / 100.0)

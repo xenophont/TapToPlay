@@ -108,4 +108,37 @@ class SaleToAcquirerDataConfigTest {
         assertEquals("3", decoded["additionalData"]?.jsonObject?.get("installments.value")?.jsonPrimitive?.content)
         assertEquals("TapToPlay", decoded["applicationInfo"]?.jsonObject?.get("merchantApplication")?.jsonObject?.get("name")?.jsonPrimitive?.content)
     }
+
+    @Test
+    fun editsNestedFieldValue() {
+        val config = SaleToAcquirerDataConfig(
+            displayName = "Editable",
+            data = buildJsonObject {
+                put("metadata", buildJsonObject {
+                    put("experiment", "qr")
+                })
+            },
+        )
+
+        val edited = SaleToAcquirerDataEditor.update(config, listOf("metadata", "experiment"), "manual")
+
+        assertEquals("manual", edited.data["metadata"]?.jsonObject?.get("experiment")?.jsonPrimitive?.content)
+        assertEquals("Editable (edited)", edited.displayName)
+    }
+
+    @Test
+    fun removesNestedFieldAndPrunesEmptyObjects() {
+        val config = SaleToAcquirerDataConfig(
+            displayName = "Editable",
+            data = buildJsonObject {
+                put("metadata", buildJsonObject {
+                    put("experiment", "qr")
+                })
+            },
+        )
+
+        val edited = SaleToAcquirerDataEditor.remove(config, listOf("metadata", "experiment"))
+
+        assertEquals(null, edited.data["metadata"])
+    }
 }

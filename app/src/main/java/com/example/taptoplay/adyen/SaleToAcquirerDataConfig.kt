@@ -4,6 +4,7 @@ import java.util.Base64
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -86,6 +87,68 @@ object SaleToAcquirerDataEncoder {
         val rawJson = Base64.getDecoder().decode(encoded).toString(Charsets.UTF_8)
         return json.parseToJsonElement(rawJson) as JsonObject
     }
+}
+
+object SaleToAcquirerDataEditor {
+    fun update(config: SaleToAcquirerDataConfig, path: List<String>, rawValue: String): SaleToAcquirerDataConfig {
+        require(path.isNotEmpty()) { "Path is required" }
+        return config.copy(
+            data = config.data.setAt(path, rawValue.toJsonPrimitive()),
+            displayName = config.displayName.asEditedName(),
+        )
+    }
+
+    fun remove(config: SaleToAcquirerDataConfig, path: List<String>): SaleToAcquirerDataConfig {
+        require(path.isNotEmpty()) { "Path is required" }
+        return config.copy(
+            data = config.data.removeAt(path),
+            displayName = config.displayName.asEditedName(),
+        )
+    }
+
+    private fun JsonObject.setAt(path: List<String>, value: JsonElement): JsonObject {
+        val key = path.first()
+        return JsonObject(
+            toMutableMap().apply {
+                this[key] = if (path.size == 1) {
+                    value
+                } else {
+                    ((this[key] as? JsonObject) ?: JsonObject(emptyMap())).setAt(path.drop(1), value)
+                }
+            },
+        )
+    }
+
+    private fun JsonObject.removeAt(path: List<String>): JsonObject {
+        val key = path.first()
+        return JsonObject(
+            toMutableMap().apply {
+                if (path.size == 1) {
+                    remove(key)
+                } else {
+                    val child = this[key] as? JsonObject
+                    if (child != null) {
+                        val updatedChild = child.removeAt(path.drop(1))
+                        if (updatedChild.isEmpty()) remove(key) else this[key] = updatedChild
+                    }
+                }
+            },
+        )
+    }
+
+    private fun String.toJsonPrimitive(): JsonPrimitive {
+        val trimmed = trim()
+        return when {
+            trimmed.equals("true", ignoreCase = true) -> JsonPrimitive(true)
+            trimmed.equals("false", ignoreCase = true) -> JsonPrimitive(false)
+            trimmed.toLongOrNull() != null -> JsonPrimitive(trimmed.toLong())
+            trimmed.toDoubleOrNull() != null -> JsonPrimitive(trimmed.toDouble())
+            else -> JsonPrimitive(this)
+        }
+    }
+
+    private fun String.asEditedName(): String =
+        if (endsWith(" (edited)")) this else "$this (edited)"
 }
 
 private fun JsonObject.deepMerge(override: JsonObject): JsonObject = JsonObject(
