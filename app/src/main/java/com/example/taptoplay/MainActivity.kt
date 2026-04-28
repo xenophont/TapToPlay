@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -36,7 +37,6 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.lifecycleScope
 import com.example.taptoplay.adyen.AdyenLinks
 import com.example.taptoplay.adyen.BoardingApiClient
@@ -74,6 +75,14 @@ import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 
 class MainActivity : ComponentActivity() {
     private lateinit var profileStore: AndroidProfileStore
@@ -265,6 +274,7 @@ private fun TapToPlayApp(
     val cart = remember { Cart() }
     var cartVersion by remember { mutableStateOf(0) }
     var selectedCategory by remember { mutableStateOf("All") }
+    var showSaleToAcquirerData by remember { mutableStateOf(false) }
     val activeProfile = profiles.firstOrNull { it.id == activeProfileId }
     val lines = remember(cartVersion) { cart.lines() }
     val products = ProductCatalog.products.filter {
@@ -348,6 +358,7 @@ private fun TapToPlayApp(
                     },
                     onScanSaleToAcquirerData = onScanSaleToAcquirerData,
                     onClearSaleToAcquirerData = onClearSaleToAcquirerData,
+                    onInspectSaleToAcquirerData = { showSaleToAcquirerData = true },
                     onPay = { profile -> onPay(profile, lines, cart.totalMinor()) },
                 )
             }
@@ -357,6 +368,13 @@ private fun TapToPlayApp(
 
     paymentResult?.let {
         PaymentResultDialog(result = it, onDismiss = onDismissResult)
+    }
+
+    if (showSaleToAcquirerData) {
+        SaleToAcquirerDataDialog(
+            config = saleToAcquirerDataConfig,
+            onDismiss = { showSaleToAcquirerData = false },
+        )
     }
 }
 
@@ -491,6 +509,7 @@ private fun CartPanel(
     onClear: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
     onClearSaleToAcquirerData: () -> Unit,
+    onInspectSaleToAcquirerData: () -> Unit,
     onPay: (AdyenProfile) -> Unit,
 ) {
     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
@@ -529,6 +548,7 @@ private fun CartPanel(
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = onScanSaleToAcquirerData) { Text("Scan data QR") }
+                        OutlinedButton(onClick = onInspectSaleToAcquirerData) { Text("View") }
                         TextButton(onClick = onClearSaleToAcquirerData) { Text("Reset") }
                     }
                 }
@@ -567,6 +587,99 @@ private fun PaymentResultDialog(result: PaymentResult, onDismiss: () -> Unit) {
         title = { Text(title) },
         text = { Text(message) },
     )
+}
+
+@Composable
+private fun SaleToAcquirerDataDialog(
+    config: SaleToAcquirerDataConfig,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(620.dp),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("SaleToAcquirerData", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "${config.displayName} | ${config.fieldCount} fields",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    TextButton(onClick = onDismiss) { Text("Close") }
+                }
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                    items(config.data.entries.toList()) { (key, value) ->
+                        JsonNodeRow(name = key, value = value, depth = 0)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun JsonNodeRow(name: String, value: JsonElement, depth: Int) {
+    var expanded by remember { mutableStateOf(depth == 0) }
+    val isExpandable = value is JsonObject || value is JsonArray
+    val summary = value.summary()
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = (12 + depth * 12).dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(summary, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                if (isExpandable) {
+                    TextButton(onClick = { expanded = !expanded }) {
+                        Text(if (expanded) "Hide" else "View")
+                    }
+                }
+            }
+            if (expanded && value is JsonObject) {
+                value.entries.forEach { (childKey, childValue) ->
+                    JsonNodeRow(name = childKey, value = childValue, depth = depth + 1)
+                }
+            }
+            if (expanded && value is JsonArray) {
+                value.forEachIndexed { index, childValue ->
+                    JsonNodeRow(name = "[$index]", value = childValue, depth = depth + 1)
+                }
+            }
+        }
+    }
+}
+
+private fun JsonElement.summary(): String = when (this) {
+    is JsonObject -> "${size} field${if (size == 1) "" else "s"}"
+    is JsonArray -> "${size} item${if (size == 1) "" else "s"}"
+    is JsonPrimitive -> when {
+        isString -> contentOrNull.orEmpty()
+        booleanOrNull != null -> booleanOrNull.toString()
+        longOrNull != null -> longOrNull.toString()
+        doubleOrNull != null -> doubleOrNull.toString()
+        else -> toString()
+    }
 }
 
 private fun formatMoney(minor: Long): String = "EUR %.2f".format(minor / 100.0)
