@@ -130,6 +130,17 @@ Use `Reset` in the checkout panel to go back to the default retail demo metadata
 
 Older TapToPlay QR payloads with `schema`, `displayName`, and `saleToAcquirerData` are still accepted, but newly generated QRs should use the plain object above to avoid sending wrapper fields or demo defaults to Adyen.
 
+## SaleToAcquirerData Favorites
+
+For demos, you can save frequently used `SaleToAcquirerData` setups as favorites:
+
+1. Load a setup with `Scan data QR`, or open `View` and edit fields manually.
+2. Tap `Save` in the checkout `SaleToAcquirerData` panel or inside the field editor.
+3. Use the `Favorites` list in checkout to tap `Use` before starting a transaction.
+4. Tap `Remove` on a favorite when you no longer need that preset.
+
+Favorites are stored locally with encrypted Android preferences. They are demo presets for faster testing; do not store sensitive production-only data in demo APKs.
+
 ## Build and Deploy
 
 From Android Studio:
