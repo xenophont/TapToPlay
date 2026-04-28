@@ -78,46 +78,42 @@ Do not commit QR images or JSON files with real credentials. For more detail and
 
 ## Create a SaleToAcquirerData QR Code
 
-TapToPlay can also scan a QR code to add or override properties inside `SaleToAcquirerData` for the next payment requests. This is useful for testing Adyen features that are controlled through `SaleToAcquirerData`.
+TapToPlay can also scan a QR code to replace the `SaleToAcquirerData` object for the next payment requests. This is useful for testing Adyen features that are controlled through `SaleToAcquirerData`.
 
-The QR contains raw JSON. TapToPlay merges these properties with the default retail demo metadata, converts the merged object to JSON, Base64-encodes it, and writes it into `PaymentRequest.SaleData.SaleToAcquirerData`.
+The recommended QR contains the plain Adyen `SaleToAcquirerData` JSON object. TapToPlay Base64-encodes exactly that object and writes it into `PaymentRequest.SaleData.SaleToAcquirerData`.
 
 Example payload:
 
 ```json
 {
-  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
-  "displayName": "Full SaleToAcquirerData test",
-  "saleToAcquirerData": {
-    "applicationInfo": {
-      "externalPlatform": {
-        "name": "COMPANY_NAME_OR_PLATFORM_NAME",
-        "version": "1.3",
-        "integrator": "COMPANY_THAT_BUILT_INTEGRATION_OR_POS_APP"
-      },
-      "merchantApplication": {
-        "name": "NAME_OF_POS_APPLICATION",
-        "version": "2.13.05"
-      },
-      "merchantDevice": {
-        "os": "OS_OF_DEVICE_THAT_RUNS_POS_APPLICATION",
-        "osVersion": "16.3"
-      }
+  "applicationInfo": {
+    "externalPlatform": {
+      "name": "COMPANY_NAME_OR_PLATFORM_NAME",
+      "version": "1.3",
+      "integrator": "COMPANY_THAT_BUILT_INTEGRATION_OR_POS_APP"
     },
-    "metadata": {
-      "someMetaDataKey1": "YOUR_VALUE",
-      "someMetaDataKey2": "YOUR_VALUE"
+    "merchantApplication": {
+      "name": "NAME_OF_POS_APPLICATION",
+      "version": "2.13.05"
     },
-    "shopperEmail": "S.Hopper@example.com",
-    "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
-    "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
-    "store": "YOUR_STORE_REFERENCE",
-    "tenderOption": "ReceiptHandler,AskGratuity",
-    "additionalData": {
-      "authorisationType": "PreAuth",
-      "manualCapture": "false",
-      "taxfree.indicator": false
+    "merchantDevice": {
+      "os": "OS_OF_DEVICE_THAT_RUNS_POS_APPLICATION",
+      "osVersion": "16.3"
     }
+  },
+  "metadata": {
+    "someMetaDataKey1": "YOUR_VALUE",
+    "someMetaDataKey2": "YOUR_VALUE"
+  },
+  "shopperEmail": "S.Hopper@example.com",
+  "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
+  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
+  "store": "YOUR_STORE_REFERENCE",
+  "tenderOption": "ReceiptHandler,AskGratuity",
+  "additionalData": {
+    "authorisationType": "PreAuth",
+    "manualCapture": "false",
+    "taxfree.indicator": false
   }
 }
 ```
@@ -127,12 +123,12 @@ To use it:
 1. Generate a QR code from the raw JSON above, replacing properties with the values you want to test.
 2. Open TapToPlay and add products to the cart.
 3. In `Checkout`, tap `Scan data QR`.
-4. Confirm the checkout panel shows the loaded `displayName`.
+4. Confirm the checkout panel shows `Scanned SaleToAcquirerData`.
 5. Start payment. The encrypted Terminal API request will include your structured JSON as Base64 in `SaleToAcquirerData`.
 
 Use `Reset` in the checkout panel to go back to the default retail demo metadata.
 
-TapToPlay deep-merges your QR object over its defaults. For example, if you provide `metadata`, it keeps default `applicationInfo` unless you override it.
+Older TapToPlay QR payloads with `schema`, `displayName`, and `saleToAcquirerData` are still accepted, but newly generated QRs should use the plain object above to avoid sending wrapper fields or demo defaults to Adyen.
 
 ## Build and Deploy
 

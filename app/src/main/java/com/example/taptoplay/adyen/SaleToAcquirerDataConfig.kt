@@ -14,6 +14,7 @@ data class SaleToAcquirerDataConfig(
     val schema: String = SCHEMA,
     val displayName: String,
     val data: JsonObject,
+    val mergeWithDefaults: Boolean = true,
 ) {
     val fieldCount: Int
         get() = data.countLeaves()
@@ -54,12 +55,13 @@ class SaleToAcquirerDataQrParser(
 ) {
     fun parse(payload: String): Result<SaleToAcquirerDataConfig> = runCatching {
         val root = json.parseToJsonElement(payload).jsonObject
+        val schema = root["schema"]?.jsonPrimitive?.content
+        val data = (root["saleToAcquirerData"] ?: root["properties"])?.jsonObject ?: root
         val config = SaleToAcquirerDataConfig(
-            schema = root["schema"]?.jsonPrimitive?.content ?: "",
-            displayName = root["displayName"]?.jsonPrimitive?.content ?: "",
-            data = (root["saleToAcquirerData"] ?: root["properties"])
-                ?.jsonObject
-                ?: error("saleToAcquirerData is required"),
+            schema = schema ?: SaleToAcquirerDataConfig.SCHEMA,
+            displayName = root["displayName"]?.jsonPrimitive?.content ?: "Scanned SaleToAcquirerData",
+            data = data.withoutTapToPlayWrapperKeys(),
+            mergeWithDefaults = false,
         )
         validate(config)
         config
@@ -72,14 +74,22 @@ class SaleToAcquirerDataQrParser(
         require(config.displayName.isNotBlank()) { "displayName is required" }
         require(config.data.isNotEmpty()) { "saleToAcquirerData must contain at least one entry" }
     }
+
+    private fun JsonObject.withoutTapToPlayWrapperKeys(): JsonObject = JsonObject(
+        filterKeys { it !in setOf("schema", "displayName", "saleToAcquirerData", "properties") },
+    )
 }
 
 object SaleToAcquirerDataEncoder {
     private val json = Json { explicitNulls = false }
 
     fun encodeBase64(config: SaleToAcquirerDataConfig): String {
-        val merged = SaleToAcquirerDataConfig.default().data.deepMerge(config.data)
-        val rawJson = json.encodeToString(JsonObject.serializer(), merged)
+        val payload = if (config.mergeWithDefaults) {
+            SaleToAcquirerDataConfig.default().data.deepMerge(config.data)
+        } else {
+            config.data
+        }
+        val rawJson = json.encodeToString(JsonObject.serializer(), payload)
         return Base64.getEncoder().encodeToString(rawJson.toByteArray(Charsets.UTF_8))
     }
 

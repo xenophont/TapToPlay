@@ -1,6 +1,7 @@
 package com.example.taptoplay.adyen
 
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -63,6 +64,85 @@ class SaleToAcquirerDataConfigTest {
             "PreAuth",
             config.data["additionalData"]?.jsonObject?.get("authorisationType")?.jsonPrimitive?.content,
         )
+    }
+
+    @Test
+    fun parsesPlainAdyenSaleToAcquirerDataObjectFromQr() {
+        val payload = """
+            {
+              "applicationInfo": {
+                "merchantApplication": {
+                  "name": "NAME_OF_POS_APPLICATION",
+                  "version": "2.13.05"
+                }
+              },
+              "metadata": {
+                "someMetaDataKey1": "YOUR_VALUE"
+              },
+              "shopperEmail": "S.Hopper@example.com",
+              "additionalData": {
+                "authorisationType": "PreAuth",
+                "manualCapture": "false",
+                "taxfree.indicator": false
+              }
+            }
+        """.trimIndent()
+
+        val config = parser.parse(payload).getOrThrow()
+
+        assertEquals("Scanned SaleToAcquirerData", config.displayName)
+        assertEquals(false, config.mergeWithDefaults)
+        assertEquals("S.Hopper@example.com", config.data["shopperEmail"]?.jsonPrimitive?.content)
+        assertEquals(
+            false,
+            config.data["additionalData"]?.jsonObject?.get("taxfree.indicator")?.jsonPrimitive?.booleanOrNull,
+        )
+    }
+
+    @Test
+    fun scannedPlainPayloadIsEncodedWithoutDemoDefaults() {
+        val config = parser.parse(
+            """
+                {
+                  "metadata": {
+                    "someMetaDataKey1": "YOUR_VALUE"
+                  }
+                }
+            """.trimIndent(),
+        ).getOrThrow()
+
+        val decoded = SaleToAcquirerDataEncoder.decodeBase64ForTest(
+            SaleToAcquirerDataEncoder.encodeBase64(config),
+        )
+
+        assertEquals("YOUR_VALUE", decoded["metadata"]?.jsonObject?.get("someMetaDataKey1")?.jsonPrimitive?.content)
+        assertEquals(null, decoded["applicationInfo"])
+        assertEquals(null, decoded["metadata"]?.jsonObject?.get("retailDemo"))
+    }
+
+    @Test
+    fun wrappedPayloadIsEncodedWithoutTapToPlayWrapperKeys() {
+        val config = parser.parse(
+            """
+                {
+                  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+                  "displayName": "Wrapped",
+                  "saleToAcquirerData": {
+                    "metadata": {
+                      "someMetaDataKey1": "YOUR_VALUE"
+                    }
+                  }
+                }
+            """.trimIndent(),
+        ).getOrThrow()
+
+        val decoded = SaleToAcquirerDataEncoder.decodeBase64ForTest(
+            SaleToAcquirerDataEncoder.encodeBase64(config),
+        )
+
+        assertEquals("YOUR_VALUE", decoded["metadata"]?.jsonObject?.get("someMetaDataKey1")?.jsonPrimitive?.content)
+        assertEquals(null, decoded["schema"])
+        assertEquals(null, decoded["saleToAcquirerData"])
     }
 
     @Test
