@@ -64,10 +64,64 @@ Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR code
 {
   "schema": "taptoplay.adyen.saleToAcquirerData.v1",
   "displayName": "Preauth experiment",
-  "properties": {
-    "authorisationType": "PreAuth",
-    "metadata.experiment": "qr-sale-to-acquirer-data",
-    "metadata.operator": "demo-user"
+  "saleToAcquirerData": {
+    "applicationInfo": {
+      "externalPlatform": {
+        "name": "COMPANY_NAME_OR_PLATFORM_NAME",
+        "version": "1.3",
+        "integrator": "COMPANY_THAT_BUILT_INTEGRATION_OR_POS_APP"
+      },
+      "merchantApplication": {
+        "name": "NAME_OF_POS_APPLICATION",
+        "version": "2.13.05"
+      },
+      "merchantDevice": {
+        "os": "OS_OF_DEVICE_THAT_RUNS_POS_APPLICATION",
+        "osVersion": "16.3"
+      }
+    },
+    "metadata": {
+      "someMetaDataKey1": "YOUR_VALUE",
+      "someMetaDataKey2": "YOUR_VALUE"
+    },
+    "recurringProcessingModel": "Subscription",
+    "recurringDetailName": "YOUR_VALUE",
+    "recurringTokenService": "YOUR_VALUE",
+    "shopperEmail": "S.Hopper@example.com",
+    "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
+    "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
+    "store": "YOUR_STORE_REFERENCE",
+    "tenderOption": "ReceiptHandler,AskGratuity",
+    "additionalData": {
+      "authorisationType": "PreAuth",
+      "lodging.customerServiceTollFreeNumber": "1800433999",
+      "lodging.checkInDate": "20200219",
+      "lodging.checkOutDate": "20200222",
+      "lodging.folioNumber": "13579111315",
+      "lodging.propertyPhoneNumber": "1800433999",
+      "lodging.room1.rate": "15000",
+      "lodging.room1.tax": "1000",
+      "lodging.room1.numberOfNights": "3",
+      "lodging.fireSafetyActIndicator": "Y",
+      "lodging.totalRoomTax": "2000",
+      "split.api": "1",
+      "split.nrOfItems": "2",
+      "split.totalAmount": "62000",
+      "split.currencyCode": "EUR",
+      "split.item1.amount": "60000",
+      "split.item1.type": "BalanceAccount",
+      "split.item1.account": "BA00000000000000000000001",
+      "split.item1.reference": "TestPayment",
+      "split.item1.description": "TestDescription",
+      "split.item2.amount": "2000",
+      "split.item2.type": "Commission",
+      "split.item2.reference": "TestCommission",
+      "surchargeFee": "VALUE_IN_MINOR_UNITS",
+      "taxfree.indicator": false,
+      "travelEntertainmentAuthData.market": "H",
+      "travelEntertainmentAuthData.duration": "3",
+      "manualCapture": "false"
+    }
   }
 }
 ```
@@ -76,6 +130,6 @@ Rules:
 
 - `schema` must be `taptoplay.adyen.saleToAcquirerData.v1`.
 - `displayName` is shown in the checkout panel.
-- `properties` must be a non-empty JSON object.
+- `saleToAcquirerData` must be a non-empty JSON object. Legacy QR codes with `properties` are still accepted.
 - Values may be strings, numbers, booleans, arrays, or nested objects.
-- TapToPlay merges these properties over the default retail demo metadata, serializes the result as JSON, Base64-encodes it, and sends it as `PaymentRequest.SaleData.SaleToAcquirerData`.
+- TapToPlay deep-merges this object over default retail demo data, serializes the result as JSON, Base64-encodes it, and sends it as `PaymentRequest.SaleData.SaleToAcquirerData`.

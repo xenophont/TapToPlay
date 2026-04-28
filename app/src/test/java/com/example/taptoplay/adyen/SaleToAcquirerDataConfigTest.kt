@@ -1,7 +1,7 @@
 package com.example.taptoplay.adyen
 
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
@@ -12,14 +12,24 @@ class SaleToAcquirerDataConfigTest {
     private val parser = SaleToAcquirerDataQrParser()
 
     @Test
-    fun parsesQrPropertiesPayload() {
+    fun parsesStructuredSaleToAcquirerDataPayload() {
         val payload = """
             {
               "schema": "taptoplay.adyen.saleToAcquirerData.v1",
               "displayName": "Preauth test",
-              "properties": {
-                "authorisationType": "PreAuth",
-                "metadata.experiment": "qr"
+              "saleToAcquirerData": {
+                "applicationInfo": {
+                  "merchantApplication": {
+                    "name": "TapToPlay",
+                    "version": "2.13.05"
+                  }
+                },
+                "metadata": {
+                  "experiment": "qr"
+                },
+                "additionalData": {
+                  "authorisationType": "PreAuth"
+                }
               }
             }
         """.trimIndent()
@@ -27,7 +37,32 @@ class SaleToAcquirerDataConfigTest {
         val config = parser.parse(payload).getOrThrow()
 
         assertEquals("Preauth test", config.displayName)
-        assertEquals("PreAuth", config.properties["authorisationType"]?.jsonPrimitive?.content)
+        assertEquals(
+            "PreAuth",
+            config.data["additionalData"]?.jsonObject?.get("authorisationType")?.jsonPrimitive?.content,
+        )
+    }
+
+    @Test
+    fun remainsCompatibleWithLegacyPropertiesPayload() {
+        val payload = """
+            {
+              "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+              "displayName": "Legacy preauth",
+              "properties": {
+                "additionalData": {
+                  "authorisationType": "PreAuth"
+                }
+              }
+            }
+        """.trimIndent()
+
+        val config = parser.parse(payload).getOrThrow()
+
+        assertEquals(
+            "PreAuth",
+            config.data["additionalData"]?.jsonObject?.get("authorisationType")?.jsonPrimitive?.content,
+        )
     }
 
     @Test
@@ -36,8 +71,10 @@ class SaleToAcquirerDataConfigTest {
             {
               "schema": "other.schema",
               "displayName": "Bad payload",
-              "properties": {
-                "authorisationType": "PreAuth"
+              "saleToAcquirerData": {
+                "additionalData": {
+                  "authorisationType": "PreAuth"
+                }
               }
             }
         """.trimIndent()
@@ -51,9 +88,14 @@ class SaleToAcquirerDataConfigTest {
     fun encodesMergedPropertiesAsBase64Json() {
         val config = SaleToAcquirerDataConfig(
             displayName = "Installments",
-            properties = buildJsonObject {
-                put("metadata.retailDemo", "Overridden")
-                put("installments.value", JsonPrimitive(3))
+            data = buildJsonObject {
+                put("metadata", buildJsonObject {
+                    put("retailDemo", "Overridden")
+                    put("experiment", "qr")
+                })
+                put("additionalData", buildJsonObject {
+                    put("installments.value", 3)
+                })
             },
         )
 
@@ -61,7 +103,9 @@ class SaleToAcquirerDataConfigTest {
             SaleToAcquirerDataEncoder.encodeBase64(config),
         )
 
-        assertEquals("Overridden", decoded["metadata.retailDemo"]?.jsonPrimitive?.content)
-        assertEquals("3", decoded["installments.value"]?.jsonPrimitive?.content)
+        assertEquals("Overridden", decoded["metadata"]?.jsonObject?.get("retailDemo")?.jsonPrimitive?.content)
+        assertEquals("qr", decoded["metadata"]?.jsonObject?.get("experiment")?.jsonPrimitive?.content)
+        assertEquals("3", decoded["additionalData"]?.jsonObject?.get("installments.value")?.jsonPrimitive?.content)
+        assertEquals("TapToPlay", decoded["applicationInfo"]?.jsonObject?.get("merchantApplication")?.jsonObject?.get("name")?.jsonPrimitive?.content)
     }
 }

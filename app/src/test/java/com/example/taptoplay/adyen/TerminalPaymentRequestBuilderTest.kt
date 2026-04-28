@@ -6,6 +6,7 @@ import com.example.taptoplay.catalog.Product
 import com.example.taptoplay.profiles.AdyenProfile
 import com.example.taptoplay.profiles.PaymentEnvironment
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
@@ -22,8 +23,10 @@ class TerminalPaymentRequestBuilderTest {
             totalMinor = 12900,
             saleToAcquirerDataConfig = SaleToAcquirerDataConfig(
                 displayName = "Metadata test",
-                properties = buildJsonObject {
-                    put("metadata.experiment", "qr")
+                data = buildJsonObject {
+                    put("metadata", buildJsonObject {
+                        put("experiment", "qr")
+                    })
                 },
             ),
         )
@@ -34,8 +37,8 @@ class TerminalPaymentRequestBuilderTest {
 
         assertNotNull(encoded)
         val decoded = SaleToAcquirerDataEncoder.decodeBase64ForTest(encoded!!)
-        assertEquals("TapToPlay", decoded["metadata.retailDemo"]?.jsonPrimitive?.content)
-        assertEquals("qr", decoded["metadata.experiment"]?.jsonPrimitive?.content)
+        assertEquals("TapToPlay", decoded["metadata"]?.jsonObject?.get("retailDemo")?.jsonPrimitive?.content)
+        assertEquals("qr", decoded["metadata"]?.jsonObject?.get("experiment")?.jsonPrimitive?.content)
     }
 
     private fun profile() = AdyenProfile(

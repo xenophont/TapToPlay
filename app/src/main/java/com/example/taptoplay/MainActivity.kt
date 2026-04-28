@@ -524,7 +524,7 @@ private fun CartPanel(
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("SaleToAcquirerData", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.properties.size} custom propert${if (saleToAcquirerDataConfig.properties.size == 1) "y" else "ies"}",
+                        "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.fieldCount} JSON field${if (saleToAcquirerDataConfig.fieldCount == 1) "" else "s"}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

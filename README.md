@@ -87,11 +87,37 @@ Example payload:
 ```json
 {
   "schema": "taptoplay.adyen.saleToAcquirerData.v1",
-  "displayName": "Preauth experiment",
-  "properties": {
-    "authorisationType": "PreAuth",
-    "metadata.experiment": "qr-sale-to-acquirer-data",
-    "metadata.operator": "demo-user"
+  "displayName": "Full SaleToAcquirerData test",
+  "saleToAcquirerData": {
+    "applicationInfo": {
+      "externalPlatform": {
+        "name": "COMPANY_NAME_OR_PLATFORM_NAME",
+        "version": "1.3",
+        "integrator": "COMPANY_THAT_BUILT_INTEGRATION_OR_POS_APP"
+      },
+      "merchantApplication": {
+        "name": "NAME_OF_POS_APPLICATION",
+        "version": "2.13.05"
+      },
+      "merchantDevice": {
+        "os": "OS_OF_DEVICE_THAT_RUNS_POS_APPLICATION",
+        "osVersion": "16.3"
+      }
+    },
+    "metadata": {
+      "someMetaDataKey1": "YOUR_VALUE",
+      "someMetaDataKey2": "YOUR_VALUE"
+    },
+    "shopperEmail": "S.Hopper@example.com",
+    "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
+    "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
+    "store": "YOUR_STORE_REFERENCE",
+    "tenderOption": "ReceiptHandler,AskGratuity",
+    "additionalData": {
+      "authorisationType": "PreAuth",
+      "manualCapture": "false",
+      "taxfree.indicator": false
+    }
   }
 }
 ```
@@ -102,9 +128,11 @@ To use it:
 2. Open TapToPlay and add products to the cart.
 3. In `Checkout`, tap `Scan data QR`.
 4. Confirm the checkout panel shows the loaded `displayName`.
-5. Start payment. The encrypted Terminal API request will include your Base64 JSON in `SaleToAcquirerData`.
+5. Start payment. The encrypted Terminal API request will include your structured JSON as Base64 in `SaleToAcquirerData`.
 
 Use `Reset` in the checkout panel to go back to the default retail demo metadata.
+
+TapToPlay deep-merges your QR object over its defaults. For example, if you provide `metadata`, it keeps default `applicationInfo` unless you override it.
 
 ## Build and Deploy
 
