@@ -109,16 +109,106 @@ Refund outcome handling depends on the Terminal API response returned by the Pay
 
 ## Español
 
-TapToPlay usa App Links de Adyen Payments para `boarded`, `board` y `nexo`. La return URL es `taptoplay://adyen-return`, y los pagos usan el parámetro `request` con un sobre Nexo cifrado y codificado en Base64URL.
+Este documento describe cómo TapToPlay se comunica con la aplicación Adyen Payments para Android y con las API de Adyen Management/Payments App.
 
-Flujo de boarding:
+### Enlaces de Payments App
+
+TapToPlay usa los App Links documentados de Adyen Payments:
+
+- Comprobación de boarding en test: `https://www.adyen.com/test/boarded`
+- Boarding en test: `https://www.adyen.com/test/board`
+- Pago en test: `https://www.adyen.com/test/nexo`
+- Comprobación de boarding en live: `https://www.adyen.com/boarded`
+- Boarding en live: `https://www.adyen.com/board`
+- Pago en live: `https://www.adyen.com/nexo`
+
+La URL de retorno es:
+
+```text
+taptoplay://adyen-return
+```
+
+Las invocaciones de pago usan el parámetro documentado `request`. Su valor es un sobre Nexo cifrado, codificado en Base64URL y generado por `NexoCrypto`.
+
+### Selección de perfil
+
+Las credenciales pueden venir de:
+
+- `local.properties`, solo para el arranque local de desarrolladores en debug.
+- Un perfil QR escaneado, almacenado en preferencias cifradas de Android.
+
+El cambio entre test y live es deliberado. Selecciona el perfil activo en `Payments App`; los perfiles de test usan los App Links y hosts de Management API de test, y los perfiles live usan los App Links y hosts de Management API live.
+
+Cuando un perfil escaneado no tiene `storeId`, TapToPlay lo trata como boarding a nivel de merchant y usa el `merchantId` existente como etiqueta principal del perfil. Cuando un perfil escaneado incluye `storeId`, TapToPlay resuelve la tienda mediante Adyen Management API v3, con `GET /stores?merchantId=...` y la clave de API del perfil. La `reference` de la tienda pasa a ser la etiqueta principal del perfil, y `displayName` se mantiene como etiqueta de reserva del QR si falla la búsqueda de la tienda.
+
+Las compilaciones de release no incrustan valores de Adyen desde `local.properties`. Usa perfiles QR para demos portátiles y nunca hagas commit de credenciales reales.
+
+### Flujo de boarding
 
 1. En `Payments App`, selecciona el perfil.
 2. Toca `Check`.
-3. Si Adyen devuelve `boardingRequestToken`, toca `Board`.
-4. TapToPlay llama a `generatePaymentsAppBoardingToken`; esta llamada tipo backend se mantiene dentro de la app solo para la demo.
-5. La app abre el link `board` y recibe `boarded=true` con `installationId`.
+3. TapToPlay abre `boarded?returnUrl=taptoplay://adyen-return`.
+4. Si la app Payments no tiene boarding, Adyen devuelve `installationId` y `boardingRequestToken`.
+5. Toca `Board`.
+6. TapToPlay llama a `generatePaymentsAppBoardingToken` con el `boardingRequestToken` devuelto. Esta llamada de tipo backend se mantiene dentro de la app de forma intencionada solo para la demo.
+7. TapToPlay abre el App Link `board` con el `boardingToken` codificado en Base64URL.
+8. La app de Adyen devuelve `boarded=true` y un `installationId`.
 
-La pestaña `Payments App` también permite listar instancias y revocar una instalación con confirmación explícita. `Remove` solo borra el perfil local cifrado; no revoca la instalación en Adyen.
+Usa `Reboard` para abrir `boarded?reboard=true`, recibir un `boardingRequestToken` nuevo y tocar después `Board` para completar la configuración del contexto de merchant/tienda seleccionado.
 
-Los pagos live requieren confirmación por cada cargo. TapToPlay solo marca transacciones como aprobadas o rechazadas cuando vuelve una respuesta completa de Terminal API.
+TapToPlay decodifica el payload `data` devuelto cuando existe y muestra el contexto legible de boarding/reboarding en el diálogo de resultado y en los diagnósticos.
+
+### Operaciones de instancia de Payments App
+
+La pestaña `Payments App` incluye operaciones protegidas que usan la clave de API del perfil seleccionado:
+
+- `Refresh`: lista las instancias de Payments App del merchant seleccionado, o de la tienda seleccionada cuando existe `storeId`.
+- `Revoke instance`: revoca una instalación listada tras una confirmación explícita.
+- `Remove`: elimina solo el perfil local cifrado y el estado local de boarding guardado.
+
+`Remove` y `Revoke instance` están separados de forma intencionada:
+
+- Usa `Remove` cuando quieras que el perfil de demo local desaparezca de este dispositivo.
+- Usa `Revoke instance` cuando la instalación de Adyen Payments deba invalidarse en Adyen y tenga que hacer boarding otra vez.
+
+La credencial de API debe tener los roles necesarios para generar tokens de boarding, listar instancias de Payments App y revocar instancias. Los perfiles con ámbito de tienda también necesitan el rol de lectura de tiendas para buscar el nombre de la tienda.
+
+### Flujo de pago
+
+1. Añade productos en `Catalog`.
+2. Abre `Checkout`.
+3. Opcionalmente, escanea o selecciona un favorito de SaleToAcquirerData.
+4. Toca `Charge test payment` o `Charge live payment`.
+5. Los pagos live muestran un diálogo de confirmación con importe, número de artículos, perfil, entorno, merchant y tienda.
+6. TapToPlay construye una solicitud estructurada de Terminal API en el paquete `adyen`.
+7. `NexoCrypto` cifra el payload de Terminal API y crea el valor `request` del App Link.
+8. La app Adyen Payments devuelve un payload de respuesta de Terminal API a `taptoplay://adyen-return`.
+9. TapToPlay registra estados approved/refused/failed solo a partir de una respuesta completa de Terminal API.
+
+Los valores de retorno cortos, como `result=success`, se tratan como fallos de diagnóstico, no como pagos aprobados. Esto evita que URLs de retorno genéricas o falsificadas marquen transacciones como pagadas.
+
+### Flujo de reembolso
+
+Los registros de pago aprobados con un identificador de transacción de Terminal API habilitan `Refund` en el inspector de transacciones. TapToPlay construye una `ReversalRequest` referenciada, la cifra y abre la app Adyen Payments con el mismo patrón de App Link `request`.
+
+El tratamiento del resultado del reembolso depende de la respuesta de Terminal API devuelta por la app Payments. Los webhooks de Adyen o las comprobaciones en Customer Area pueden seguir siendo necesarios para la conciliación operativa.
+
+### Checklist live
+
+- Usa un perfil QR live con `environment: "live"`.
+- Verifica el perfil activo en `Payments App` antes del checkout.
+- Confirma que la app live de Adyen Payments está instalada y tiene boarding.
+- Actualiza las instancias de Payments App si necesitas verificar el estado de la instalación.
+- Confirma cada cargo live en el diálogo de confirmación del checkout.
+- No envíes este modelo de credenciales dentro de la app a usuarios de producción.
+
+### Resolución de problemas
+
+- Falla el escaneo QR: valida el payload con `docs/QR_CREDENTIALS.md`, incluidos el tamaño del payload y los campos obligatorios.
+- Falla la búsqueda del nombre de tienda: comprueba la clave de API, el rol de lectura de tiendas de Management API, la cuenta de merchant, el ID de tienda y el entorno. El perfil se importa igualmente con `displayName` como valor de reserva.
+- Falla el boarding: comprueba la clave de API, la cuenta de merchant, el ID de tienda, el entorno y los roles de API de Adyen.
+- Falla el refresh/revoke de Payments App API: comprueba los permisos de la clave de API del perfil seleccionado y si el ámbito de merchant/tienda es correcto.
+- La app de Adyen no se abre: confirma que la app Payments Test está instalada para flujos de test, o la app Payments live para flujos live.
+- No aparece el diálogo de retorno: confirma que la URL de retorno es `taptoplay://adyen-return`.
+- El pago devuelve solo un resultado corto: inspecciona el fallo de la transacción; TapToPlay requiere un payload de respuesta completo de Terminal API para marcar approved/refused.
+- Errores de Nexo crypto: verifica el identificador de clave del terminal, la versión de la clave, la passphrase del terminal, el entorno y el POIID/installation ID.
