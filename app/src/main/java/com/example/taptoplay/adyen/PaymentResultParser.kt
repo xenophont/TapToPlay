@@ -7,6 +7,8 @@ import java.util.Base64
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -17,24 +19,39 @@ sealed interface PaymentResult {
         val boardingRequestToken: String?,
         val error: String?,
         val data: String?,
+        val returnData: BoardingReturnData? = null,
+        val errorAdvice: String? = adyenAppLinkAdvice(error),
     ) : PaymentResult
 
     data class Success(
         val pspReference: String?,
         val rawResult: String?,
         val responseJson: String? = null,
+        val serviceId: String? = null,
     ) : PaymentResult
 
     data class Refused(
         val reason: String?,
         val responseJson: String? = null,
+        val serviceId: String? = null,
     ) : PaymentResult
 
     data class Failure(
         val message: String,
         val responseJson: String? = null,
+        val serviceId: String? = null,
     ) : PaymentResult
 }
+
+data class BoardingReturnData(
+    val boarded: Boolean?,
+    val installationId: String?,
+    val date: String?,
+    val reboarding: Boolean?,
+    val boardingRequestToken: String?,
+    val merchantAccountCode: String?,
+    val merchantStoreCode: String?,
+)
 
 object PaymentResultParser {
     fun parse(uri: Uri?): PaymentResult? {
@@ -63,27 +80,35 @@ object PaymentResultParser {
     ): PaymentResult {
         val boarded = params["boarded"]
         val installationId = params["installationId"]
+        val rawData = params["data"]
         if (boarded != null || params["boardingRequestToken"] != null) {
             return PaymentResult.BoardingStatus(
                 boarded = boarded.equals("true", ignoreCase = true),
                 installationId = installationId,
                 boardingRequestToken = params["boardingRequestToken"],
                 error = params["error"],
-                data = params["data"],
+                data = rawData,
+                returnData = rawData?.let(::parseBoardingReturnData),
             )
         }
 
         terminalApiResponse(params, profile, crypto)?.let { return it }
 
-        val result = params["result"] ?: params["Result"] ?: params["event"]
-        return when (result?.lowercase()) {
-            "success", "approved", "authorised", "authorized" -> PaymentResult.Success(
-                pspReference = params["pspReference"],
-                rawResult = result,
+        params["error"]?.let { error ->
+            val advice = adyenAppLinkAdvice(error)
+            return PaymentResult.Failure(
+                listOfNotNull("Adyen App Link error: $error", advice).joinToString(" | "),
             )
-            "refused", "declined" -> PaymentResult.Refused(params["reason"])
-            null -> PaymentResult.Failure("Adyen returned without a recognizable result.")
-            else -> PaymentResult.Failure(params["message"] ?: result)
+        }
+
+        val result = params["result"] ?: params["Result"] ?: params["event"]
+        return if (result == null) {
+            PaymentResult.Failure("Adyen returned without a Terminal API response.")
+        } else {
+            PaymentResult.Failure(
+                "Adyen returned short result '$result' without a Terminal API response. " +
+                    "TapToPlay only records approved/refused states from full Terminal API payloads.",
+            )
         }
     }
 
@@ -96,7 +121,7 @@ object PaymentResultParser {
         val candidates = buildList {
             preferredKeys.forEach { key -> params[key]?.let(::add) }
             params
-                .filterKeys { it !in preferredKeys && it !in setOf("result", "Result", "event", "pspReference", "reason", "message") }
+                .filterKeys { it !in preferredKeys && it !in setOf("result", "Result", "event", "pspReference", "reason", "message", "error") }
                 .values
                 .forEach(::add)
         }.distinct()
@@ -117,6 +142,7 @@ object PaymentResultParser {
         val saleToPoi = runCatching {
             json.parseToJsonElement(responseJson).jsonObject["SaleToPOIResponse"]?.jsonObject
         }.getOrNull() ?: return null
+        val serviceId = saleToPoi["MessageHeader"]?.jsonObject?.string("ServiceID")
         val responseKey = saleToPoi.keys.firstOrNull { it.endsWith("Response") && it != "MessageHeader" } ?: return null
         val terminalResponse = saleToPoi[responseKey]?.jsonObject ?: return null
 
@@ -142,18 +168,33 @@ object PaymentResultParser {
                 pspReference = pspReference,
                 rawResult = result,
                 responseJson = responseJson,
+                serviceId = serviceId,
             )
             "failure" -> {
                 val reason = listOfNotNull(errorCondition, refusalReason ?: additionalResponse).joinToString(" | ").ifBlank { null }
                 if (errorCondition.equals("Refusal", ignoreCase = true) || errorCondition.equals("Refused", ignoreCase = true)) {
-                    PaymentResult.Refused(reason, responseJson)
+                    PaymentResult.Refused(reason, responseJson, serviceId)
                 } else {
-                    PaymentResult.Failure(reason ?: "Terminal API payment failed.", responseJson)
+                    PaymentResult.Failure(reason ?: "Terminal API payment failed.", responseJson, serviceId)
                 }
             }
-            null -> PaymentResult.Failure("Terminal API response did not include Response.Result.", responseJson)
-            else -> PaymentResult.Failure("Terminal API returned $result.", responseJson)
+            null -> PaymentResult.Failure("Terminal API response did not include Response.Result.", responseJson, serviceId)
+            else -> PaymentResult.Failure("Terminal API returned $result.", responseJson, serviceId)
         }
+    }
+
+    private fun parseBoardingReturnData(encoded: String): BoardingReturnData? {
+        val decoded = decodeBase64(encoded) ?: return null
+        val root = runCatching { json.parseToJsonElement(decoded).jsonObject }.getOrNull() ?: return null
+        return BoardingReturnData(
+            boarded = root.boolean("boarded"),
+            installationId = root.string("installationId"),
+            date = root.string("date"),
+            reboarding = root.boolean("reboarding"),
+            boardingRequestToken = root.string("boardingRequestToken"),
+            merchantAccountCode = root.string("merchantAccountCode"),
+            merchantStoreCode = root.string("merchantStoreCode"),
+        )
     }
 
     private fun decodeBase64(value: String): String? {
@@ -183,8 +224,29 @@ object PaymentResultParser {
     private fun JsonObject.string(name: String): String? =
         get(name)?.stringOrNull()
 
+    private fun JsonObject.boolean(name: String): Boolean? =
+        runCatching {
+            val primitive = get(name)?.jsonPrimitive ?: return@runCatching null
+            primitive.booleanOrNull ?: primitive.contentOrNull?.toBooleanStrictOrNull()
+        }.getOrNull()
+
     private fun JsonElement.stringOrNull(): String? =
-        runCatching { jsonPrimitive.content }.getOrNull()
+        runCatching { jsonPrimitive.contentOrNull }.getOrNull()
 
     private val json = Json { ignoreUnknownKeys = true }
+}
+
+fun adyenAppLinkAdvice(error: String?): String? = when {
+    error.isNullOrBlank() -> null
+    error.contains("03_013") || error.contains("03_014") ->
+        "Nexo request security validation failed. Check Terminal API encryption, key version, key identifier, and required request fields."
+    error.contains("03_015") ->
+        "The Payments app could not decrypt the request. Recheck the terminal shared key and profile environment."
+    error.contains("03_010") ->
+        "The Payments app is missing the installation token. Check boarding status before charging."
+    error.contains("03_006") || error.contains("03_007") || error.contains("03_008") ->
+        "The Payments app could not resolve the requested App Link configuration. Check the environment and path."
+    error.contains("03_012") ->
+        "The Payments app could not verify the request. Restart the boarding flow."
+    else -> null
 }

@@ -38,6 +38,18 @@ class AndroidProfileStore(context: Context) : ProfileStore {
         prefs.edit().putString(KEY_ACTIVE, profileId).apply()
     }
 
+    override fun remove(profileId: String) {
+        val remaining = profiles().filterNot { it.id == profileId }
+        prefs.edit()
+            .putString(KEY_PROFILES, json.encodeToString(ListSerializer(AdyenProfile.serializer()), remaining))
+            .apply {
+                if (activeProfileId() == profileId) {
+                    remaining.firstOrNull()?.let { putString(KEY_ACTIVE, it.id) } ?: remove(KEY_ACTIVE)
+                }
+            }
+            .apply()
+    }
+
     companion object {
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ACTIVE = "active"

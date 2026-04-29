@@ -36,6 +36,24 @@ class ProfileQrParserTest {
         assertTrue(result.isFailure)
     }
 
+    @Test
+    fun rejectsOversizedCredentialPayloads() {
+        val result = parser.parse("x".repeat(9_000))
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("too large") == true)
+    }
+
+    @Test
+    fun rejectsOversizedSecretFields() {
+        val payload = validPayload().replace("AQE-demo", "a".repeat(600))
+
+        val result = parser.parse(payload)
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("apiKey is too long") == true)
+    }
+
     private fun validPayload(): String = """
         {
           "schema": "taptoplay.adyen.profile.v1",

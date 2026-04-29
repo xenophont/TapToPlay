@@ -7,6 +7,8 @@ import kotlinx.serialization.json.jsonPrimitive
 
 data class TerminalApiRequestInsight(
     val messageCategory: String?,
+    val serviceId: String?,
+    val saleTransactionId: String?,
     val saleToAcquirerDataBase64: String?,
     val saleToAcquirerDataJson: String?,
 )
@@ -29,6 +31,22 @@ object TerminalApiRequestInspector {
             ?.get("MessageCategory")
             ?.jsonPrimitive
             ?.content
+        val serviceId = saleToPoi
+            ?.get("MessageHeader")
+            ?.jsonObject
+            ?.get("ServiceID")
+            ?.jsonPrimitive
+            ?.content
+        val saleTransactionId = saleToPoi
+            ?.get("PaymentRequest")
+            ?.jsonObject
+            ?.get("SaleData")
+            ?.jsonObject
+            ?.get("SaleTransactionID")
+            ?.jsonObject
+            ?.get("TransactionID")
+            ?.jsonPrimitive
+            ?.content
         val saleToAcquirerData = saleToPoi
             ?.get("PaymentRequest")
             ?.jsonObject
@@ -42,6 +60,8 @@ object TerminalApiRequestInspector {
             ?.let { json.encodeToString(JsonObject.serializer(), it) }
         return TerminalApiRequestInsight(
             messageCategory = category,
+            serviceId = serviceId,
+            saleTransactionId = saleTransactionId,
             saleToAcquirerDataBase64 = saleToAcquirerData,
             saleToAcquirerDataJson = decoded,
         )

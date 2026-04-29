@@ -56,6 +56,7 @@ class SaleToAcquirerDataQrParser(
     },
 ) {
     fun parse(payload: String): Result<SaleToAcquirerDataConfig> = runCatching {
+        require(payload.length <= MAX_PAYLOAD_CHARS) { "SaleToAcquirerData QR payload is too large" }
         val root = json.parseToJsonElement(payload).jsonObject
         val schema = root["schema"]?.jsonPrimitive?.content
         val data = (root["saleToAcquirerData"] ?: root["properties"])?.jsonObject ?: root
@@ -74,12 +75,20 @@ class SaleToAcquirerDataQrParser(
     private fun validate(config: SaleToAcquirerDataConfig) {
         require(config.schema == SaleToAcquirerDataConfig.SCHEMA) { "Unsupported schema: ${config.schema}" }
         require(config.displayName.isNotBlank()) { "displayName is required" }
+        require(config.displayName.length <= MAX_DISPLAY_NAME_CHARS) { "displayName is too long" }
         require(config.data.isNotEmpty()) { "saleToAcquirerData must contain at least one entry" }
+        require(config.fieldCount <= MAX_FIELD_COUNT) { "saleToAcquirerData contains too many fields" }
     }
 
     private fun JsonObject.withoutTapToPlayWrapperKeys(): JsonObject = JsonObject(
         filterKeys { it !in setOf("schema", "displayName", "saleToAcquirerData", "properties") },
     )
+
+    private companion object {
+        const val MAX_PAYLOAD_CHARS = 12_288
+        const val MAX_DISPLAY_NAME_CHARS = 80
+        const val MAX_FIELD_COUNT = 80
+    }
 }
 
 object SaleToAcquirerDataEncoder {

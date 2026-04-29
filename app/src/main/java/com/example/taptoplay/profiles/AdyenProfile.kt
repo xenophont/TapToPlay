@@ -43,3 +43,6 @@ fun String.mask(): String = when {
     length <= 8 -> "****"
     else -> take(4) + "..." + takeLast(4)
 }
+
+fun AdyenProfile.requiresLivePaymentConfirmation(): Boolean =
+    environment == PaymentEnvironment.LIVE

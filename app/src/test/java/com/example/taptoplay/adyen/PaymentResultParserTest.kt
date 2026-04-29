@@ -43,14 +43,16 @@ class PaymentResultParserTest {
     fun parsesApprovedPayment() {
         val result = PaymentResultParser.parse("taptoplay://adyen-return?result=success&pspReference=psp-1")
 
-        assertEquals(PaymentResult.Success("psp-1", "success"), result)
+        assertTrue(result is PaymentResult.Failure)
+        assertTrue((result as PaymentResult.Failure).message.contains("short result 'success'"))
     }
 
     @Test
     fun parsesRefusedPayment() {
         val result = PaymentResultParser.parse("taptoplay://adyen-return?result=refused&reason=Not%20enough%20funds")
 
-        assertEquals(PaymentResult.Refused("Not enough funds"), result)
+        assertTrue(result is PaymentResult.Failure)
+        assertTrue((result as PaymentResult.Failure).message.contains("full Terminal API payloads"))
     }
 
     @Test
@@ -58,6 +60,9 @@ class PaymentResultParserTest {
         val responseJson = """
             {
               "SaleToPOIResponse": {
+                "MessageHeader": {
+                  "ServiceID": "svc-123"
+                },
                 "PaymentResponse": {
                   "Response": {
                     "Result": "Success",
@@ -77,7 +82,7 @@ class PaymentResultParserTest {
             .encodeToString(responseJson.toByteArray(Charsets.UTF_8))
         val result = PaymentResultParser.parse("taptoplay://adyen-return?response=${encoded.urlEncode()}")
 
-        assertEquals(PaymentResult.Success("PSP123", "Success", responseJson), result)
+        assertEquals(PaymentResult.Success("PSP123", "Success", responseJson, "svc-123"), result)
     }
 
     @Test
@@ -106,6 +111,33 @@ class PaymentResultParserTest {
         val result = PaymentResultParser.parse("taptoplay://adyen-return")
 
         assertTrue(result is PaymentResult.Failure)
+    }
+
+    @Test
+    fun decodesBoardingReturnData() {
+        val data = Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(
+                """
+                    {
+                      "boarded": true,
+                      "installationId": "install-1",
+                      "date": "2026-04-29T12:00:00Z",
+                      "reboarding": true,
+                      "boardingRequestToken": "req",
+                      "merchantAccountCode": "merchant",
+                      "merchantStoreCode": "store"
+                    }
+                """.trimIndent().toByteArray(Charsets.UTF_8),
+            )
+
+        val result = PaymentResultParser.parse("taptoplay://adyen-return?boarded=true&installationId=install-1&data=${data.urlEncode()}")
+
+        assertTrue(result is PaymentResult.BoardingStatus)
+        val boarding = result as PaymentResult.BoardingStatus
+        assertEquals("merchant", boarding.returnData?.merchantAccountCode)
+        assertEquals("store", boarding.returnData?.merchantStoreCode)
+        assertEquals(true, boarding.returnData?.reboarding)
     }
 
     private fun String.urlEncode(): String = URLEncoder.encode(this, Charsets.UTF_8.name())

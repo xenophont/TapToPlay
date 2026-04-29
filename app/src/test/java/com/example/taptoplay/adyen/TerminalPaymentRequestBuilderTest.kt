@@ -5,7 +5,9 @@ import com.example.taptoplay.cart.CartLine
 import com.example.taptoplay.catalog.Product
 import com.example.taptoplay.profiles.AdyenProfile
 import com.example.taptoplay.profiles.PaymentEnvironment
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.double
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -14,6 +16,30 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class TerminalPaymentRequestBuilderTest {
+    @Test
+    fun structuredPaymentRequestRecordsServiceAndSaleTransactionIds() {
+        val request = TerminalPaymentRequestBuilder.buildDemoPaymentRequest(
+            profile = profile(),
+            installationId = "install-1",
+            lines = listOf(CartLine(product(), 1)),
+            totalMinor = 12900,
+        )
+
+        val insight = TerminalApiRequestInspector.inspect(request.json)
+        val saleToPoi = Json.parseToJsonElement(request.json).jsonObject["SaleToPOIRequest"]!!.jsonObject
+        val amount = saleToPoi["PaymentRequest"]!!
+            .jsonObject["PaymentTransaction"]!!
+            .jsonObject["AmountsReq"]!!
+            .jsonObject["RequestedAmount"]!!
+            .jsonPrimitive
+            .double
+
+        assertEquals("Payment", request.messageCategory)
+        assertEquals(request.serviceId, insight.serviceId)
+        assertEquals(request.saleTransactionId, insight.saleTransactionId)
+        assertEquals(129.0, amount, 0.0)
+    }
+
     @Test
     fun embedsBase64JsonSaleToAcquirerData() {
         val request = TerminalPaymentRequestBuilder.buildDemoRequest(

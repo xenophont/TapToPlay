@@ -18,6 +18,27 @@ class ProfileSelectionTest {
         assertEquals(liveProfile.id, store.activeProfileId())
     }
 
+    @Test
+    fun removingActiveProfileSelectsNextAvailableProfile() {
+        val store = MemoryProfileStore()
+        val testProfile = profile("Test", PaymentEnvironment.TEST)
+        val liveProfile = profile("Live", PaymentEnvironment.LIVE)
+
+        store.save(testProfile)
+        store.save(liveProfile)
+        store.setActive(testProfile.id)
+        store.remove(testProfile.id)
+
+        assertEquals(liveProfile.id, store.activeProfileId())
+        assertEquals(listOf(liveProfile), store.profiles())
+    }
+
+    @Test
+    fun onlyLiveProfilesRequireChargeConfirmation() {
+        assertEquals(false, profile("Test", PaymentEnvironment.TEST).requiresLivePaymentConfirmation())
+        assertEquals(true, profile("Live", PaymentEnvironment.LIVE).requiresLivePaymentConfirmation())
+    }
+
     private fun profile(name: String, environment: PaymentEnvironment) = AdyenProfile(
         displayName = name,
         environment = environment,
@@ -46,5 +67,10 @@ private class MemoryProfileStore : ProfileStore {
     override fun setActive(profileId: String) {
         require(profiles.any { it.id == profileId })
         active = profileId
+    }
+
+    override fun remove(profileId: String) {
+        profiles.removeAll { it.id == profileId }
+        if (active == profileId) active = profiles.firstOrNull()?.id
     }
 }

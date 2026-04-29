@@ -21,6 +21,9 @@ data class TransactionRecord(
     val itemCount: Int,
     val saleToAcquirerDataName: String,
     val requestJson: String,
+    val serviceId: String? = null,
+    val saleTransactionId: String? = null,
+    val messageCategory: String? = null,
     val profileId: String? = null,
     val installationId: String? = null,
     val adyenTransactionId: String? = null,
@@ -49,6 +52,13 @@ fun PaymentResult.toTransactionSummary(): String = when (this) {
 fun PaymentResult.transactionIdOrNull(): String? = when (this) {
     is PaymentResult.Success -> pspReference
     else -> null
+}
+
+fun PaymentResult.serviceIdOrNull(): String? = when (this) {
+    is PaymentResult.Success -> serviceId
+    is PaymentResult.Refused -> serviceId
+    is PaymentResult.Failure -> serviceId
+    is PaymentResult.BoardingStatus -> null
 }
 
 fun PaymentResult.failureReasonOrNull(): String? = when (this) {

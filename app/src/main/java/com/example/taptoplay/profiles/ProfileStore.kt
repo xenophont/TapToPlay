@@ -5,4 +5,5 @@ interface ProfileStore {
     fun activeProfileId(): String?
     fun save(profile: AdyenProfile)
     fun setActive(profileId: String)
+    fun remove(profileId: String)
 }

@@ -17,6 +17,20 @@ fun localProperty(name: String): String = localProperties.getProperty(name, "")
 fun quotedBuildConfig(name: String): String =
     "\"${localProperty(name).replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
+val adyenBuildConfigKeys = listOf(
+    "ADYEN_ENVIRONMENT",
+    "ADYEN_PROFILE_NAME",
+    "ADYEN_MERCHANT_ID",
+    "ADYEN_STORE_ID",
+    "ADYEN_API_KEY",
+    "ADYEN_CLIENT_KEY",
+    "ADYEN_TERMINAL_KEY_IDENTIFIER",
+    "ADYEN_TERMINAL_KEY_VERSION",
+    "ADYEN_TERMINAL_PASSPHRASE",
+    "ADYEN_CURRENCY",
+    "ADYEN_COUNTRY_CODE",
+)
+
 android {
     namespace = "com.example.taptoplay"
     compileSdk {
@@ -33,21 +47,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "ADYEN_ENVIRONMENT", quotedBuildConfig("ADYEN_ENVIRONMENT"))
-        buildConfigField("String", "ADYEN_PROFILE_NAME", quotedBuildConfig("ADYEN_PROFILE_NAME"))
-        buildConfigField("String", "ADYEN_MERCHANT_ID", quotedBuildConfig("ADYEN_MERCHANT_ID"))
-        buildConfigField("String", "ADYEN_STORE_ID", quotedBuildConfig("ADYEN_STORE_ID"))
-        buildConfigField("String", "ADYEN_API_KEY", quotedBuildConfig("ADYEN_API_KEY"))
-        buildConfigField("String", "ADYEN_CLIENT_KEY", quotedBuildConfig("ADYEN_CLIENT_KEY"))
-        buildConfigField("String", "ADYEN_TERMINAL_KEY_IDENTIFIER", quotedBuildConfig("ADYEN_TERMINAL_KEY_IDENTIFIER"))
-        buildConfigField("String", "ADYEN_TERMINAL_KEY_VERSION", quotedBuildConfig("ADYEN_TERMINAL_KEY_VERSION"))
-        buildConfigField("String", "ADYEN_TERMINAL_PASSPHRASE", quotedBuildConfig("ADYEN_TERMINAL_PASSPHRASE"))
-        buildConfigField("String", "ADYEN_CURRENCY", quotedBuildConfig("ADYEN_CURRENCY"))
-        buildConfigField("String", "ADYEN_COUNTRY_CODE", quotedBuildConfig("ADYEN_COUNTRY_CODE"))
     }
 
     buildTypes {
+        debug {
+            adyenBuildConfigKeys.forEach { key ->
+                buildConfigField("String", key, quotedBuildConfig(key))
+            }
+        }
         release {
+            adyenBuildConfigKeys.forEach { key ->
+                buildConfigField("String", key, "\"\"")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
