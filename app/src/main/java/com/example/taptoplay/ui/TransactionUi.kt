@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.taptoplay.adyen.PaymentReceipt
 import com.example.taptoplay.adyen.PaymentResult
@@ -50,6 +51,7 @@ import com.example.taptoplay.adyen.TerminalApiResponseInsight
 import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TransactionRecord
 import com.example.taptoplay.adyen.TransactionStatus
+import com.example.taptoplay.adyen.pspReferenceOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -105,6 +107,7 @@ internal fun TransactionHistoryPanel(
 @Composable
 private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
     val strings = LocalTapToPlayStrings.current
+    val pspReference = remember(record.pspReference, record.responseBody) { record.pspReferenceOrNull() }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -133,7 +136,23 @@ private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
                     )
                 }
             }
-            TextButton(onClick = onInspect) { Text(strings["inspect"]) }
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                pspReference?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.widthIn(max = 112.dp),
+                    )
+                }
+                TextButton(onClick = onInspect) { Text(strings["inspect"]) }
+            }
         }
     }
 }
@@ -200,6 +219,7 @@ internal fun TransactionDialog(
     val responseInsight = remember(record.responseBody) { TerminalApiResponseInspector.inspect(record.responseBody) }
     val highlights = remember(record.responseBody) { TerminalApiResponseInspector.compactSummary(record.responseBody) }
     val receipts = responseInsight?.receipts.orEmpty()
+    val pspReference = remember(record.pspReference, record.responseBody) { record.pspReferenceOrNull() }
     val canRefund = record.status == TransactionStatus.APPROVED &&
         record.refundOfTransactionId == null &&
         (record.adyenTransactionId != null || responseInsight?.transactionId != null)
@@ -219,6 +239,12 @@ internal fun TransactionDialog(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        pspReference ?: strings["not_supplied"],
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
@@ -579,7 +605,7 @@ private fun RequestSummary(record: TransactionRecord) {
             KeyValueLine(strings["items"], record.itemCount.toString())
             record.messageCategory?.let { KeyValueLine(strings["message_category"], it) }
             record.serviceId?.let { KeyValueLine(strings["service_id"], it) }
-            record.saleTransactionId?.let { KeyValueLine(strings["sale_transaction"], it) }
+            record.saleTransactionId?.let { KeyValueLine(strings["merchant_reference"], it) }
             record.adyenTransactionId?.let { KeyValueLine(strings["adyen_transaction"], it) }
             record.refundOfTransactionId?.let { KeyValueLine(strings["refund_of"], it) }
         }

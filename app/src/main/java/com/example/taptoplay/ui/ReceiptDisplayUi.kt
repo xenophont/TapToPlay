@@ -2,6 +2,7 @@ package com.example.taptoplay.ui
 
 import com.example.taptoplay.adyen.PaymentReceipt
 import com.example.taptoplay.adyen.ReceiptLine
+import java.net.URLDecoder
 import java.util.Locale
 
 internal data class ReceiptDisplay(
@@ -42,6 +43,12 @@ internal enum class ReceiptRowEmphasis {
     Secondary,
     Technical,
 }
+
+private data class ReceiptEntry(
+    val key: String,
+    val value: String,
+    val label: String? = null,
+)
 
 internal fun PaymentReceipt.toReceiptDisplay(strings: TapToPlayStrings): ReceiptDisplay {
     val items = displayLines()
@@ -95,14 +102,14 @@ private fun ReceiptLine.toReceiptDisplayItem(strings: TapToPlayStrings): Receipt
             bold = characterStyle?.contains("bold", ignoreCase = true) == true,
         )
     }
-    val (rawKey, rawValue) = entry
+    val (rawKey, rawValue, rawLabel) = entry
     val key = rawKey.canonicalReceiptKey()
     val value = rawValue.trim()
     return when {
-        key.startsWith("header") -> ReceiptDisplayItem.TextLine(
+        key.startsWith("header") || key in receiptTitleKeys -> ReceiptDisplayItem.TextLine(
             text = value,
             alignment = ReceiptTextAlignment.Center,
-            bold = key == "header1",
+            bold = key == "header1" || key in receiptTitleKeys,
         )
         key == "cardholderheader" -> ReceiptDisplayItem.TextLine(
             text = value.uppercase(strings.locale),
@@ -118,20 +125,60 @@ private fun ReceiptLine.toReceiptDisplayItem(strings: TapToPlayStrings): Receipt
         key in receiptSignatureKeys -> ReceiptDisplayItem.SignatureLine(strings.receiptDisplayLabel(rawKey))
         key == "qrcode" -> ReceiptDisplayItem.QrCode(value)
         else -> ReceiptDisplayItem.Row(
-            label = strings.receiptDisplayLabel(rawKey),
+            label = rawLabel?.takeIf { it.isNotBlank() } ?: strings.receiptDisplayLabel(rawKey),
             value = value,
             emphasis = key.receiptRowEmphasis(),
         )
     }
 }
 
-private fun String.receiptEntry(): Pair<String, String>? {
+private fun String.receiptEntry(): ReceiptEntry? {
+    val fields = parseReceiptFields()
+    val hasStructuredReceiptKeys = fields.keys.any { it.equals("key", ignoreCase = true) } ||
+        fields.keys.any { it.equals("name", ignoreCase = true) } ||
+        fields.keys.any { it.equals("value", ignoreCase = true) }
+    return if (hasStructuredReceiptKeys) {
+        fields.structuredReceiptEntry()
+    } else {
+        simpleReceiptEntry()
+    }
+}
+
+private fun Map<String, String>.structuredReceiptEntry(): ReceiptEntry? {
+    val rawKey = valueFor("key") ?: return null
+    val rawName = valueFor("name")
+    val rawValue = valueFor("value")
+    if (rawKey.canonicalReceiptKey() == "filler") return ReceiptEntry(rawKey, "")
+    val value = rawValue?.takeIf { it.isNotBlank() }
+        ?: rawName?.takeIf { it.isNotBlank() }
+        ?: return null
+    val label = rawName?.takeIf { rawValue?.isNotBlank() == true }
+    return ReceiptEntry(rawKey, value, label)
+}
+
+private fun String.simpleReceiptEntry(): ReceiptEntry? {
     val separator = receiptSeparators.firstOrNull { contains(it) } ?: return null
     val parts = split(separator, limit = 2)
     val key = parts.getOrNull(0)?.trim().orEmpty()
     val value = parts.getOrNull(1)?.trim().orEmpty()
-    return if (key.isBlank() || value.isBlank()) null else key to value
+    return if (key.isBlank() || value.isBlank()) null else ReceiptEntry(key, value)
 }
+
+private fun String.parseReceiptFields(): Map<String, String> =
+    split("&")
+        .mapNotNull { field ->
+            val parts = field.split("=", limit = 2)
+            val key = parts.getOrNull(0)?.trim()?.urlDecodeOrSelf().orEmpty()
+            val value = parts.getOrNull(1)?.trim()?.urlDecodeOrSelf().orEmpty()
+            if (key.isBlank() || parts.size < 2) null else key to value
+        }
+        .toMap()
+
+private fun Map<String, String>.valueFor(name: String): String? =
+    entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
+
+private fun String.urlDecodeOrSelf(): String =
+    runCatching { URLDecoder.decode(this, Charsets.UTF_8.name()) }.getOrElse { this }
 
 private fun String?.receiptAlignment(): ReceiptTextAlignment = when {
     this == null -> ReceiptTextAlignment.Start
@@ -233,6 +280,12 @@ private val receiptStatusKeys = setOf("approved", "refused", "void")
 private val receiptFooterKeys = setOf("thanks", "retain")
 
 private val receiptSignatureKeys = setOf("sigline", "signature", "merchantsigline")
+
+private val receiptTitleKeys = setOf(
+    "merchanttitle",
+    "shoppertitle",
+    "customertitle",
+)
 
 private val receiptTechnicalKeys = setOf(
     "aac",

@@ -149,7 +149,7 @@ The Management API calls use the selected scanned/bootstrap profile API key. Mak
 
 Each payment or refund attempt is saved in the `Transactions` tab. Tap `Inspect` to review:
 
-- The structured Terminal API request, including `ServiceID`, message category, sale transaction ID, and decoded SaleToAcquirerData.
+- The structured Terminal API request, including `ServiceID`, message category, Merchant Reference, and decoded SaleToAcquirerData.
 - The decoded Terminal API response when available.
 - A readable response field view with key values at the top.
 - Decoded `AdditionalResponse` values.

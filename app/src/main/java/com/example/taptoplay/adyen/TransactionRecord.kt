@@ -26,6 +26,7 @@ data class TransactionRecord(
     val messageCategory: String? = null,
     val profileId: String? = null,
     val installationId: String? = null,
+    val pspReference: String? = null,
     val adyenTransactionId: String? = null,
     val refundOfTransactionId: String? = null,
     val status: TransactionStatus = TransactionStatus.LAUNCHED,
@@ -50,9 +51,19 @@ fun PaymentResult.toTransactionSummary(): String = when (this) {
 }
 
 fun PaymentResult.transactionIdOrNull(): String? = when (this) {
+    is PaymentResult.Success -> terminalTransactionId ?: pspReference
+    else -> null
+}
+
+fun PaymentResult.pspReferenceOrNull(): String? = when (this) {
     is PaymentResult.Success -> pspReference
     else -> null
 }
+
+fun TransactionRecord.pspReferenceOrNull(): String? =
+    pspReference
+        ?: TerminalApiResponseInspector.inspect(responseBody)
+            ?.let { TerminalApiResponseInspector.importantAdditional("pspReference", it) }
 
 fun PaymentResult.serviceIdOrNull(): String? = when (this) {
     is PaymentResult.Success -> serviceId

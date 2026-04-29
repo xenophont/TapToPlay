@@ -70,7 +70,7 @@ class PaymentResultParserTest {
                   },
                   "POIData": {
                     "POITransactionID": {
-                      "TransactionID": "PSP123"
+                      "TransactionID": "tender.PSP123"
                     }
                   }
                 }
@@ -82,7 +82,7 @@ class PaymentResultParserTest {
             .encodeToString(responseJson.toByteArray(Charsets.UTF_8))
         val result = PaymentResultParser.parse("taptoplay://adyen-return?response=${encoded.urlEncode()}")
 
-        assertEquals(PaymentResult.Success("PSP123", "Success", responseJson, "svc-123"), result)
+        assertEquals(PaymentResult.Success("PSP123", "Success", responseJson, "svc-123", "tender.PSP123"), result)
     }
 
     @Test

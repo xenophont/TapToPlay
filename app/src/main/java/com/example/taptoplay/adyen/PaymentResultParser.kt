@@ -28,6 +28,7 @@ sealed interface PaymentResult {
         val rawResult: String?,
         val responseJson: String? = null,
         val serviceId: String? = null,
+        val terminalTransactionId: String? = null,
     ) : PaymentResult
 
     data class Refused(
@@ -162,7 +163,8 @@ object PaymentResultParser {
             ?.get("POITransactionID")
             ?.jsonObject
             ?.string("TransactionID")
-        val pspReference = transactionId ?: insight?.let { TerminalApiResponseInspector.importantAdditional("pspReference", it) }
+        val pspReference = insight?.let { TerminalApiResponseInspector.importantAdditional("pspReference", it) }
+            ?: transactionId
         val refusalReason = insight?.let {
             TerminalApiResponseInspector.importantAdditional("refusalReason", it)
                 ?: TerminalApiResponseInspector.importantAdditional("refusalReasonRaw", it)
@@ -175,6 +177,7 @@ object PaymentResultParser {
                 rawResult = result,
                 responseJson = responseJson,
                 serviceId = serviceId,
+                terminalTransactionId = transactionId,
             )
             "failure" -> {
                 val reason = listOfNotNull(errorCondition, refusalReason ?: additionalResponse).joinToString(" | ").ifBlank { null }

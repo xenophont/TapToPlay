@@ -15,6 +15,18 @@ class TransactionRecordTest {
     }
 
     @Test
+    fun keepsPspReferenceSeparateFromTerminalTransactionId() {
+        val result = PaymentResult.Success(
+            pspReference = "PSP123",
+            rawResult = "Success",
+            terminalTransactionId = "tender.PSP123",
+        )
+
+        assertEquals("PSP123", result.pspReferenceOrNull())
+        assertEquals("tender.PSP123", result.transactionIdOrNull())
+    }
+
+    @Test
     fun mapsRefusedResultToFailureDetailForUser() {
         val result = PaymentResult.Refused(reason = "Not enough funds")
 
@@ -30,5 +42,31 @@ class TransactionRecordTest {
         assertEquals(TransactionStatus.FAILED, result.toTransactionStatus())
         assertEquals("Failed | Malformed response", result.toTransactionSummary())
         assertEquals("Malformed response", result.failureReasonOrNull())
+    }
+
+    @Test
+    fun extractsPspReferenceFromSavedTerminalApiResponse() {
+        val record = TransactionRecord(
+            id = "record-1",
+            createdAt = "2026-04-29T12:00:00Z",
+            amountLabel = "EUR 12.00",
+            itemCount = 1,
+            saleToAcquirerDataName = "Default",
+            requestJson = "{}",
+            responseBody = """
+                {
+                  "SaleToPOIResponse": {
+                    "PaymentResponse": {
+                      "Response": {
+                        "Result": "Success",
+                        "AdditionalResponse": "tid=123&pspReference=PSP123"
+                      }
+                    }
+                  }
+                }
+            """.trimIndent(),
+        )
+
+        assertEquals("PSP123", record.pspReferenceOrNull())
     }
 }

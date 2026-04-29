@@ -29,6 +29,7 @@ import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TerminalPaymentRequestBuilder
 import com.example.taptoplay.adyen.TransactionRecord
 import com.example.taptoplay.adyen.TransactionStatus
+import com.example.taptoplay.adyen.pspReferenceOrNull
 import com.example.taptoplay.adyen.responseJsonOrNull
 import com.example.taptoplay.adyen.serviceIdOrNull
 import com.example.taptoplay.adyen.toTransactionStatus
@@ -663,6 +664,7 @@ class MainActivity : ComponentActivity() {
                         responseBody = parsed.responseJsonOrNull(),
                         responseSummary = parsed.localizedTransactionSummary(),
                         failureReason = parsed.localizedFailureReasonOrNull(),
+                        pspReference = parsed.pspReferenceOrNull() ?: record.pspReference,
                         adyenTransactionId = parsed.transactionIdOrNull() ?: record.adyenTransactionId,
                     )
                 }
