@@ -55,6 +55,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -66,6 +67,8 @@ import com.example.taptoplay.adyen.BoardingApiClient
 import com.example.taptoplay.adyen.NexoCrypto
 import com.example.taptoplay.adyen.PaymentResult
 import com.example.taptoplay.adyen.PaymentResultParser
+import com.example.taptoplay.adyen.PaymentReceipt
+import com.example.taptoplay.adyen.ReceiptLine
 import com.example.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.example.taptoplay.adyen.SaleToAcquirerDataEditor
 import com.example.taptoplay.adyen.SaleToAcquirerDataFavoriteStore
@@ -119,6 +122,7 @@ class MainActivity : ComponentActivity() {
     private var profilesState by mutableStateOf(emptyList<AdyenProfile>())
     private var activeProfileIdState by mutableStateOf<String?>(null)
     private var paymentResultState by mutableStateOf<PaymentResult?>(null)
+    private var paymentResultIsRefundState by mutableStateOf(false)
     private var statusState by mutableStateOf("Ready for boutique checkout")
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
@@ -179,6 +183,7 @@ class MainActivity : ComponentActivity() {
                     transactionHistory = transactionHistoryState,
                     status = statusState,
                     paymentResult = paymentResultState,
+                    paymentResultIsRefund = paymentResultIsRefundState,
                     onDismissResult = { paymentResultState = null },
                     onScanProfile = { scanQr() },
                     onScanSaleToAcquirerData = { scanSaleToAcquirerDataQr() },
@@ -378,8 +383,9 @@ class MainActivity : ComponentActivity() {
         val rawUri = intent?.data?.toString()
         val activeProfile = profilesState.firstOrNull { it.id == activeProfileIdState }
         val parsed = PaymentResultParser.parse(rawUri ?: return, activeProfile, nexoCrypto) ?: return
-        paymentResultState = parsed
         if (parsed is PaymentResult.BoardingStatus) {
+            paymentResultIsRefundState = false
+            paymentResultState = parsed
             val activeProfileId = activeProfile?.id
             parsed.installationId?.let { installationId ->
                 installationIdState = installationId
@@ -397,6 +403,9 @@ class MainActivity : ComponentActivity() {
             }
         } else {
             val transactionId = pendingTransactionIdState ?: transactionHistoryState.firstOrNull { it.status == TransactionStatus.LAUNCHED }?.id
+            val transactionRecord = transactionId?.let { id -> transactionHistoryState.firstOrNull { it.id == id } }
+            paymentResultIsRefundState = transactionRecord?.refundOfTransactionId != null
+            paymentResultState = parsed
             if (transactionId != null) {
                 transactionStore.update(transactionId) { record ->
                     record.copy(
@@ -430,6 +439,7 @@ private fun TapToPlayApp(
     transactionHistory: List<TransactionRecord>,
     status: String,
     paymentResult: PaymentResult?,
+    paymentResultIsRefund: Boolean,
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
@@ -555,7 +565,7 @@ private fun TapToPlayApp(
     }
 
     paymentResult?.let {
-        PaymentResultDialog(result = it, onDismiss = onDismissResult)
+        PaymentResultDialog(result = it, isRefund = paymentResultIsRefund, onDismiss = onDismissResult)
     }
 
     if (showSaleToAcquirerData) {
@@ -998,10 +1008,10 @@ private fun TransactionStatusChip(status: TransactionStatus) {
 }
 
 @Composable
-private fun PaymentResultDialog(result: PaymentResult, onDismiss: () -> Unit) {
+private fun PaymentResultDialog(result: PaymentResult, isRefund: Boolean, onDismiss: () -> Unit) {
     val title = when (result) {
         is PaymentResult.BoardingStatus -> "Boarding returned"
-        is PaymentResult.Success -> "Payment approved"
+        is PaymentResult.Success -> if (isRefund) "Refund approved" else "Payment approved"
         is PaymentResult.Refused -> "Payment refused"
         is PaymentResult.Failure -> "Adyen result"
     }
@@ -1032,6 +1042,7 @@ private fun TransactionDialog(
     val requestInsight = remember(record.requestJson) { TerminalApiRequestInspector.inspect(record.requestJson) }
     val responseInsight = remember(record.responseBody) { TerminalApiResponseInspector.inspect(record.responseBody) }
     val highlights = remember(record.responseBody) { TerminalApiResponseInspector.compactSummary(record.responseBody) }
+    val receipts = responseInsight?.receipts.orEmpty()
     val canRefund = record.status == TransactionStatus.APPROVED &&
         record.refundOfTransactionId == null &&
         (record.adyenTransactionId != null || responseInsight?.transactionId != null)
@@ -1075,6 +1086,12 @@ private fun TransactionDialog(
                         onClick = { selectedSection = "Response" },
                         label = { Text("Response") },
                     )
+                    FilterChip(
+                        selected = selectedSection == "Receipt",
+                        onClick = { selectedSection = "Receipt" },
+                        enabled = receipts.isNotEmpty(),
+                        label = { Text("Receipt") },
+                    )
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                     item { TransactionStatusChip(record.status) }
@@ -1091,7 +1108,7 @@ private fun TransactionDialog(
                             }
                             item { MonospaceBlock(record.requestJson) }
                         }
-                        else -> {
+                        "Response" -> {
                             if (highlights.isNotEmpty()) {
                                 item {
                                     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -1141,11 +1158,105 @@ private fun TransactionDialog(
                                 item { MonospaceBlock(response) }
                             }
                         }
+                        "Receipt" -> {
+                            if (receipts.isEmpty()) {
+                                item {
+                                    Text(
+                                        "No PaymentReceipt data was returned for this transaction.",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            } else {
+                                items(receipts) { receipt ->
+                                    DigitalReceiptCard(receipt)
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun DigitalReceiptCard(receipt: PaymentReceipt) {
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(receipt.documentQualifier.receiptTitle(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Adyen-generated receipt data",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (receipt.requiredSignature) {
+                    AssistChip(onClick = {}, label = { Text("Signature") })
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                receipt.displayLines().forEach { line ->
+                    Text(
+                        text = line.text.ifEmpty { " " },
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = line.alignment.receiptTextAlign(),
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (line.characterStyle?.contains("Bold", ignoreCase = true) == true) {
+                            FontWeight.Bold
+                        } else {
+                            FontWeight.Normal
+                        },
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun PaymentReceipt.displayLines(): List<ReceiptLine> {
+    val rendered = mutableListOf<ReceiptLine>()
+    var pending: ReceiptLine? = null
+    lines.forEach { line ->
+        val current = pending
+        if (current == null) {
+            pending = line
+        } else {
+            pending = current.copy(text = current.text + line.text)
+        }
+        if (line.endOfLine) {
+            pending?.let(rendered::add)
+            pending = null
+        }
+    }
+    pending?.let(rendered::add)
+    return rendered
+}
+
+private fun String.receiptTitle(): String = when (this) {
+    "CustomerReceipt", "SaleReceipt" -> "Customer receipt"
+    "CashierReceipt" -> "Merchant receipt"
+    else -> this
+}
+
+private fun String?.receiptTextAlign(): TextAlign = when {
+    equals("Centred", ignoreCase = true) || equals("Center", ignoreCase = true) -> TextAlign.Center
+    equals("Right", ignoreCase = true) -> TextAlign.Right
+    else -> TextAlign.Left
 }
 
 @Composable

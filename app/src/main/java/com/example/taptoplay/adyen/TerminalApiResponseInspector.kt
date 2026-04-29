@@ -4,8 +4,10 @@ import java.net.URLDecoder
 import java.util.Base64
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -18,6 +20,7 @@ data class TerminalApiResponseInsight(
     val additionalResponseRaw: String?,
     val additionalResponseDecoded: JsonElement?,
     val additionalResponseFields: List<AdditionalResponseField>,
+    val receipts: List<PaymentReceipt>,
     val root: JsonObject,
 )
 
@@ -25,6 +28,19 @@ data class AdditionalResponseField(
     val name: String,
     val value: String,
     val decodedValue: String? = null,
+)
+
+data class PaymentReceipt(
+    val documentQualifier: String,
+    val requiredSignature: Boolean,
+    val lines: List<ReceiptLine>,
+)
+
+data class ReceiptLine(
+    val text: String,
+    val alignment: String?,
+    val characterStyle: String?,
+    val endOfLine: Boolean,
 )
 
 object TerminalApiResponseInspector {
@@ -43,6 +59,7 @@ object TerminalApiResponseInspector {
         val additionalResponse = response?.string("AdditionalResponse")
         val decodedAdditional = additionalResponse?.let(::decodeJson)
         val fields = additionalResponseFields(additionalResponse, decodedAdditional)
+        val receipts = paymentReceipts(body)
         val transactionId = body["POIData"]
             ?.jsonObject
             ?.get("POITransactionID")
@@ -57,6 +74,7 @@ object TerminalApiResponseInspector {
             additionalResponseRaw = additionalResponse,
             additionalResponseDecoded = decodedAdditional,
             additionalResponseFields = fields,
+            receipts = receipts,
             root = root,
         )
     }
@@ -113,6 +131,42 @@ object TerminalApiResponseInspector {
             }
     }
 
+    private fun paymentReceipts(body: JsonObject): List<PaymentReceipt> {
+        val receiptElement = body["PaymentReceipt"] ?: return emptyList()
+        val receiptObjects = when (receiptElement) {
+            is JsonArray -> receiptElement.mapNotNull { it as? JsonObject }
+            is JsonObject -> listOf(receiptElement)
+            else -> emptyList()
+        }
+        return receiptObjects.mapNotNull { receipt ->
+            val outputContent = receipt["OutputContent"] as? JsonObject
+            val outputText = outputContent?.get("OutputText")
+            val lineObjects = when (outputText) {
+                is JsonArray -> outputText.mapNotNull { it as? JsonObject }
+                is JsonObject -> listOf(outputText)
+                else -> emptyList()
+            }
+            val lines = lineObjects.mapNotNull { line ->
+                val text = line.string("Text")?.urlDecodeOrSelf() ?: return@mapNotNull null
+                ReceiptLine(
+                    text = text,
+                    alignment = line.string("Alignment"),
+                    characterStyle = line.string("CharacterStyle"),
+                    endOfLine = line.boolean("EndOfLineFlag") ?: true,
+                )
+            }
+            if (lines.isEmpty()) {
+                null
+            } else {
+                PaymentReceipt(
+                    documentQualifier = receipt.string("DocumentQualifier") ?: "Receipt",
+                    requiredSignature = receipt.boolean("RequiredSignatureFlag") ?: false,
+                    lines = lines,
+                )
+            }
+        }
+    }
+
     private fun decodeJson(value: String): JsonElement? {
         val decoded = decodePrintable(value) ?: return null
         return runCatching { json.parseToJsonElement(decoded) }.getOrNull()
@@ -160,5 +214,11 @@ object TerminalApiResponseInspector {
     private fun JsonObject.string(name: String): String? =
         get(name)?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }
 
+    private fun JsonObject.boolean(name: String): Boolean? =
+        get(name)?.let { runCatching { it.jsonPrimitive.booleanOrNull }.getOrNull() }
+
     private fun String.urlDecode(): String = URLDecoder.decode(this, Charsets.UTF_8.name())
+
+    private fun String.urlDecodeOrSelf(): String =
+        runCatching { urlDecode() }.getOrElse { this }
 }

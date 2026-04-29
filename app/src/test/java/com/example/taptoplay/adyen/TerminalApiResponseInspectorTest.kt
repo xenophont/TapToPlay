@@ -33,14 +33,55 @@ class TerminalApiResponseInspectorTest {
     }
 
     @Test
+    fun extractsPaymentReceipts() {
+        val response = paymentResponse(
+            additionalResponse = "pspReference=PSP123",
+            paymentReceipt = """
+                "PaymentReceipt": [
+                  {
+                    "DocumentQualifier": "CustomerReceipt",
+                    "OutputContent": {
+                      "OutputFormat": "Text",
+                      "OutputText": [
+                        {"Text": "TapToPlay", "Alignment": "Centred", "CharacterStyle": "Bold"},
+                        {"Text": "Total%3A+EUR+12.00"}
+                      ]
+                    }
+                  },
+                  {
+                    "DocumentQualifier": "CashierReceipt",
+                    "RequiredSignatureFlag": true,
+                    "OutputContent": {
+                      "OutputFormat": "Text",
+                      "OutputText": [
+                        {"Text": "Merchant copy"}
+                      ]
+                    }
+                  }
+                ],
+            """.trimIndent(),
+        )
+
+        val receipts = TerminalApiResponseInspector.inspect(response)!!.receipts
+
+        assertEquals(2, receipts.size)
+        assertEquals("CustomerReceipt", receipts[0].documentQualifier)
+        assertEquals("TapToPlay", receipts[0].lines[0].text)
+        assertEquals("Total: EUR 12.00", receipts[0].lines[1].text)
+        assertEquals("CashierReceipt", receipts[1].documentQualifier)
+        assertEquals(true, receipts[1].requiredSignature)
+    }
+
+    @Test
     fun ignoresMissingTerminalResponse() {
         assertNull(TerminalApiResponseInspector.inspect("""{"hello":"world"}"""))
     }
 
-    private fun paymentResponse(additionalResponse: String): String = """
+    private fun paymentResponse(additionalResponse: String, paymentReceipt: String = ""): String = """
         {
           "SaleToPOIResponse": {
             "PaymentResponse": {
+              $paymentReceipt
               "Response": {
                 "Result": "Success",
                 "AdditionalResponse": "$additionalResponse"
