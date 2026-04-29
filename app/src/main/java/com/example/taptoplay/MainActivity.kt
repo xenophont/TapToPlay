@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -1078,29 +1079,27 @@ private fun TransactionDialog(
                         TextButton(onClick = onDismiss) { Text("Close") }
                     }
                 }
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    item {
-                        FilterChip(
-                            selected = selectedSection == "Request",
-                            onClick = { selectedSection = "Request" },
-                            label = { Text("Request") },
-                        )
-                    }
-                    item {
-                        FilterChip(
-                            selected = selectedSection == "Response",
-                            onClick = { selectedSection = "Response" },
-                            label = { Text("Response") },
-                        )
-                    }
-                    item {
-                        FilterChip(
-                            selected = selectedSection == "Receipt",
-                            onClick = { selectedSection = "Receipt" },
-                            enabled = record.responseBody != null,
-                            label = { Text("Receipt") },
-                        )
-                    }
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    FilterChip(
+                        selected = selectedSection == "Request",
+                        onClick = { selectedSection = "Request" },
+                        label = { Text("Request") },
+                    )
+                    FilterChip(
+                        selected = selectedSection == "Response",
+                        onClick = { selectedSection = "Response" },
+                        label = { Text("Response") },
+                    )
+                    FilterChip(
+                        selected = selectedSection == "Receipt",
+                        onClick = { selectedSection = "Receipt" },
+                        enabled = record.responseBody != null,
+                        label = { Text("Receipt") },
+                    )
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                     item { TransactionStatusChip(record.status) }
