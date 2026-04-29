@@ -132,13 +132,15 @@ object TerminalApiResponseInspector {
     }
 
     private fun paymentReceipts(body: JsonObject): List<PaymentReceipt> {
-        val receiptElement = body["PaymentReceipt"] ?: return emptyList()
-        val receiptObjects = when (receiptElement) {
-            is JsonArray -> receiptElement.mapNotNull { it as? JsonObject }
-            is JsonObject -> listOf(receiptElement)
-            else -> emptyList()
-        }
-        return receiptObjects.mapNotNull { receipt ->
+        return body.findPaymentReceiptElements()
+            .flatMap { receiptElement ->
+                when (receiptElement) {
+                    is JsonArray -> receiptElement.mapNotNull { it as? JsonObject }
+                    is JsonObject -> listOf(receiptElement)
+                    else -> emptyList()
+                }
+            }
+            .mapNotNull { receipt ->
             val outputContent = receipt["OutputContent"] as? JsonObject
             val outputText = outputContent?.get("OutputText")
             val lineObjects = when (outputText) {
@@ -166,6 +168,18 @@ object TerminalApiResponseInspector {
             }
         }
     }
+
+    private fun JsonObject.findPaymentReceiptElements(): List<JsonElement> =
+        entries.flatMap { (key, value) ->
+            when {
+                key == "PaymentReceipt" -> listOf(value)
+                value is JsonObject -> value.findPaymentReceiptElements()
+                value is JsonArray -> value.flatMap { element ->
+                    (element as? JsonObject)?.findPaymentReceiptElements().orEmpty()
+                }
+                else -> emptyList()
+            }
+        }
 
     private fun decodeJson(value: String): JsonElement? {
         val decoded = decodePrintable(value) ?: return null

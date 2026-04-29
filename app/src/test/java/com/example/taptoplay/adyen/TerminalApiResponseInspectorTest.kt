@@ -37,28 +37,30 @@ class TerminalApiResponseInspectorTest {
         val response = paymentResponse(
             additionalResponse = "pspReference=PSP123",
             paymentReceipt = """
-                "PaymentReceipt": [
-                  {
-                    "DocumentQualifier": "CustomerReceipt",
-                    "OutputContent": {
-                      "OutputFormat": "Text",
-                      "OutputText": [
-                        {"Text": "TapToPlay", "Alignment": "Centred", "CharacterStyle": "Bold"},
-                        {"Text": "Total%3A+EUR+12.00"}
-                      ]
+                "PaymentResult": {
+                  "PaymentReceipt": [
+                    {
+                      "DocumentQualifier": "CustomerReceipt",
+                      "OutputContent": {
+                        "OutputFormat": "Text",
+                        "OutputText": [
+                          {"Text": "TapToPlay", "Alignment": "Centred", "CharacterStyle": "Bold"},
+                          {"Text": "Total%3A+EUR+12.00"}
+                        ]
+                      }
+                    },
+                    {
+                      "DocumentQualifier": "CashierReceipt",
+                      "RequiredSignatureFlag": true,
+                      "OutputContent": {
+                        "OutputFormat": "Text",
+                        "OutputText": [
+                          {"Text": "Merchant copy"}
+                        ]
+                      }
                     }
-                  },
-                  {
-                    "DocumentQualifier": "CashierReceipt",
-                    "RequiredSignatureFlag": true,
-                    "OutputContent": {
-                      "OutputFormat": "Text",
-                      "OutputText": [
-                        {"Text": "Merchant copy"}
-                      ]
-                    }
-                  }
-                ],
+                  ]
+                },
             """.trimIndent(),
         )
 

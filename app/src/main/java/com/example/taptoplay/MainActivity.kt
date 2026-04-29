@@ -402,8 +402,11 @@ class MainActivity : ComponentActivity() {
                 else -> "Adyen app is not boarded yet."
             }
         } else {
-            val transactionId = pendingTransactionIdState ?: transactionHistoryState.firstOrNull { it.status == TransactionStatus.LAUNCHED }?.id
-            val transactionRecord = transactionId?.let { id -> transactionHistoryState.firstOrNull { it.id == id } }
+            val transactionRecords = transactionStore.records()
+            val transactionId = pendingTransactionIdState ?: transactionRecords.firstOrNull {
+                it.status == TransactionStatus.LAUNCHED || it.status == TransactionStatus.REFUND_LAUNCHED
+            }?.id
+            val transactionRecord = transactionId?.let { id -> transactionRecords.firstOrNull { it.id == id } }
             paymentResultIsRefundState = transactionRecord?.refundOfTransactionId != null
             paymentResultState = parsed
             if (transactionId != null) {
@@ -1089,7 +1092,7 @@ private fun TransactionDialog(
                     FilterChip(
                         selected = selectedSection == "Receipt",
                         onClick = { selectedSection = "Receipt" },
-                        enabled = receipts.isNotEmpty(),
+                        enabled = record.responseBody != null,
                         label = { Text("Receipt") },
                     )
                 }
