@@ -107,9 +107,7 @@ Example payload:
   },
   "shopperEmail": "S.Hopper@example.com",
   "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
-  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
-  "store": "YOUR_STORE_REFERENCE",
-  "tenderOption": "ReceiptHandler,AskGratuity"
+  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION"
 }
 ```
 
@@ -289,9 +287,7 @@ Payload de ejemplo:
   },
   "shopperEmail": "S.Hopper@example.com",
   "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
-  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
-  "store": "YOUR_STORE_REFERENCE",
-  "tenderOption": "ReceiptHandler,AskGratuity"
+  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION"
 }
 ```
 

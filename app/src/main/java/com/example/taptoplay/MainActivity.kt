@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +51,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -706,6 +709,25 @@ private fun ProductCard(product: Product, onAdd: () -> Unit) {
                     .clip(RoundedCornerShape(8.dp))
                     .background(Brush.linearGradient(listOf(product.color, product.accentColor))),
             ) {
+                if (product.imageResId != 0) {
+                    Image(
+                        painter = painterResource(product.imageResId),
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    0f to Color.Transparent,
+                                    0.72f to Color.Transparent,
+                                    1f to Color.Black.copy(alpha = 0.42f),
+                                )
+                            ),
+                    )
+                }
                 Text(
                     product.category.uppercase(),
                     modifier = Modifier

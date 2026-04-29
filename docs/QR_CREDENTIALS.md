@@ -83,9 +83,7 @@ Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR code
   },
   "shopperEmail": "S.Hopper@example.com",
   "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
-  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
-  "store": "YOUR_STORE_REFERENCE",
-  "tenderOption": "ReceiptHandler,AskGratuity"
+  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION"
 }
 ```
 
@@ -185,9 +183,7 @@ Los QR de credenciales usan `taptoplay.adyen.profile.v1`. Los QR de SaleToAcquir
   },
   "shopperEmail": "S.Hopper@example.com",
   "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
-  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION",
-  "store": "YOUR_STORE_REFERENCE",
-  "tenderOption": "ReceiptHandler,AskGratuity"
+  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION"
 }
 ```
 

@@ -1,6 +1,8 @@
 package com.example.taptoplay.catalog
 
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color
+import com.example.taptoplay.R
 
 data class Product(
     val id: String,
@@ -10,6 +12,7 @@ data class Product(
     val priceMinor: Long,
     val color: Color,
     val accentColor: Color,
+    @param:DrawableRes val imageResId: Int = 0,
 )
 
 object ProductCatalog {
@@ -22,6 +25,7 @@ object ProductCatalog {
             priceMinor = 18900,
             color = Color(0xFFE6D8C9),
             accentColor = Color(0xFF38463F),
+            imageResId = R.drawable.product_linen_blazer,
         ),
         Product(
             id = "silk-shirt",
@@ -31,6 +35,7 @@ object ProductCatalog {
             priceMinor = 12900,
             color = Color(0xFFF5EFE4),
             accentColor = Color(0xFF8D4E3A),
+            imageResId = R.drawable.product_silk_shirt,
         ),
         Product(
             id = "tailored-trouser",
@@ -40,6 +45,7 @@ object ProductCatalog {
             priceMinor = 14900,
             color = Color(0xFF6D7470),
             accentColor = Color(0xFFC7A66A),
+            imageResId = R.drawable.product_tailored_trouser,
         ),
         Product(
             id = "cotton-dress",
@@ -49,6 +55,7 @@ object ProductCatalog {
             priceMinor = 16900,
             color = Color(0xFFD9E2DF),
             accentColor = Color(0xFF1E4A5A),
+            imageResId = R.drawable.product_cotton_dress,
         ),
         Product(
             id = "knit-cardigan",
@@ -58,6 +65,7 @@ object ProductCatalog {
             priceMinor = 11900,
             color = Color(0xFFB9A795),
             accentColor = Color(0xFF513D34),
+            imageResId = R.drawable.product_knit_cardigan,
         ),
         Product(
             id = "leather-tote",
@@ -67,6 +75,7 @@ object ProductCatalog {
             priceMinor = 21000,
             color = Color(0xFF9E7258),
             accentColor = Color(0xFF22211F),
+            imageResId = R.drawable.product_leather_tote,
         ),
     )
 
