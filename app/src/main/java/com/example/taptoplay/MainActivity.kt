@@ -3,6 +3,7 @@ package com.example.taptoplay
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -33,21 +35,27 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -578,166 +587,187 @@ private fun TapToPlayApp(
         selectedCategory == "All" || it.category == selectedCategory
     }
     val tabs = OpsTab.entries.toList()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var showLatestAction by remember { mutableStateOf(false) }
+    var lastToastedStatus by remember { mutableStateOf(status) }
 
-    Scaffold { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
-                .padding(horizontal = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            item {
-                Header(status = status)
-            }
-            item {
-                PrimaryTabRow(selectedTabIndex = tabs.indexOf(selectedTab)) {
-                    tabs.forEach { tab ->
-                        Tab(
-                            selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
-                            text = {
-                                Text(
-                                    tab.label,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = MaterialTheme.typography.labelLarge,
-                                )
-                            },
-                        )
+    LaunchedEffect(status, showLatestAction) {
+        if (showLatestAction) {
+            lastToastedStatus = status
+        } else if (status.isNotBlank() && status != lastToastedStatus) {
+            Toast.makeText(context, status, Toast.LENGTH_SHORT).show()
+            lastToastedStatus = status
+        }
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppNavigationDrawer(
+                tabs = tabs,
+                selectedTab = selectedTab,
+                onSelectTab = { tab ->
+                    selectedTab = tab
+                    scope.launch { drawerState.close() }
+                },
+            )
+        },
+    ) {
+        Scaffold { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(innerPadding)
+                    .padding(horizontal = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                item {
+                    CompactNavigationBar(
+                        selectedTab = selectedTab,
+                        onOpenMenu = { scope.launch { drawerState.open() } },
+                    )
+                }
+                if (showLatestAction) {
+                    item {
+                        LatestActionBanner(status = status)
                     }
                 }
-            }
-            when (selectedTab) {
-                OpsTab.Catalog -> {
-                    item {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            items(ProductCatalog.categories) { category ->
-                                FilterChip(
-                                    selected = selectedCategory == category,
-                                    onClick = { selectedCategory = category },
-                                    label = { Text(category, maxLines = 1) },
-                                )
+                when (selectedTab) {
+                    OpsTab.Catalog -> {
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                items(ProductCatalog.categories) { category ->
+                                    FilterChip(
+                                        selected = selectedCategory == category,
+                                        onClick = { selectedCategory = category },
+                                        label = { Text(category, maxLines = 1) },
+                                    )
+                                }
                             }
                         }
-                    }
-                    item {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            products.chunked(2).forEach { rowProducts ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    rowProducts.forEach { product ->
-                                        Box(Modifier.weight(1f)) {
-                                            ProductCard(product = product) {
-                                                cart.add(product)
-                                                cartVersion++
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                products.chunked(2).forEach { rowProducts ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    ) {
+                                        rowProducts.forEach { product ->
+                                            Box(Modifier.weight(1f)) {
+                                                ProductCard(product = product) {
+                                                    cart.add(product)
+                                                    cartVersion++
+                                                }
                                             }
                                         }
-                                    }
-                                    if (rowProducts.size == 1) {
-                                        Spacer(Modifier.weight(1f))
+                                        if (rowProducts.size == 1) {
+                                            Spacer(Modifier.weight(1f))
+                                        }
                                     }
                                 }
                             }
                         }
+                        item {
+                            CartSummaryCard(
+                                lines = lines,
+                                totalMinor = cart.totalMinor(),
+                                activeProfile = activeProfile,
+                                onCheckout = { selectedTab = OpsTab.Checkout },
+                            )
+                        }
                     }
-                    item {
-                        CartSummaryCard(
-                            lines = lines,
-                            totalMinor = cart.totalMinor(),
-                            activeProfile = activeProfile,
-                            onCheckout = { selectedTab = OpsTab.Checkout },
-                        )
+                    OpsTab.Checkout -> {
+                        item {
+                            CartPanel(
+                                lines = lines,
+                                totalMinor = cart.totalMinor(),
+                                activeProfile = activeProfile,
+                                saleToAcquirerDataConfig = saleToAcquirerDataConfig,
+                                saleToAcquirerDataFavorites = saleToAcquirerDataFavorites,
+                                onRemove = {
+                                    cart.removeOne(it)
+                                    cartVersion++
+                                },
+                                onClear = {
+                                    cart.clear()
+                                    cartVersion++
+                                },
+                                onScanSaleToAcquirerData = onScanSaleToAcquirerData,
+                                onSaveSaleToAcquirerDataFavorite = { onSaveSaleToAcquirerDataFavorite(saleToAcquirerDataConfig) },
+                                onApplySaleToAcquirerDataFavorite = onApplySaleToAcquirerDataFavorite,
+                                onRemoveSaleToAcquirerDataFavorite = onRemoveSaleToAcquirerDataFavorite,
+                                onClearSaleToAcquirerData = onClearSaleToAcquirerData,
+                                onInspectSaleToAcquirerData = { showSaleToAcquirerData = true },
+                                onPay = { profile ->
+                                    if (profile.requiresLivePaymentConfirmation()) {
+                                        liveChargeConfirmation = LiveChargeConfirmation(profile, lines, cart.totalMinor())
+                                    } else {
+                                        onPay(profile, lines, cart.totalMinor())
+                                    }
+                                },
+                            )
+                        }
+                    }
+                    OpsTab.PaymentsApp -> {
+                        item {
+                            ProfilePanel(
+                                profiles = profiles,
+                                activeProfile = activeProfile,
+                                installationId = installationId,
+                                boardingRequestToken = boardingRequestToken,
+                                onScanProfile = onScanProfile,
+                                onSelectProfile = onSelectProfile,
+                                onRemoveProfile = onRemoveProfile,
+                                onCheckBoarding = onCheckBoarding,
+                                onBoard = onBoard,
+                                onReboard = onReboard,
+                            )
+                        }
+                        item {
+                            PaymentsAppOperationsPanel(
+                                activeProfile = activeProfile,
+                                installationId = installationId,
+                                instances = paymentsAppInstances,
+                                status = paymentsAppStatus,
+                                onRefresh = onRefreshPaymentsApps,
+                                onRevoke = onRevokePaymentsApp,
+                            )
+                        }
+                    }
+                    OpsTab.Transactions -> {
+                        item {
+                            TransactionHistoryPanel(
+                                records = transactionHistory,
+                                onInspect = { inspectedTransaction = it },
+                                onClear = onClearTransactions,
+                            )
+                        }
+                    }
+                    OpsTab.Diagnostics -> {
+                        item {
+                            DiagnosticsPanel(
+                                activeProfile = activeProfile,
+                                installationId = installationId,
+                                boardingRequestToken = boardingRequestToken,
+                                saleToAcquirerDataConfig = saleToAcquirerDataConfig,
+                                transactionHistory = transactionHistory,
+                                paymentsAppInstances = paymentsAppInstances,
+                                paymentsAppStatus = paymentsAppStatus,
+                                status = status,
+                                showLatestAction = showLatestAction,
+                                onShowLatestActionChange = { showLatestAction = it },
+                            )
+                        }
                     }
                 }
-                OpsTab.Checkout -> {
-                    item {
-                        CartPanel(
-                            lines = lines,
-                            totalMinor = cart.totalMinor(),
-                            activeProfile = activeProfile,
-                            saleToAcquirerDataConfig = saleToAcquirerDataConfig,
-                            saleToAcquirerDataFavorites = saleToAcquirerDataFavorites,
-                            onRemove = {
-                                cart.removeOne(it)
-                                cartVersion++
-                            },
-                            onClear = {
-                                cart.clear()
-                                cartVersion++
-                            },
-                            onScanSaleToAcquirerData = onScanSaleToAcquirerData,
-                            onSaveSaleToAcquirerDataFavorite = { onSaveSaleToAcquirerDataFavorite(saleToAcquirerDataConfig) },
-                            onApplySaleToAcquirerDataFavorite = onApplySaleToAcquirerDataFavorite,
-                            onRemoveSaleToAcquirerDataFavorite = onRemoveSaleToAcquirerDataFavorite,
-                            onClearSaleToAcquirerData = onClearSaleToAcquirerData,
-                            onInspectSaleToAcquirerData = { showSaleToAcquirerData = true },
-                            onPay = { profile ->
-                                if (profile.requiresLivePaymentConfirmation()) {
-                                    liveChargeConfirmation = LiveChargeConfirmation(profile, lines, cart.totalMinor())
-                                } else {
-                                    onPay(profile, lines, cart.totalMinor())
-                                }
-                            },
-                        )
-                    }
-                }
-                OpsTab.PaymentsApp -> {
-                    item {
-                        ProfilePanel(
-                            profiles = profiles,
-                            activeProfile = activeProfile,
-                            installationId = installationId,
-                            boardingRequestToken = boardingRequestToken,
-                            onScanProfile = onScanProfile,
-                            onSelectProfile = onSelectProfile,
-                            onRemoveProfile = onRemoveProfile,
-                            onCheckBoarding = onCheckBoarding,
-                            onBoard = onBoard,
-                            onReboard = onReboard,
-                        )
-                    }
-                    item {
-                        PaymentsAppOperationsPanel(
-                            activeProfile = activeProfile,
-                            installationId = installationId,
-                            instances = paymentsAppInstances,
-                            status = paymentsAppStatus,
-                            onRefresh = onRefreshPaymentsApps,
-                            onRevoke = onRevokePaymentsApp,
-                        )
-                    }
-                }
-                OpsTab.Transactions -> {
-                    item {
-                        TransactionHistoryPanel(
-                            records = transactionHistory,
-                            onInspect = { inspectedTransaction = it },
-                            onClear = onClearTransactions,
-                        )
-                    }
-                }
-                OpsTab.Diagnostics -> {
-                    item {
-                        DiagnosticsPanel(
-                            activeProfile = activeProfile,
-                            installationId = installationId,
-                            boardingRequestToken = boardingRequestToken,
-                            saleToAcquirerDataConfig = saleToAcquirerDataConfig,
-                            transactionHistory = transactionHistory,
-                            paymentsAppInstances = paymentsAppInstances,
-                            paymentsAppStatus = paymentsAppStatus,
-                        )
-                    }
-                }
+                item { Spacer(Modifier.height(18.dp)) }
             }
-            item { Spacer(Modifier.height(18.dp)) }
         }
     }
 
@@ -786,15 +816,83 @@ private fun TapToPlayApp(
 }
 
 @Composable
-private fun Header(status: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 18.dp)) {
-        Text("TapToPlay", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.SemiBold)
+private fun AppNavigationDrawer(
+    tabs: List<OpsTab>,
+    selectedTab: OpsTab,
+    onSelectTab: (OpsTab) -> Unit,
+) {
+    ModalDrawerSheet {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("TapToPlay", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Boutique POS demo",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        tabs.forEach { tab ->
+            NavigationDrawerItem(
+                selected = selectedTab == tab,
+                onClick = { onSelectTab(tab) },
+                label = {
+                    Text(
+                        tab.label,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactNavigationBar(
+    selectedTab: OpsTab,
+    onOpenMenu: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedButton(onClick = onOpenMenu, modifier = Modifier.height(40.dp)) {
+            Text("Menu")
+        }
         Text(
-            "A premium clothing store demo for Adyen Tap to Pay",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            selectedTab.label,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        AssistChip(onClick = {}, label = { Text(status, maxLines = 2, overflow = TextOverflow.Ellipsis) })
+    }
+}
+
+@Composable
+private fun LatestActionBanner(status: String) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                "Latest action",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                status,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
     }
 }
 
@@ -1054,11 +1152,39 @@ private fun DiagnosticsPanel(
     transactionHistory: List<TransactionRecord>,
     paymentsAppInstances: List<PaymentsAppInstance>,
     paymentsAppStatus: String,
+    status: String,
+    showLatestAction: Boolean,
+    onShowLatestActionChange: (Boolean) -> Unit,
 ) {
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Diagnostics", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Text("Redacted operational state for the selected profile.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp))
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = showLatestAction, onCheckedChange = onShowLatestActionChange)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "Show latest action on top",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    Text(
+                        status,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            KeyValueLine("Latest action", status)
             KeyValueLine("Profile", activeProfile?.displayName ?: "none")
             KeyValueLine("Environment", activeProfile?.environment?.name?.lowercase() ?: "none")
             activeProfile?.let {
@@ -1233,8 +1359,12 @@ private fun CartPanel(
                         }
                         Text(formatMoney(line.lineTotalMinor), fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.width(8.dp))
-                        OutlinedButton(onClick = { onRemove(line.product.id) }, modifier = Modifier.size(width = 44.dp, height = 36.dp)) {
-                            Text("-")
+                        OutlinedButton(
+                            onClick = { onRemove(line.product.id) },
+                            modifier = Modifier.size(width = 44.dp, height = 36.dp),
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Text("X", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
