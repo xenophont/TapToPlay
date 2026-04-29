@@ -1078,23 +1078,29 @@ private fun TransactionDialog(
                         TextButton(onClick = onDismiss) { Text("Close") }
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = selectedSection == "Request",
-                        onClick = { selectedSection = "Request" },
-                        label = { Text("Request") },
-                    )
-                    FilterChip(
-                        selected = selectedSection == "Response",
-                        onClick = { selectedSection = "Response" },
-                        label = { Text("Response") },
-                    )
-                    FilterChip(
-                        selected = selectedSection == "Receipt",
-                        onClick = { selectedSection = "Receipt" },
-                        enabled = record.responseBody != null,
-                        label = { Text("Receipt") },
-                    )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        FilterChip(
+                            selected = selectedSection == "Request",
+                            onClick = { selectedSection = "Request" },
+                            label = { Text("Request") },
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = selectedSection == "Response",
+                            onClick = { selectedSection = "Response" },
+                            label = { Text("Response") },
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = selectedSection == "Receipt",
+                            onClick = { selectedSection = "Receipt" },
+                            enabled = record.responseBody != null,
+                            label = { Text("Receipt") },
+                        )
+                    }
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
                     item { TransactionStatusChip(record.status) }
@@ -1184,8 +1190,9 @@ private fun TransactionDialog(
 
 @Composable
 private fun DigitalReceiptCard(receipt: PaymentReceipt) {
+    val display = remember(receipt) { receipt.toDisplay() }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1208,28 +1215,81 @@ private fun DigitalReceiptCard(receipt: PaymentReceipt) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                    .padding(horizontal = 12.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f))
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                receipt.displayLines().forEach { line ->
-                    Text(
-                        text = line.text.ifEmpty { " " },
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = line.alignment.receiptTextAlign(),
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = if (line.characterStyle?.contains("Bold", ignoreCase = true) == true) {
-                            FontWeight.Bold
-                        } else {
-                            FontWeight.Normal
-                        },
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                ReceiptHeader(display)
+                display.total?.let { total ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Total", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(total, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    }
+                }
+                display.status?.let { status ->
+                    AssistChip(onClick = {}, label = { Text(status) })
+                }
+                if (display.details.isNotEmpty()) {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        display.details.forEach { (label, value) ->
+                            ReceiptDetailLine(label, value)
+                        }
+                    }
+                }
+                if (display.footer.isNotEmpty()) {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        display.footer.forEach { footer ->
+                            Text(
+                                footer,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+@Composable
+private fun ReceiptHeader(display: ReceiptDisplay) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            display.merchantName,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        display.header.drop(1).forEach { header ->
+            Text(
+                header,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReceiptDetailLine(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(0.42f))
+        Text(value, textAlign = TextAlign.Right, fontWeight = FontWeight.Medium, modifier = Modifier.weight(0.58f))
+    }
+}
+
+private data class ReceiptDisplay(
+    val merchantName: String,
+    val header: List<String>,
+    val status: String?,
+    val total: String?,
+    val details: List<Pair<String, String>>,
+    val footer: List<String>,
+)
 
 private fun PaymentReceipt.displayLines(): List<ReceiptLine> {
     val rendered = mutableListOf<ReceiptLine>()
@@ -1249,6 +1309,85 @@ private fun PaymentReceipt.displayLines(): List<ReceiptLine> {
     pending?.let(rendered::add)
     return rendered
 }
+
+private fun PaymentReceipt.toDisplay(): ReceiptDisplay {
+    val lines = displayLines().map { it.text.trim() }.filter { it.isNotBlank() }
+    val entries = lines.mapNotNull { it.receiptEntry() }
+    val entryKeys = entries.map { it.first.normalizedReceiptKey() }.toSet()
+    val headerEntries = entries.filter { it.first.normalizedReceiptKey().startsWith("header") }.map { it.second }
+    val freeHeaders = lines
+        .takeWhile { line -> line.receiptEntry()?.first?.normalizedReceiptKey()?.let { it in amountAndStatusKeys } != true }
+        .filterNot { it.receiptEntry()?.first?.normalizedReceiptKey() in ignoredReceiptKeys }
+        .filterNot { line -> entries.any { it.first.normalizedReceiptKey().startsWith("header") && it.second == line } }
+        .take(3)
+    val headers = (headerEntries + freeHeaders).distinct().ifEmpty { listOf("TapToPlay Boutique") }
+    val total = entries.firstValue("totalAmount")
+        ?: entries.firstValue("originalAmount")
+        ?: entries.firstValue("shopperAmount")
+    val status = when {
+        entries.any { it.first.normalizedReceiptKey() == "approved" } -> "Approved"
+        entries.any { it.first.normalizedReceiptKey() == "refused" } -> "Refused"
+        entries.any { it.first.normalizedReceiptKey() == "void" } -> "Voided"
+        else -> null
+    }
+    val details = receiptDetailOrder.mapNotNull { (key, label) ->
+        entries.firstValue(key)?.let { label to it }
+    }
+    val footer = entries
+        .filter { it.first.normalizedReceiptKey() in footerReceiptKeys }
+        .map { it.second }
+        .ifEmpty {
+            lines.takeLast(2).filterNot { line ->
+                line.receiptEntry()?.first?.normalizedReceiptKey() in entryKeys || line in headers
+            }
+        }
+    return ReceiptDisplay(
+        merchantName = headers.first(),
+        header = headers,
+        status = status,
+        total = total,
+        details = details,
+        footer = footer,
+    )
+}
+
+private fun String.receiptEntry(): Pair<String, String>? {
+    val separators = listOf(": ", " : ", "=")
+    val separator = separators.firstOrNull { contains(it) } ?: return null
+    val parts = split(separator, limit = 2)
+    val key = parts.getOrNull(0)?.trim().orEmpty()
+    val value = parts.getOrNull(1)?.trim().orEmpty()
+    return if (key.isBlank() || value.isBlank()) null else key to value
+}
+
+private fun List<Pair<String, String>>.firstValue(key: String): String? =
+    firstOrNull { it.first.normalizedReceiptKey().equals(key, ignoreCase = true) }?.second
+
+private fun String.normalizedReceiptKey(): String =
+    filter { it.isLetterOrDigit() }.replaceFirstChar { it.lowercase() }
+
+private val amountAndStatusKeys = setOf("totalAmount", "originalAmount", "shopperAmount", "approved", "refused", "void")
+
+private val ignoredReceiptKeys = setOf("filler", "sigline", "signature", "merchantSigline")
+
+private val footerReceiptKeys = setOf("thanks", "retain")
+
+private val receiptDetailOrder = listOf(
+    "txtype" to "Type",
+    "paymentMethod" to "Payment method",
+    "cardType" to "Card",
+    "pan" to "Card number",
+    "authCode" to "Authorisation",
+    "txdate" to "Date",
+    "txtime" to "Time",
+    "mref" to "Reference",
+    "txRef" to "Transaction reference",
+    "tid" to "Terminal",
+    "mid" to "Merchant ID",
+    "rrn" to "RRN",
+    "stan" to "STAN",
+    "aid" to "AID",
+)
 
 private fun String.receiptTitle(): String = when (this) {
     "CustomerReceipt", "SaleReceipt" -> "Customer receipt"
