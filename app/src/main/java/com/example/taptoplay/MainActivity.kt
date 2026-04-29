@@ -77,6 +77,7 @@ class MainActivity : ComponentActivity() {
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
     private var boardingTokenIssuedState by mutableStateOf(false)
+    private var showPaymentsAppDownloadPromptState by mutableStateOf(false)
     private var saleToAcquirerDataConfigState by mutableStateOf(SaleToAcquirerDataConfig.default())
     private var saleToAcquirerDataFavoritesState by mutableStateOf(emptyList<SaleToAcquirerDataConfig>())
     private var transactionHistoryState by mutableStateOf(emptyList<TransactionRecord>())
@@ -136,6 +137,7 @@ class MainActivity : ComponentActivity() {
                     installationId = installationIdState,
                     boardingRequestToken = boardingRequestTokenState,
                     boardingTokenIssued = boardingTokenIssuedState,
+                    showPaymentsAppDownloadPrompt = showPaymentsAppDownloadPromptState,
                     saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
                     saleToAcquirerDataFavorites = saleToAcquirerDataFavoritesState,
                     transactionHistory = transactionHistoryState,
@@ -156,6 +158,10 @@ class MainActivity : ComponentActivity() {
                     onOpenCredentialQrDocs = {
                         selectScreen(AppScreen.PaymentsApp)
                         openCredentialQrDocs()
+                    },
+                    onDownloadPaymentsApp = { profile ->
+                        selectScreen(AppScreen.PaymentsApp)
+                        openPaymentsAppDownload(profile)
                     },
                     onScanSaleToAcquirerData = {
                         selectScreen(AppScreen.Checkout)
@@ -203,6 +209,7 @@ class MainActivity : ComponentActivity() {
                         paymentsAppInstancesState = emptyList()
                         paymentsAppStatusState = "Payments App instances not loaded"
                         boardingTokenIssuedState = false
+                        showPaymentsAppDownloadPromptState = false
                         statusState = "Active profile switched deliberately."
                     },
                     onRemoveProfile = { profile ->
@@ -211,7 +218,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onCheckBoarding = { profile ->
                         selectScreen(AppScreen.PaymentsApp)
-                        launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
+                        checkBoarding(profile)
                     },
                     onBoard = { profile ->
                         selectScreen(AppScreen.PaymentsApp)
@@ -219,7 +226,7 @@ class MainActivity : ComponentActivity() {
                     },
                     onReboard = { profile ->
                         selectScreen(AppScreen.PaymentsApp)
-                        launchLink(AdyenLinks.startReboard(profile), AppScreen.PaymentsApp)
+                        launchPaymentsAppLink(profile, AdyenLinks.startReboard(profile), AppScreen.PaymentsApp)
                     },
                     onRefreshPaymentsApps = { profile ->
                         selectScreen(AppScreen.PaymentsApp)
@@ -351,7 +358,13 @@ class MainActivity : ComponentActivity() {
         paymentsAppInstancesState = emptyList()
         paymentsAppStatusState = "Payments App instances not loaded"
         boardingTokenIssuedState = false
+        showPaymentsAppDownloadPromptState = false
         statusState = statusMessage
+    }
+
+    private fun checkBoarding(profile: AdyenProfile) {
+        selectScreen(AppScreen.PaymentsApp)
+        launchPaymentsAppLink(profile, AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
     }
 
     private fun board(profile: AdyenProfile) {
@@ -359,7 +372,7 @@ class MainActivity : ComponentActivity() {
         val requestToken = boardingRequestTokenState
         if (requestToken.isNullOrBlank()) {
             statusState = "Check boarding first so Adyen can return a boarding request token."
-            launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
+            checkBoarding(profile)
             return
         }
         statusState = "Requesting Adyen boarding token..."
@@ -374,7 +387,7 @@ class MainActivity : ComponentActivity() {
                     boardingStateStore.clearBoardingRequestToken(profile.id)
                     boardingTokenIssuedState = true
                     statusState = "Opening Adyen to finish boarding..."
-                    launchLink(AdyenLinks.board(profile, response.boardingToken), AppScreen.PaymentsApp)
+                    launchPaymentsAppLink(profile, AdyenLinks.board(profile, response.boardingToken), AppScreen.PaymentsApp)
                 }
                 .onFailure { statusState = "Boarding token failed: ${it.message}" }
         }
@@ -389,6 +402,7 @@ class MainActivity : ComponentActivity() {
         paymentsAppInstancesState = emptyList()
         paymentsAppStatusState = "Payments App instances not loaded"
         boardingTokenIssuedState = false
+        showPaymentsAppDownloadPromptState = false
         statusState = "Removed ${profile.profileName} and cleared its local boarding state."
     }
 
@@ -445,7 +459,7 @@ class MainActivity : ComponentActivity() {
         if (installationId.isNullOrBlank()) {
             selectScreen(AppScreen.PaymentsApp)
             statusState = "Check boarding first. Payments require an installation ID as POIID."
-            launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
+            checkBoarding(profile)
             return
         }
         val request = TerminalPaymentRequestBuilder.buildDemoPaymentRequest(
@@ -476,6 +490,34 @@ class MainActivity : ComponentActivity() {
         val encoded = nexoCrypto.encryptToBase64Url(profile, request.json)
         statusState = "Opening Adyen payment app with encrypted Terminal API request..."
         launchLink(AdyenLinks.nexo(profile, encoded), AppScreen.Transactions)
+    }
+
+    private fun launchPaymentsAppLink(profile: AdyenProfile, rawUrl: String, returnScreen: AppScreen) {
+        if (!isPaymentsAppInstalled(profile)) {
+            showPaymentsAppDownloadPromptState = true
+            val environment = profile.environment.name.lowercase()
+            statusState = "Adyen Payments app for $environment is not installed. Open Google Play from the setup block."
+            return
+        }
+        showPaymentsAppDownloadPromptState = false
+        launchLink(rawUrl, returnScreen)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun isPaymentsAppInstalled(profile: AdyenProfile): Boolean =
+        runCatching {
+            packageManager.getPackageInfo(AdyenLinks.paymentsAppPackageName(profile), 0)
+        }.isSuccess
+
+    private fun openPaymentsAppDownload(profile: AdyenProfile) {
+        showPaymentsAppDownloadPromptState = true
+        val environment = profile.environment.name.lowercase()
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AdyenLinks.paymentsAppPlayStore(profile))))
+            statusState = "Opening Google Play for the $environment Adyen Payments app."
+        } catch (_: ActivityNotFoundException) {
+            statusState = "No browser or Play Store app is available to open the $environment download link."
+        }
     }
 
     private fun refund(record: TransactionRecord) {
@@ -549,6 +591,7 @@ class MainActivity : ComponentActivity() {
         selectScreen(pendingReturnScreenState ?: screenForAdyenReturn(parsed))
         pendingReturnScreenState = null
         if (parsed is PaymentResult.BoardingStatus) {
+            showPaymentsAppDownloadPromptState = false
             paymentResultIsRefundState = false
             paymentResultState = parsed
             val activeProfileId = activeProfile?.id

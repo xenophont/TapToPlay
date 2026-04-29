@@ -2,6 +2,7 @@ package com.example.taptoplay.adyen
 
 import com.example.taptoplay.profiles.AdyenProfile
 import com.example.taptoplay.profiles.PaymentEnvironment
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -31,6 +32,23 @@ class AdyenLinksTest {
         val link = AdyenLinks.nexo(profile, "encryptedPayload")
 
         assertTrue(link.contains("request=encryptedPayload"))
+    }
+
+    @Test
+    fun paymentsAppDownloadTargetsFollowEnvironment() {
+        val testProfile = profile(PaymentEnvironment.TEST)
+        val liveProfile = profile(PaymentEnvironment.LIVE)
+
+        assertEquals("com.adyen.ipp.mobile.companion.test", AdyenLinks.paymentsAppPackageName(testProfile))
+        assertEquals(
+            "https://play.google.com/store/apps/details?id=com.adyen.ipp.mobile.companion.test",
+            AdyenLinks.paymentsAppPlayStore(testProfile),
+        )
+        assertEquals("com.adyen.ipp.mobile.companion.live", AdyenLinks.paymentsAppPackageName(liveProfile))
+        assertEquals(
+            "https://play.google.com/store/apps/details?id=com.adyen.ipp.mobile.companion.live",
+            AdyenLinks.paymentsAppPlayStore(liveProfile),
+        )
     }
 
     private fun profile(environment: PaymentEnvironment) = AdyenProfile(

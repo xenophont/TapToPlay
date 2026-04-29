@@ -7,6 +7,9 @@ import java.util.Base64
 
 object AdyenLinks {
     private const val RETURN_URL = "taptoplay://adyen-return"
+    private const val TEST_PAYMENTS_APP_PACKAGE = "com.adyen.ipp.mobile.companion.test"
+    private const val LIVE_PAYMENTS_APP_PACKAGE = "com.adyen.ipp.mobile.companion.live"
+    private const val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id="
 
     fun boarded(profile: AdyenProfile): String = withParams(
         base(profile.environment, "boarded"),
@@ -30,6 +33,14 @@ object AdyenLinks {
         "returnUrl" to RETURN_URL,
         "request" to encodedRequest,
     )
+
+    fun paymentsAppPackageName(profile: AdyenProfile): String = when (profile.environment) {
+        PaymentEnvironment.TEST -> TEST_PAYMENTS_APP_PACKAGE
+        PaymentEnvironment.LIVE -> LIVE_PAYMENTS_APP_PACKAGE
+    }
+
+    fun paymentsAppPlayStore(profile: AdyenProfile): String =
+        PLAY_STORE_URL + paymentsAppPackageName(profile)
 
     private fun base(environment: PaymentEnvironment, action: String): String = when (environment) {
         PaymentEnvironment.TEST -> "https://www.adyen.com/test/$action"

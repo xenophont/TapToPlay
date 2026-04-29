@@ -43,8 +43,10 @@ internal fun ProfilePanel(
     installationId: String?,
     boardingRequestToken: String?,
     boardingTokenIssued: Boolean,
+    showPaymentsAppDownloadPrompt: Boolean,
     onScanProfile: () -> Unit,
     onOpenCredentialQrDocs: () -> Unit,
+    onDownloadPaymentsApp: (AdyenProfile) -> Unit,
     onSelectProfile: (String) -> Unit,
     onRemoveProfile: (AdyenProfile) -> Unit,
     onCheckBoarding: (AdyenProfile) -> Unit,
@@ -136,6 +138,12 @@ internal fun ProfilePanel(
                         )
                     }
                 }
+                if (showPaymentsAppDownloadPrompt && installationId == null) {
+                    PaymentsAppDownloadCard(
+                        profile = activeProfile,
+                        onDownload = { onDownloadPaymentsApp(activeProfile) },
+                    )
+                }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { onCheckBoarding(activeProfile) }) { Text("Check") }
                     Button(onClick = { onBoard(activeProfile) }) { Text("Board") }
@@ -191,6 +199,29 @@ internal fun ProfilePanel(
                 )
             },
         )
+    }
+}
+
+@Composable
+private fun PaymentsAppDownloadCard(
+    profile: AdyenProfile,
+    onDownload: () -> Unit,
+) {
+    OutlinedCard(
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Payments app not installed", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Install the ${profile.environment.name.lowercase()} Adyen Payments app from Google Play, then return here and run Check again.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(onClick = onDownload, modifier = Modifier.align(Alignment.Start)) {
+                Text("Open Google Play")
+            }
+        }
     }
 }
 
