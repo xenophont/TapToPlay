@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,11 +46,19 @@ import com.example.taptoplay.adyen.TerminalApiResponseInsight
 import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TransactionRecord
 import com.example.taptoplay.adyen.TransactionStatus
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 private enum class TransactionSection {
     Request,
     Response,
     Receipt,
+}
+
+private val transactionJson = Json {
+    ignoreUnknownKeys = true
+    prettyPrint = true
 }
 
 @Composable
@@ -199,21 +209,25 @@ internal fun TransactionDialog(
                 .padding(vertical = 24.dp),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(strings["transaction"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "${record.amountLabel} | ${record.createdAt}",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        strings["transaction"],
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        record.createdAt,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         OutlinedButton(onClick = onRefund, enabled = canRefund) { Text(strings["refund"], maxLines = 1) }
                         TextButton(onClick = onDismiss) { Text(strings["close"]) }
                     }
@@ -248,12 +262,16 @@ internal fun TransactionDialog(
                                 RequestSummary(record)
                             }
                             item {
-                                Text(strings["terminal_api_request"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                StructuredJsonSection(
+                                    title = strings["terminal_api_request"],
+                                    rawLabel = strings["raw_terminal_api_request"],
+                                    raw = record.requestJson,
+                                    rootName = strings["request"],
+                                )
                             }
                             item {
-                                DecodedSaleToAcquirerDataCard(requestInsight)
+                                DecodedSaleToAcquirerDataSection(requestInsight)
                             }
-                            item { MonospaceBlock(record.requestJson) }
                         }
                         TransactionSection.Response -> {
                             if (highlights.isNotEmpty()) {
@@ -287,11 +305,7 @@ internal fun TransactionDialog(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            responseInsight?.let { insight ->
-                                item {
-                                    ResponseFieldList(insight)
-                                }
-                            }
+                            responseInsight?.let { insight -> item { ResponseFieldList(insight) } }
                             record.responseBody?.let { body ->
                                 item {
                                     Text(strings["raw_terminal_api_response"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -569,47 +583,75 @@ private fun RequestSummary(record: TransactionRecord) {
 }
 
 @Composable
-private fun DecodedSaleToAcquirerDataCard(insight: TerminalApiRequestInsight) {
+private fun StructuredJsonSection(
+    title: String,
+    rawLabel: String,
+    raw: String,
+    rootName: String,
+) {
     val strings = LocalTapToPlayStrings.current
-    var expanded by remember { mutableStateOf(false) }
-    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(strings["decoded_sale_to_acquirer_data"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        if (insight.saleToAcquirerDataJson == null) {
-                            strings["no_sale_to_acquirer_data"]
-                        } else {
-                            strings["raw_sale_to_acquirer_data"]
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                TextButton(
-                    onClick = { expanded = !expanded },
-                enabled = insight.saleToAcquirerDataJson != null || insight.saleToAcquirerDataBase64 != null,
-            ) {
-                    Text(if (expanded) strings["hide"] else strings["decode"])
-                }
+    var showRaw by remember(raw) { mutableStateOf(false) }
+    val parsed = remember(raw) { parseJsonElement(raw) }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            TextButton(onClick = { showRaw = !showRaw }) {
+                Text(if (showRaw) strings["hide_raw_json"] else strings["show_raw_json"], maxLines = 1)
             }
-            if (expanded) {
-                insight.saleToAcquirerDataJson?.let { decoded ->
-                    MonospaceBlock(decoded)
-                }
-                if (insight.saleToAcquirerDataJson == null) {
-                    insight.saleToAcquirerDataBase64?.let { encoded ->
-                        Text(strings["base64_decode_failed"], color = MaterialTheme.colorScheme.error)
-                        MonospaceBlock(encoded)
-                    }
-                }
+        }
+        if (parsed == null) {
+            Text(strings["json_parse_failed"], color = MaterialTheme.colorScheme.error)
+        } else {
+            JsonElementTree(rootName = rootName, value = parsed)
+        }
+        if (showRaw || parsed == null) {
+            Text(rawLabel, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            MonospaceBlock(raw)
+        }
+    }
+}
+
+@Composable
+private fun DecodedSaleToAcquirerDataSection(insight: TerminalApiRequestInsight) {
+    val strings = LocalTapToPlayStrings.current
+    var showRaw by remember(insight.saleToAcquirerDataJson, insight.saleToAcquirerDataBase64) { mutableStateOf(false) }
+    val decodedJson = insight.saleToAcquirerDataJson
+    val parsed = remember(decodedJson) { decodedJson?.let(::parseJsonElement) }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(strings["decoded_sale_to_acquirer_data"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                if (decodedJson == null) {
+                    strings["no_sale_to_acquirer_data"]
+                } else {
+                    strings["structured_sale_to_acquirer_data"]
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            TextButton(
+                onClick = { showRaw = !showRaw },
+                enabled = decodedJson != null || insight.saleToAcquirerDataBase64 != null,
+            ) {
+                Text(if (showRaw) strings["hide_raw_json"] else strings["show_raw_json"], maxLines = 1)
             }
+        }
+        when {
+            parsed != null -> JsonElementTree(rootName = "SaleToAcquirerData", value = parsed)
+            decodedJson != null -> Text(strings["json_parse_failed"], color = MaterialTheme.colorScheme.error)
+            insight.saleToAcquirerDataBase64 != null -> Text(strings["base64_decode_failed"], color = MaterialTheme.colorScheme.error)
+            else -> OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    strings["no_sale_to_acquirer_data"],
+                    modifier = Modifier.padding(12.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (showRaw) {
+            Text(strings["raw_sale_to_acquirer_data"], style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            MonospaceBlock(decodedJson ?: insight.saleToAcquirerDataBase64.orEmpty())
         }
     }
 }
@@ -617,28 +659,80 @@ private fun DecodedSaleToAcquirerDataCard(insight: TerminalApiRequestInsight) {
 @Composable
 private fun ResponseFieldList(insight: TerminalApiResponseInsight) {
     val strings = LocalTapToPlayStrings.current
-    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(strings["readable_response"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            KeyValueLine(strings["category"], insight.category)
-            insight.result?.let { KeyValueLine(strings["result"], it) }
-            insight.transactionId?.let { KeyValueLine(strings["transaction_id"], it) }
-            insight.errorCondition?.let { KeyValueLine(strings["error_condition"], it) }
-            if (insight.additionalResponseFields.isNotEmpty()) {
-                Text("AdditionalResponse", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                insight.additionalResponseFields.forEach { field ->
-                    ExpandableValueRow(
-                        label = field.name,
-                        value = field.decodedValue?.let { "${field.value}\n\n${strings["decoded"]}:\n$it" } ?: field.value,
-                    )
-                }
-            } else if (!insight.additionalResponseRaw.isNullOrBlank()) {
-                ExpandableValueRow(strings["additional_response_raw"], insight.additionalResponseRaw)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(strings["readable_response"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                KeyValueLine(strings["category"], insight.category)
+                insight.result?.let { KeyValueLine(strings["result"], it) }
+                insight.transactionId?.let { KeyValueLine(strings["transaction_id"], it) }
+                insight.errorCondition?.let { KeyValueLine(strings["error_condition"], it) }
             }
-            insight.additionalResponseDecoded?.let { decoded ->
-                Text(strings["additional_response_decoded_json"], style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                JsonNodeRow(name = "additionalResponse", value = decoded, depth = 0)
+        }
+        if (insight.additionalResponseFields.isNotEmpty()) {
+            Text("AdditionalResponse", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            insight.additionalResponseFields.forEach { field ->
+                AdditionalResponseFieldCard(field)
+            }
+        } else if (!insight.additionalResponseRaw.isNullOrBlank()) {
+            AdditionalResponseFieldCard(
+                label = strings["additional_response_raw"],
+                value = insight.additionalResponseRaw,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdditionalResponseFieldCard(field: com.example.taptoplay.adyen.AdditionalResponseField) {
+    AdditionalResponseFieldCard(
+        label = field.name,
+        value = field.value,
+        decodedValue = field.decodedValue,
+    )
+}
+
+@Composable
+private fun AdditionalResponseFieldCard(
+    label: String,
+    value: String,
+    decodedValue: String? = null,
+) {
+    val strings = LocalTapToPlayStrings.current
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            SelectableValueText(value)
+            decodedValue?.let {
+                Text(strings["decoded"], style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                SelectableValueText(it)
             }
         }
     }
 }
+
+@Composable
+private fun SelectableValueText(value: String) {
+    SelectionContainer {
+        Text(
+            text = value,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = if (value.contains('\n')) FontFamily.Monospace else null,
+        )
+    }
+}
+
+@Composable
+private fun JsonElementTree(rootName: String, value: JsonElement) {
+    if (value is JsonObject && value.isNotEmpty()) {
+        value.entries.forEach { (name, child) ->
+            JsonNodeRow(name = name, value = child, depth = 0)
+        }
+    } else {
+        JsonNodeRow(name = rootName, value = value, depth = 0)
+    }
+}
+
+private fun parseJsonElement(raw: String): JsonElement? =
+    runCatching { transactionJson.parseToJsonElement(raw) }.getOrNull()
