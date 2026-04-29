@@ -42,6 +42,7 @@ import com.example.taptoplay.ui.TapToPlayApp
 import com.example.taptoplay.ui.formatMoney
 import com.example.taptoplay.ui.maskForDisplay
 import com.example.taptoplay.ui.screenForAdyenReturn
+import com.example.taptoplay.ui.shouldRefreshPaymentsAppInstances
 import com.example.taptoplay.ui.theme.TapToPlayTheme
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -67,6 +68,7 @@ class MainActivity : ComponentActivity() {
     private var paymentResultIsRefundState by mutableStateOf(false)
     private var selectedScreenState by mutableStateOf(AppScreen.Catalog)
     private var pendingReturnScreenState by mutableStateOf<AppScreen?>(null)
+    private var showDrawerHintState by mutableStateOf(false)
     private var statusState by mutableStateOf("Ready for boutique checkout")
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
@@ -76,9 +78,10 @@ class MainActivity : ComponentActivity() {
     private var pendingTransactionIdState by mutableStateOf<String?>(null)
     private var paymentsAppInstancesState by mutableStateOf(emptyList<PaymentsAppInstance>())
     private var paymentsAppStatusState by mutableStateOf("Payments App instances not loaded")
+    private var lastPaymentsAppEnteredAtMillis: Long? = null
 
     private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
-        selectedScreenState = AppScreen.PaymentsApp
+        selectScreen(AppScreen.PaymentsApp)
         val contents = result.contents ?: return@registerForActivityResult
         qrParser.parse(contents)
             .onSuccess { profile ->
@@ -92,7 +95,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val saleToAcquirerDataQrLauncher = registerForActivityResult(ScanContract()) { result ->
-        selectedScreenState = AppScreen.Checkout
+        selectScreen(AppScreen.Checkout)
         val contents = result.contents ?: return@registerForActivityResult
         saleToAcquirerDataQrParser.parse(contents)
             .onSuccess { config ->
@@ -107,6 +110,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         selectedScreenState = savedInstanceState?.screen(KEY_SELECTED_SCREEN) ?: AppScreen.Catalog
         pendingReturnScreenState = savedInstanceState?.screen(KEY_PENDING_RETURN_SCREEN)
+        lastPaymentsAppEnteredAtMillis = savedInstanceState?.optionalLong(KEY_LAST_PAYMENTS_APP_ENTERED)
+        showDrawerHintState = savedInstanceState == null
         profileStore = AndroidProfileStore(this)
         transactionStore = AndroidTransactionStore(this)
         boardingStateStore = AndroidBoardingStateStore(this)
@@ -119,6 +124,9 @@ class MainActivity : ComponentActivity() {
         reloadBoardingState()
         reloadSaleToAcquirerDataFavorites()
         reloadTransactions()
+        if (selectedScreenState == AppScreen.PaymentsApp) {
+            handlePaymentsAppEntered()
+        }
         handleReturnIntent(intent)
 
         setContent {
@@ -137,52 +145,54 @@ class MainActivity : ComponentActivity() {
                     paymentResult = paymentResultState,
                     paymentResultIsRefund = paymentResultIsRefundState,
                     selectedScreen = selectedScreenState,
-                    onSelectScreen = { selectedScreenState = it },
+                    onSelectScreen = { selectScreen(it) },
+                    showDrawerHint = showDrawerHintState,
+                    onDrawerHintShown = { markDrawerHintShown() },
                     onDismissResult = { paymentResultState = null },
                     onScanProfile = {
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         scanQr()
                     },
                     onScanSaleToAcquirerData = {
-                        selectedScreenState = AppScreen.Checkout
+                        selectScreen(AppScreen.Checkout)
                         scanSaleToAcquirerDataQr()
                     },
                     onUpdateSaleToAcquirerData = { config ->
-                        selectedScreenState = AppScreen.Checkout
+                        selectScreen(AppScreen.Checkout)
                         saleToAcquirerDataConfigState = config
                         statusState = "SaleToAcquirerData updated from the field editor."
                     },
                     onSaveSaleToAcquirerDataFavorite = { config ->
-                        selectedScreenState = AppScreen.Checkout
+                        selectScreen(AppScreen.Checkout)
                         saleToAcquirerDataFavoriteStore.save(config)
                         reloadSaleToAcquirerDataFavorites()
                         statusState = "Saved ${config.displayName} as a SaleToAcquirerData favorite."
                     },
                     onApplySaleToAcquirerDataFavorite = { config ->
-                        selectedScreenState = AppScreen.Checkout
+                        selectScreen(AppScreen.Checkout)
                         saleToAcquirerDataConfigState = config
                         statusState = "SaleToAcquirerData favorite applied: ${config.displayName}."
                     },
                     onRemoveSaleToAcquirerDataFavorite = { config ->
-                        selectedScreenState = AppScreen.Checkout
+                        selectScreen(AppScreen.Checkout)
                         saleToAcquirerDataFavoriteStore.remove(config.displayName)
                         reloadSaleToAcquirerDataFavorites()
                         statusState = "Removed SaleToAcquirerData favorite: ${config.displayName}."
                     },
                     onClearSaleToAcquirerData = {
-                        selectedScreenState = AppScreen.Checkout
+                        selectScreen(AppScreen.Checkout)
                         saleToAcquirerDataConfigState = SaleToAcquirerDataConfig.default()
                         statusState = "SaleToAcquirerData reset to retail demo defaults."
                     },
                     onClearTransactions = {
-                        selectedScreenState = AppScreen.Transactions
+                        selectScreen(AppScreen.Transactions)
                         transactionStore.clear()
                         pendingTransactionIdState = null
                         reloadTransactions()
                         statusState = "Transaction history cleared."
                     },
                     onSelectProfile = {
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         profileStore.setActive(it)
                         reloadProfiles()
                         reloadBoardingState()
@@ -191,35 +201,35 @@ class MainActivity : ComponentActivity() {
                         statusState = "Active profile switched deliberately."
                     },
                     onRemoveProfile = { profile ->
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         removeProfile(profile)
                     },
                     onCheckBoarding = { profile ->
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
                     },
                     onBoard = { profile ->
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         board(profile)
                     },
                     onReboard = { profile ->
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         launchLink(AdyenLinks.startReboard(profile), AppScreen.PaymentsApp)
                     },
                     onRefreshPaymentsApps = { profile ->
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         refreshPaymentsApps(profile)
                     },
                     onRevokePaymentsApp = { profile, instance ->
-                        selectedScreenState = AppScreen.PaymentsApp
+                        selectScreen(AppScreen.PaymentsApp)
                         revokePaymentsApp(profile, instance)
                     },
                     onPay = { profile, lines, totalMinor ->
-                        selectedScreenState = AppScreen.Checkout
+                        selectScreen(AppScreen.Checkout)
                         pay(profile, lines, totalMinor)
                     },
                     onRefund = { record ->
-                        selectedScreenState = AppScreen.Transactions
+                        selectScreen(AppScreen.Transactions)
                         refund(record)
                     },
                 )
@@ -236,6 +246,7 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(KEY_SELECTED_SCREEN, selectedScreenState.name)
         pendingReturnScreenState?.let { outState.putString(KEY_PENDING_RETURN_SCREEN, it.name) }
+        lastPaymentsAppEnteredAtMillis?.let { outState.putLong(KEY_LAST_PAYMENTS_APP_ENTERED, it) }
         super.onSaveInstanceState(outState)
     }
 
@@ -258,8 +269,30 @@ class MainActivity : ComponentActivity() {
         saleToAcquirerDataFavoritesState = saleToAcquirerDataFavoriteStore.favorites()
     }
 
+    private fun selectScreen(screen: AppScreen) {
+        val previousScreen = selectedScreenState
+        selectedScreenState = screen
+        if (screen == AppScreen.PaymentsApp && previousScreen != AppScreen.PaymentsApp) {
+            handlePaymentsAppEntered()
+        }
+    }
+
+    private fun handlePaymentsAppEntered(nowMillis: Long = System.currentTimeMillis()) {
+        val shouldRefresh = shouldRefreshPaymentsAppInstances(lastPaymentsAppEnteredAtMillis, nowMillis)
+        lastPaymentsAppEnteredAtMillis = nowMillis
+        if (shouldRefresh) {
+            profilesState.firstOrNull { it.id == activeProfileIdState }?.let { profile ->
+                refreshPaymentsApps(profile)
+            }
+        }
+    }
+
+    private fun markDrawerHintShown() {
+        showDrawerHintState = false
+    }
+
     private fun scanQr() {
-        selectedScreenState = AppScreen.PaymentsApp
+        selectScreen(AppScreen.PaymentsApp)
         qrLauncher.launch(
             ScanOptions()
                 .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
@@ -269,7 +302,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scanSaleToAcquirerDataQr() {
-        selectedScreenState = AppScreen.Checkout
+        selectScreen(AppScreen.Checkout)
         saleToAcquirerDataQrLauncher.launch(
             ScanOptions()
                 .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
@@ -279,7 +312,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun board(profile: AdyenProfile) {
-        selectedScreenState = AppScreen.PaymentsApp
+        selectScreen(AppScreen.PaymentsApp)
         val requestToken = boardingRequestTokenState
         if (requestToken.isNullOrBlank()) {
             statusState = "Check boarding first so Adyen can return a boarding request token."
@@ -301,7 +334,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun removeProfile(profile: AdyenProfile) {
-        selectedScreenState = AppScreen.PaymentsApp
+        selectScreen(AppScreen.PaymentsApp)
         boardingStateStore.clear(profile.id)
         profileStore.remove(profile.id)
         reloadProfiles()
@@ -312,7 +345,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun refreshPaymentsApps(profile: AdyenProfile) {
-        selectedScreenState = AppScreen.PaymentsApp
         paymentsAppStatusState = "Refreshing Payments App instances..."
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { paymentsAppApiClient.listPaymentsApps(profile) }
@@ -332,7 +364,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun revokePaymentsApp(profile: AdyenProfile, instance: PaymentsAppInstance) {
-        selectedScreenState = AppScreen.PaymentsApp
+        selectScreen(AppScreen.PaymentsApp)
         paymentsAppStatusState = "Revoking Payments App instance ${instance.installationId.maskForDisplay()}..."
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -363,7 +395,7 @@ class MainActivity : ComponentActivity() {
     private fun pay(profile: AdyenProfile, lines: List<CartLine>, totalMinor: Long) {
         val installationId = installationIdState
         if (installationId.isNullOrBlank()) {
-            selectedScreenState = AppScreen.PaymentsApp
+            selectScreen(AppScreen.PaymentsApp)
             statusState = "Check boarding first. Payments require an installation ID as POIID."
             launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
             return
@@ -399,7 +431,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun refund(record: TransactionRecord) {
-        selectedScreenState = AppScreen.Transactions
+        selectScreen(AppScreen.Transactions)
         val originalTransactionId = record.adyenTransactionId
             ?: TerminalApiResponseInspector.inspect(record.responseBody)?.transactionId
         if (originalTransactionId.isNullOrBlank()) {
@@ -458,7 +490,7 @@ class MainActivity : ComponentActivity() {
         val rawUri = intent?.data?.toString()
         val activeProfile = profilesState.firstOrNull { it.id == activeProfileIdState }
         val parsed = PaymentResultParser.parse(rawUri ?: return, activeProfile, nexoCrypto) ?: return
-        selectedScreenState = pendingReturnScreenState ?: screenForAdyenReturn(parsed)
+        selectScreen(pendingReturnScreenState ?: screenForAdyenReturn(parsed))
         pendingReturnScreenState = null
         if (parsed is PaymentResult.BoardingStatus) {
             paymentResultIsRefundState = false
@@ -517,8 +549,12 @@ class MainActivity : ComponentActivity() {
 
 private const val KEY_SELECTED_SCREEN = "selectedScreen"
 private const val KEY_PENDING_RETURN_SCREEN = "pendingReturnScreen"
+private const val KEY_LAST_PAYMENTS_APP_ENTERED = "lastPaymentsAppEntered"
 
 private fun Bundle.screen(key: String): AppScreen? =
     getString(key)?.let { name ->
         AppScreen.entries.firstOrNull { it.name == name }
     }
+
+private fun Bundle.optionalLong(key: String): Long? =
+    if (containsKey(key)) getLong(key) else null

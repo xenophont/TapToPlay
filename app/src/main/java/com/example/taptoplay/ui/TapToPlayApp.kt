@@ -1,7 +1,21 @@
 package com.example.taptoplay.ui
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,14 +25,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -29,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +54,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,6 +75,7 @@ import com.example.taptoplay.cart.CartLine
 import com.example.taptoplay.catalog.ProductCatalog
 import com.example.taptoplay.profiles.AdyenProfile
 import com.example.taptoplay.profiles.requiresLivePaymentConfirmation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,6 +94,8 @@ internal fun TapToPlayApp(
     paymentResultIsRefund: Boolean,
     selectedScreen: AppScreen,
     onSelectScreen: (AppScreen) -> Unit,
+    showDrawerHint: Boolean,
+    onDrawerHintShown: () -> Unit,
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
@@ -101,10 +129,20 @@ internal fun TapToPlayApp(
     }
     val tabs = AppScreen.entries.toList()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var showLatestAction by remember { mutableStateOf(false) }
     var lastToastedStatus by remember { mutableStateOf(status) }
+    var showDrawerPeek by remember { mutableStateOf(false) }
+    val catalogCartSummaryIndex = if (showLatestAction) 4 else 3
+    val shouldShowCartFab by remember(listState, selectedScreen, lines.isNotEmpty(), catalogCartSummaryIndex) {
+        derivedStateOf {
+            selectedScreen == AppScreen.Catalog &&
+                lines.isNotEmpty() &&
+                listState.layoutInfo.visibleItemsInfo.none { it.index == catalogCartSummaryIndex }
+        }
+    }
 
     LaunchedEffect(status, showLatestAction) {
         if (showLatestAction) {
@@ -112,6 +150,17 @@ internal fun TapToPlayApp(
         } else if (status.isNotBlank() && status != lastToastedStatus) {
             Toast.makeText(context, status, Toast.LENGTH_SHORT).show()
             lastToastedStatus = status
+        }
+    }
+
+    LaunchedEffect(showDrawerHint) {
+        if (showDrawerHint) {
+            delay(450)
+            showDrawerPeek = true
+            delay(1250)
+            showDrawerPeek = false
+            delay(240)
+            onDrawerHintShown()
         }
     }
 
@@ -129,157 +178,217 @@ internal fun TapToPlayApp(
         },
     ) {
         Scaffold { innerPadding ->
-            LazyColumn(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding)
-                    .padding(horizontal = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .padding(innerPadding),
             ) {
-                item {
-                    CompactNavigationBar(
-                        selectedScreen = selectedScreen,
-                        onOpenMenu = { scope.launch { drawerState.open() } },
-                    )
-                }
-                if (showLatestAction) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
                     item {
-                        LatestActionBanner(status = status)
+                        CompactNavigationBar(
+                            selectedScreen = selectedScreen,
+                            onOpenMenu = { scope.launch { drawerState.open() } },
+                        )
                     }
-                }
-                when (selectedScreen) {
-                    AppScreen.Catalog -> {
+                    if (showLatestAction) {
                         item {
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                items(ProductCatalog.categories) { category ->
-                                    FilterChip(
-                                        selected = selectedCategory == category,
-                                        onClick = { selectedCategory = category },
-                                        label = { Text(category, maxLines = 1) },
-                                    )
+                            LatestActionBanner(status = status)
+                        }
+                    }
+                    when (selectedScreen) {
+                        AppScreen.Catalog -> {
+                            item {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    items(ProductCatalog.categories) { category ->
+                                        FilterChip(
+                                            selected = selectedCategory == category,
+                                            onClick = { selectedCategory = category },
+                                            label = { Text(category, maxLines = 1) },
+                                        )
+                                    }
                                 }
                             }
-                        }
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                products.chunked(2).forEach { rowProducts ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    ) {
-                                        rowProducts.forEach { product ->
-                                            Box(Modifier.weight(1f)) {
-                                                ProductCard(product = product) {
-                                                    cart.add(product)
-                                                    cartVersion++
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    products.chunked(2).forEach { rowProducts ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        ) {
+                                            rowProducts.forEach { product ->
+                                                Box(Modifier.weight(1f)) {
+                                                    ProductCard(product = product) {
+                                                        cart.add(product)
+                                                        cartVersion++
+                                                    }
                                                 }
                                             }
-                                        }
-                                        if (rowProducts.size == 1) {
-                                            Spacer(Modifier.weight(1f))
+                                            if (rowProducts.size == 1) {
+                                                Spacer(Modifier.weight(1f))
+                                            }
                                         }
                                     }
                                 }
                             }
+                            item {
+                                CartSummaryCard(
+                                    lines = lines,
+                                    totalMinor = cart.totalMinor(),
+                                    activeProfile = activeProfile,
+                                    onCheckout = { onSelectScreen(AppScreen.Checkout) },
+                                )
+                            }
                         }
-                        item {
-                            CartSummaryCard(
-                                lines = lines,
-                                totalMinor = cart.totalMinor(),
-                                activeProfile = activeProfile,
-                                onCheckout = { onSelectScreen(AppScreen.Checkout) },
-                            )
+                        AppScreen.Checkout -> {
+                            item {
+                                CartPanel(
+                                    lines = lines,
+                                    totalMinor = cart.totalMinor(),
+                                    activeProfile = activeProfile,
+                                    installationId = installationId,
+                                    saleToAcquirerDataConfig = saleToAcquirerDataConfig,
+                                    saleToAcquirerDataFavorites = saleToAcquirerDataFavorites,
+                                    onRemove = {
+                                        cart.removeOne(it)
+                                        cartVersion++
+                                    },
+                                    onClear = {
+                                        cart.clear()
+                                        cartVersion++
+                                    },
+                                    onScanSaleToAcquirerData = onScanSaleToAcquirerData,
+                                    onSaveSaleToAcquirerDataFavorite = { onSaveSaleToAcquirerDataFavorite(saleToAcquirerDataConfig) },
+                                    onApplySaleToAcquirerDataFavorite = onApplySaleToAcquirerDataFavorite,
+                                    onRemoveSaleToAcquirerDataFavorite = onRemoveSaleToAcquirerDataFavorite,
+                                    onClearSaleToAcquirerData = onClearSaleToAcquirerData,
+                                    onInspectSaleToAcquirerData = { showSaleToAcquirerData = true },
+                                    onPay = { profile ->
+                                        if (profile.requiresLivePaymentConfirmation()) {
+                                            liveChargeConfirmation = LiveChargeConfirmation(profile, lines, cart.totalMinor())
+                                        } else {
+                                            onPay(profile, lines, cart.totalMinor())
+                                        }
+                                    },
+                                    onOpenPaymentsApp = { onSelectScreen(AppScreen.PaymentsApp) },
+                                )
+                            }
+                        }
+                        AppScreen.PaymentsApp -> {
+                            item {
+                                ProfilePanel(
+                                    profiles = profiles,
+                                    activeProfile = activeProfile,
+                                    installationId = installationId,
+                                    boardingRequestToken = boardingRequestToken,
+                                    onScanProfile = onScanProfile,
+                                    onSelectProfile = onSelectProfile,
+                                    onRemoveProfile = onRemoveProfile,
+                                    onCheckBoarding = onCheckBoarding,
+                                    onBoard = onBoard,
+                                    onReboard = onReboard,
+                                )
+                            }
+                            item {
+                                PaymentsAppOperationsPanel(
+                                    activeProfile = activeProfile,
+                                    installationId = installationId,
+                                    instances = paymentsAppInstances,
+                                    status = paymentsAppStatus,
+                                    onRefresh = onRefreshPaymentsApps,
+                                    onRevoke = onRevokePaymentsApp,
+                                )
+                            }
+                        }
+                        AppScreen.Transactions -> {
+                            item {
+                                TransactionHistoryPanel(
+                                    records = transactionHistory,
+                                    onInspect = { inspectedTransaction = it },
+                                    onClear = onClearTransactions,
+                                )
+                            }
+                        }
+                        AppScreen.Diagnostics -> {
+                            item {
+                                DiagnosticsPanel(
+                                    activeProfile = activeProfile,
+                                    installationId = installationId,
+                                    boardingRequestToken = boardingRequestToken,
+                                    saleToAcquirerDataConfig = saleToAcquirerDataConfig,
+                                    transactionHistory = transactionHistory,
+                                    paymentsAppInstances = paymentsAppInstances,
+                                    paymentsAppStatus = paymentsAppStatus,
+                                    status = status,
+                                    showLatestAction = showLatestAction,
+                                    onShowLatestActionChange = { showLatestAction = it },
+                                )
+                            }
                         }
                     }
-                    AppScreen.Checkout -> {
-                        item {
-                            CartPanel(
-                                lines = lines,
-                                totalMinor = cart.totalMinor(),
-                                activeProfile = activeProfile,
-                                saleToAcquirerDataConfig = saleToAcquirerDataConfig,
-                                saleToAcquirerDataFavorites = saleToAcquirerDataFavorites,
-                                onRemove = {
-                                    cart.removeOne(it)
-                                    cartVersion++
-                                },
-                                onClear = {
-                                    cart.clear()
-                                    cartVersion++
-                                },
-                                onScanSaleToAcquirerData = onScanSaleToAcquirerData,
-                                onSaveSaleToAcquirerDataFavorite = { onSaveSaleToAcquirerDataFavorite(saleToAcquirerDataConfig) },
-                                onApplySaleToAcquirerDataFavorite = onApplySaleToAcquirerDataFavorite,
-                                onRemoveSaleToAcquirerDataFavorite = onRemoveSaleToAcquirerDataFavorite,
-                                onClearSaleToAcquirerData = onClearSaleToAcquirerData,
-                                onInspectSaleToAcquirerData = { showSaleToAcquirerData = true },
-                                onPay = { profile ->
-                                    if (profile.requiresLivePaymentConfirmation()) {
-                                        liveChargeConfirmation = LiveChargeConfirmation(profile, lines, cart.totalMinor())
-                                    } else {
-                                        onPay(profile, lines, cart.totalMinor())
-                                    }
-                                },
-                            )
-                        }
-                    }
-                    AppScreen.PaymentsApp -> {
-                        item {
-                            ProfilePanel(
-                                profiles = profiles,
-                                activeProfile = activeProfile,
-                                installationId = installationId,
-                                boardingRequestToken = boardingRequestToken,
-                                onScanProfile = onScanProfile,
-                                onSelectProfile = onSelectProfile,
-                                onRemoveProfile = onRemoveProfile,
-                                onCheckBoarding = onCheckBoarding,
-                                onBoard = onBoard,
-                                onReboard = onReboard,
-                            )
-                        }
-                        item {
-                            PaymentsAppOperationsPanel(
-                                activeProfile = activeProfile,
-                                installationId = installationId,
-                                instances = paymentsAppInstances,
-                                status = paymentsAppStatus,
-                                onRefresh = onRefreshPaymentsApps,
-                                onRevoke = onRevokePaymentsApp,
-                            )
-                        }
-                    }
-                    AppScreen.Transactions -> {
-                        item {
-                            TransactionHistoryPanel(
-                                records = transactionHistory,
-                                onInspect = { inspectedTransaction = it },
-                                onClear = onClearTransactions,
-                            )
-                        }
-                    }
-                    AppScreen.Diagnostics -> {
-                        item {
-                            DiagnosticsPanel(
-                                activeProfile = activeProfile,
-                                installationId = installationId,
-                                boardingRequestToken = boardingRequestToken,
-                                saleToAcquirerDataConfig = saleToAcquirerDataConfig,
-                                transactionHistory = transactionHistory,
-                                paymentsAppInstances = paymentsAppInstances,
-                                paymentsAppStatus = paymentsAppStatus,
-                                status = status,
-                                showLatestAction = showLatestAction,
-                                onShowLatestActionChange = { showLatestAction = it },
-                            )
-                        }
-                    }
+                    item { Spacer(Modifier.height(18.dp)) }
                 }
-                item { Spacer(Modifier.height(18.dp)) }
+                AnimatedVisibility(
+                    visible = shouldShowCartFab,
+                    enter = slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = tween(durationMillis = 260, easing = FastOutLinearInEasing),
+                    ) + fadeIn(animationSpec = tween(durationMillis = 220, easing = FastOutLinearInEasing)),
+                    exit = slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+                    ) + fadeOut(animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 12.dp),
+                ) {
+                    ScrollToCartFab(
+                        onClick = {
+                            scope.launch {
+                                listState.animateScrollBy(
+                                    value = 10_000f,
+                                    animationSpec = tween(
+                                        durationMillis = 900,
+                                        easing = FastOutSlowInEasing,
+                                    ),
+                                )
+                            }
+                        },
+                    )
+                }
+                AnimatedVisibility(
+                    visible = showDrawerPeek && drawerState.currentValue == DrawerValue.Closed,
+                    enter = slideInHorizontally(
+                        initialOffsetX = { -it },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow,
+                        ),
+                    ) + fadeIn(animationSpec = tween(durationMillis = 150)),
+                    exit = slideOutHorizontally(
+                        targetOffsetX = { -it },
+                        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                    ) + fadeOut(animationSpec = tween(durationMillis = 140)),
+                    modifier = Modifier.align(Alignment.CenterStart),
+                ) {
+                    DrawerPeekHint(
+                        onClick = {
+                            scope.launch {
+                                showDrawerPeek = false
+                                drawerState.open()
+                            }
+                        },
+                    )
+                }
             }
         }
     }
@@ -325,6 +434,103 @@ internal fun TapToPlayApp(
             onRefund = { onRefund(record) },
             onDismiss = { inspectedTransaction = null },
         )
+    }
+}
+
+@Composable
+private fun DrawerPeekHint(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp)
+    val lineColor = MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .size(width = 52.dp, height = 132.dp)
+            .background(MaterialTheme.colorScheme.surface, shape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "Open menu" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.size(width = 26.dp, height = 70.dp)) {
+            val strokeWidth = 2.25.dp.toPx()
+            val startX = size.width * 0.18f
+            val endX = size.width * 0.82f
+            listOf(0.24f, 0.42f, 0.6f).forEach { yFactor ->
+                drawLine(
+                    color = lineColor,
+                    start = Offset(startX, size.height * yFactor),
+                    end = Offset(endX, size.height * yFactor),
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round,
+                )
+            }
+            drawLine(
+                color = lineColor,
+                start = Offset(size.width * 0.46f, size.height * 0.78f),
+                end = Offset(size.width * 0.68f, size.height * 0.68f),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = lineColor,
+                start = Offset(size.width * 0.46f, size.height * 0.78f),
+                end = Offset(size.width * 0.68f, size.height * 0.88f),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScrollToCartFab(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(56.dp)
+            .semantics { contentDescription = "Scroll to cart" },
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    ) {
+        CartGlyph(Modifier.size(28.dp))
+    }
+}
+
+@Composable
+private fun CartGlyph(modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.onPrimaryContainer
+    Canvas(modifier = modifier) {
+        val strokeWidth = 2.5.dp.toPx()
+        val wheelRadius = size.minDimension * 0.07f
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.12f, size.height * 0.2f),
+            end = Offset(size.width * 0.26f, size.height * 0.2f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.26f, size.height * 0.2f),
+            end = Offset(size.width * 0.34f, size.height * 0.36f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(size.width * 0.32f, size.height * 0.34f),
+            size = Size(size.width * 0.5f, size.height * 0.26f),
+            cornerRadius = CornerRadius(size.width * 0.04f, size.height * 0.04f),
+            style = Stroke(width = strokeWidth),
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.39f, size.height * 0.46f),
+            end = Offset(size.width * 0.76f, size.height * 0.46f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+        drawCircle(color = color, radius = wheelRadius, center = Offset(size.width * 0.44f, size.height * 0.73f))
+        drawCircle(color = color, radius = wheelRadius, center = Offset(size.width * 0.72f, size.height * 0.73f))
     }
 }
 

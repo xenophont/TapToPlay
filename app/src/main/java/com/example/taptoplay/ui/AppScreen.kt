@@ -16,3 +16,8 @@ internal fun screenForAdyenReturn(result: PaymentResult): AppScreen = when (resu
     is PaymentResult.Refused,
     is PaymentResult.Failure -> AppScreen.Transactions
 }
+
+internal const val PAYMENTS_APP_REFRESH_INTERVAL_MS = 5 * 60 * 1000L
+
+internal fun shouldRefreshPaymentsAppInstances(lastEnteredAtMillis: Long?, nowMillis: Long): Boolean =
+    lastEnteredAtMillis == null || nowMillis - lastEnteredAtMillis > PAYMENTS_APP_REFRESH_INTERVAL_MS

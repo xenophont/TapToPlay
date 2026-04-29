@@ -1,5 +1,17 @@
 package com.example.taptoplay.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,8 +34,10 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,6 +57,7 @@ internal fun CartPanel(
     lines: List<CartLine>,
     totalMinor: Long,
     activeProfile: AdyenProfile?,
+    installationId: String?,
     saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
     saleToAcquirerDataFavorites: List<SaleToAcquirerDataConfig>,
     onRemove: (String) -> Unit,
@@ -54,7 +69,9 @@ internal fun CartPanel(
     onClearSaleToAcquirerData: () -> Unit,
     onInspectSaleToAcquirerData: () -> Unit,
     onPay: (AdyenProfile) -> Unit,
+    onOpenPaymentsApp: () -> Unit,
 ) {
+    val needsPaymentsAppSetup = installationId.isNullOrBlank()
     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -163,6 +180,73 @@ internal fun CartPanel(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (activeProfile?.environment == PaymentEnvironment.LIVE) "Charge live payment" else "Charge test payment")
+            }
+            AnimatedVisibility(
+                visible = needsPaymentsAppSetup,
+                enter = fadeIn(tween(180)) + expandVertically() + scaleIn(initialScale = 0.96f),
+                exit = fadeOut(tween(140)) + shrinkVertically() + scaleOut(targetScale = 0.96f),
+            ) {
+                PaymentsAppStatusPrompt(onClick = onOpenPaymentsApp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaymentsAppStatusPrompt(onClick: () -> Unit) {
+    val pulse = rememberInfiniteTransition(label = "boardingPromptPulse")
+    val scale by pulse.animateFloat(
+        initialValue = 0.985f,
+        targetValue = 1.015f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "boardingPromptScale",
+    )
+    val elevationDp by pulse.animateFloat(
+        initialValue = 4f,
+        targetValue = 10f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "boardingPromptElevation",
+    )
+    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "Payment App not boarded",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.error,
+            )
+            Text(
+                "Open Payments App status to check boarding, get a request token, or finish setup before charging.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = onClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .scale(scale),
+                shape = RoundedCornerShape(999.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = elevationDp.dp,
+                    pressedElevation = 12.dp,
+                ),
+            ) {
+                Text(
+                    "Open Payments App status",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }

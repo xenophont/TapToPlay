@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -111,15 +111,24 @@ internal fun ProfilePanel(
                 }
             }
             if (expanded && profiles.isNotEmpty()) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     profiles.forEach { profile ->
-                        item {
-                            FilterChip(
-                                selected = profile.id == activeProfile?.id,
-                                onClick = { onSelectProfile(profile.id) },
-                                label = { Text(profile.displayName, maxLines = 1) },
-                            )
-                        }
+                        FilterChip(
+                            selected = profile.id == activeProfile?.id,
+                            onClick = { onSelectProfile(profile.id) },
+                            label = {
+                                Text(
+                                    profile.displayName,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
+                            modifier = Modifier.widthIn(max = 180.dp),
+                        )
                     }
                 }
             }

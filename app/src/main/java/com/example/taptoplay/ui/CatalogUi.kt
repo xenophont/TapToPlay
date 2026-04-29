@@ -1,5 +1,9 @@
 package com.example.taptoplay.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,9 +24,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -33,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.example.taptoplay.cart.CartLine
 import com.example.taptoplay.catalog.Product
 import com.example.taptoplay.profiles.AdyenProfile
+import kotlinx.coroutines.delay
 
 @Composable
 internal fun CartSummaryCard(
@@ -73,6 +84,36 @@ internal fun CartSummaryCard(
 
 @Composable
 internal fun ProductCard(product: Product, onAdd: () -> Unit) {
+    var feedbackTick by remember { mutableStateOf(0) }
+    var addedFeedback by remember { mutableStateOf(false) }
+    LaunchedEffect(feedbackTick) {
+        if (feedbackTick > 0) {
+            addedFeedback = true
+            delay(850)
+            addedFeedback = false
+        }
+    }
+    val buttonScale by animateFloatAsState(
+        targetValue = if (addedFeedback) 1.04f else 1f,
+        animationSpec = spring(stiffness = 460f, dampingRatio = 0.55f),
+        label = "addButtonScale",
+    )
+    val buttonElevation by animateDpAsState(
+        targetValue = if (addedFeedback) 8.dp else 2.dp,
+        animationSpec = spring(stiffness = 420f, dampingRatio = 0.7f),
+        label = "addButtonElevation",
+    )
+    val buttonColor by animateColorAsState(
+        targetValue = if (addedFeedback) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+        animationSpec = spring(stiffness = 360f, dampingRatio = 0.75f),
+        label = "addButtonColor",
+    )
+    val buttonContentColor by animateColorAsState(
+        targetValue = if (addedFeedback) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
+        animationSpec = spring(stiffness = 360f, dampingRatio = 0.75f),
+        label = "addButtonContentColor",
+    )
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -150,15 +191,27 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Button(
-                    onClick = onAdd,
+                    onClick = {
+                        onAdd()
+                        feedbackTick++
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
+                        .height(44.dp)
+                        .scale(buttonScale),
                     shape = RoundedCornerShape(6.dp),
                     contentPadding = ButtonDefaults.ContentPadding,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = buttonColor,
+                        contentColor = buttonContentColor,
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = buttonElevation,
+                        pressedElevation = 10.dp,
+                    ),
                 ) {
                     Text(
-                        "Add to cart",
+                        if (addedFeedback) "Added" else "Add to cart",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.labelLarge,

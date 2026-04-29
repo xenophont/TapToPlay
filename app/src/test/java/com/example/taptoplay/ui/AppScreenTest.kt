@@ -38,4 +38,19 @@ class AppScreenTest {
 
         assertEquals(AppScreen.Transactions, screenForAdyenReturn(result))
     }
+
+    @Test
+    fun paymentsAppInstancesRefreshOnFirstEntry() {
+        assertEquals(true, shouldRefreshPaymentsAppInstances(lastEnteredAtMillis = null, nowMillis = 1_000L))
+    }
+
+    @Test
+    fun paymentsAppInstancesDoNotRefreshWithinFiveMinutes() {
+        assertEquals(false, shouldRefreshPaymentsAppInstances(lastEnteredAtMillis = 1_000L, nowMillis = 301_000L))
+    }
+
+    @Test
+    fun paymentsAppInstancesRefreshAfterMoreThanFiveMinutes() {
+        assertEquals(true, shouldRefreshPaymentsAppInstances(lastEnteredAtMillis = 1_000L, nowMillis = 301_001L))
+    }
 }
