@@ -1,5 +1,6 @@
 package com.example.taptoplay
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -35,6 +36,7 @@ import com.example.taptoplay.adyen.transactionIdOrNull
 import com.example.taptoplay.cart.CartLine
 import com.example.taptoplay.profiles.AndroidProfileStore
 import com.example.taptoplay.profiles.AdyenProfile
+import com.example.taptoplay.profiles.CredentialQrDocumentation
 import com.example.taptoplay.profiles.LocalProfileBootstrap
 import com.example.taptoplay.profiles.ProfileQrParser
 import com.example.taptoplay.ui.AppScreen
@@ -152,6 +154,10 @@ class MainActivity : ComponentActivity() {
                     onScanProfile = {
                         selectScreen(AppScreen.PaymentsApp)
                         scanQr()
+                    },
+                    onOpenCredentialQrDocs = {
+                        selectScreen(AppScreen.PaymentsApp)
+                        openCredentialQrDocs()
                     },
                     onScanSaleToAcquirerData = {
                         selectScreen(AppScreen.Checkout)
@@ -484,6 +490,14 @@ class MainActivity : ComponentActivity() {
     private fun launchLink(rawUrl: String, returnScreen: AppScreen) {
         pendingReturnScreenState = returnScreen
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl)))
+    }
+
+    private fun openCredentialQrDocs() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(CredentialQrDocumentation.URL)))
+        } catch (_: ActivityNotFoundException) {
+            statusState = "No browser is available to open the QR documentation."
+        }
     }
 
     private fun handleReturnIntent(intent: Intent?) {

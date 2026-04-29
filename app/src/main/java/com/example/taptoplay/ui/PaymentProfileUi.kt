@@ -43,6 +43,7 @@ internal fun ProfilePanel(
     installationId: String?,
     boardingRequestToken: String?,
     onScanProfile: () -> Unit,
+    onOpenCredentialQrDocs: () -> Unit,
     onSelectProfile: (String) -> Unit,
     onRemoveProfile: (AdyenProfile) -> Unit,
     onCheckBoarding: (AdyenProfile) -> Unit,
@@ -84,6 +85,20 @@ internal fun ProfilePanel(
             }
             if (expanded) {
                 Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text("Scan QR") }
+            }
+            if (expanded && profiles.isEmpty()) {
+                OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("No credential profile loaded", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Create a credential QR from the TapToPlay schema before boarding the Adyen Payments app.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        TextButton(onClick = onOpenCredentialQrDocs, modifier = Modifier.align(Alignment.Start)) {
+                            Text("Open QR documentation")
+                        }
+                    }
+                }
             }
             if (expanded && activeProfile != null) {
                 OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
