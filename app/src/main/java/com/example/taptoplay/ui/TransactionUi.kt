@@ -1,13 +1,16 @@
 package com.example.taptoplay.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -31,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.taptoplay.adyen.PaymentReceipt
 import com.example.taptoplay.adyen.PaymentResult
-import com.example.taptoplay.adyen.ReceiptLine
 import com.example.taptoplay.adyen.TerminalApiRequestInsight
 import com.example.taptoplay.adyen.TerminalApiRequestInspector
 import com.example.taptoplay.adyen.TerminalApiResponseInsight
@@ -343,9 +347,9 @@ internal fun TransactionDialog(
 @Composable
 private fun DigitalReceiptCard(receipt: PaymentReceipt) {
     val strings = LocalTapToPlayStrings.current
-    val display = remember(receipt, strings.language) { receipt.toDisplay(strings) }
+    val display = remember(receipt, strings.language) { receipt.toReceiptDisplay(strings) }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -360,47 +364,48 @@ private fun DigitalReceiptCard(receipt: PaymentReceipt) {
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (receipt.requiredSignature) {
+                if (display.requiredSignature) {
                     AssistChip(onClick = {}, label = { Text(strings["signature"]) })
                 }
             }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f))
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                ReceiptHeader(display)
-                display.total?.let { total ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(strings["total"], style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(total, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    }
-                }
-                display.status?.let { status ->
-                    AssistChip(onClick = {}, label = { Text(status) })
-                }
-                if (display.details.isNotEmpty()) {
-                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        display.details.forEach { (label, value) ->
-                            ReceiptDetailLine(label, value)
-                        }
-                    }
-                }
-                if (display.footer.isNotEmpty()) {
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        display.footer.forEach { footer ->
-                            Text(
-                                footer,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                    }
+            ReceiptPaper(display)
+        }
+    }
+}
+
+@Composable
+private fun ReceiptPaper(display: ReceiptDisplay) {
+    val paperColor = Color(0xFFFFFCF4)
+    val inkColor = Color(0xFF24211D)
+    val mutedInk = inkColor.copy(alpha = 0.64f)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f))
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 390.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .background(paperColor)
+                .border(1.dp, inkColor.copy(alpha = 0.10f), RoundedCornerShape(6.dp))
+                .padding(horizontal = 18.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            display.items.forEach { item ->
+                when (item) {
+                    is ReceiptDisplayItem.TextLine -> ReceiptTextLine(item, inkColor, mutedInk)
+                    is ReceiptDisplayItem.Row -> ReceiptTicketRow(item, inkColor, mutedInk)
+                    is ReceiptDisplayItem.Status -> ReceiptStatusLine(item.text, inkColor)
+                    is ReceiptDisplayItem.Total -> ReceiptTotalLine(item, inkColor)
+                    is ReceiptDisplayItem.Note -> ReceiptNoteLine(item.text, mutedInk)
+                    is ReceiptDisplayItem.SignatureLine -> ReceiptSignatureLine(item.label, mutedInk)
+                    is ReceiptDisplayItem.QrCode -> ReceiptQrLine(item.value, inkColor, mutedInk)
+                    ReceiptDisplayItem.Separator -> ReceiptSeparator(inkColor)
                 }
             }
         }
@@ -408,161 +413,160 @@ private fun DigitalReceiptCard(receipt: PaymentReceipt) {
 }
 
 @Composable
-private fun ReceiptHeader(display: ReceiptDisplay) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            display.merchantName,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        display.header.drop(1).forEach { header ->
-            Text(
-                header,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ReceiptDetailLine(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(0.42f))
-        Text(value, textAlign = TextAlign.Right, fontWeight = FontWeight.Medium, modifier = Modifier.weight(0.58f))
-    }
-}
-
-private data class ReceiptDisplay(
-    val title: String,
-    val merchantName: String,
-    val header: List<String>,
-    val status: String?,
-    val total: String?,
-    val details: List<Pair<String, String>>,
-    val footer: List<String>,
-)
-
-private fun PaymentReceipt.displayLines(): List<ReceiptLine> {
-    val rendered = mutableListOf<ReceiptLine>()
-    var pending: ReceiptLine? = null
-    lines.forEach { line ->
-        val current = pending
-        if (current == null) {
-            pending = line
-        } else {
-            pending = current.copy(text = current.text + line.text)
-        }
-        if (line.endOfLine) {
-            pending?.let(rendered::add)
-            pending = null
-        }
-    }
-    pending?.let(rendered::add)
-    return rendered
-}
-
-private fun PaymentReceipt.toDisplay(strings: TapToPlayStrings): ReceiptDisplay {
-    val lines = displayLines().map { it.text.trim() }.filter { it.isNotBlank() }
-    val entries = lines.mapNotNull { it.receiptEntry() }
-    val entryKeys = entries.map { it.first.normalizedReceiptKey() }.toSet()
-    val headerEntries = entries.filter { it.first.normalizedReceiptKey().startsWith("header") }.map { it.second }
-    val freeHeaders = lines
-        .takeWhile { line -> line.receiptEntry()?.first?.normalizedReceiptKey()?.let { it in amountAndStatusKeys } != true }
-        .filterNot { it.receiptEntry()?.first?.normalizedReceiptKey() in ignoredReceiptKeys }
-        .filterNot { line -> entries.any { it.first.normalizedReceiptKey().startsWith("header") && it.second == line } }
-        .take(3)
-    val headers = (headerEntries + freeHeaders).distinct().ifEmpty { listOf("TapToPlay Boutique") }
-    val total = entries.firstValue("totalAmount")
-        ?: entries.firstValue("originalAmount")
-        ?: entries.firstValue("shopperAmount")
-    val status = when {
-        entries.any { it.first.normalizedReceiptKey() == "approved" } -> strings["transaction_status_approved"]
-        entries.any { it.first.normalizedReceiptKey() == "refused" } -> strings["transaction_status_refused"]
-        entries.any { it.first.normalizedReceiptKey() == "void" } -> strings["receipt_status_voided"]
-        else -> null
-    }
-    val details = receiptDetailOrder.mapNotNull { (key, label) ->
-        entries.firstValue(key)?.let { strings.receiptDetailLabel(key, label) to it }
-    }
-    val footer = entries
-        .filter { it.first.normalizedReceiptKey() in footerReceiptKeys }
-        .map { it.second }
-        .ifEmpty {
-            lines.takeLast(2).filterNot { line ->
-                line.receiptEntry()?.first?.normalizedReceiptKey() in entryKeys || line in headers
-            }
-        }
-    return ReceiptDisplay(
-        title = documentQualifier.receiptTitle(strings),
-        merchantName = headers.first(),
-        header = headers,
-        status = status,
-        total = total,
-        details = details,
-        footer = footer,
+private fun ReceiptTextLine(item: ReceiptDisplayItem.TextLine, inkColor: Color, mutedInk: Color) {
+    Text(
+        text = item.text,
+        modifier = Modifier.fillMaxWidth(),
+        color = if (item.bold) inkColor else mutedInk,
+        style = if (item.bold) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodySmall,
+        fontWeight = if (item.bold) FontWeight.Bold else FontWeight.Normal,
+        fontFamily = FontFamily.Monospace,
+        textAlign = item.alignment.textAlign(),
     )
 }
 
-private fun String.receiptEntry(): Pair<String, String>? {
-    val separators = listOf(": ", " : ", "=")
-    val separator = separators.firstOrNull { contains(it) } ?: return null
-    val parts = split(separator, limit = 2)
-    val key = parts.getOrNull(0)?.trim().orEmpty()
-    val value = parts.getOrNull(1)?.trim().orEmpty()
-    return if (key.isBlank() || value.isBlank()) null else key to value
+@Composable
+private fun ReceiptTicketRow(item: ReceiptDisplayItem.Row, inkColor: Color, mutedInk: Color) {
+    val valueColor = when (item.emphasis) {
+        ReceiptRowEmphasis.Normal -> inkColor
+        ReceiptRowEmphasis.Secondary -> mutedInk
+        ReceiptRowEmphasis.Technical -> mutedInk.copy(alpha = 0.82f)
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(
+            text = item.label.uppercase(),
+            modifier = Modifier.weight(0.44f),
+            color = mutedInk,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = FontFamily.Monospace,
+        )
+        Text(
+            text = item.value,
+            modifier = Modifier.weight(0.56f),
+            color = valueColor,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = if (item.emphasis == ReceiptRowEmphasis.Normal) FontWeight.Medium else FontWeight.Normal,
+            fontFamily = FontFamily.Monospace,
+            textAlign = TextAlign.Right,
+        )
+    }
 }
 
-private fun List<Pair<String, String>>.firstValue(key: String): String? =
-    firstOrNull { it.first.normalizedReceiptKey().equals(key, ignoreCase = true) }?.second
-
-private fun String.normalizedReceiptKey(): String =
-    filter { it.isLetterOrDigit() }.replaceFirstChar { it.lowercase() }
-
-private val amountAndStatusKeys = setOf("totalAmount", "originalAmount", "shopperAmount", "approved", "refused", "void")
-
-private val ignoredReceiptKeys = setOf("filler", "sigline", "signature", "merchantSigline")
-
-private val footerReceiptKeys = setOf("thanks", "retain")
-
-private val receiptDetailOrder = listOf(
-    "txtype" to "Type",
-    "paymentMethod" to "Payment method",
-    "cardType" to "Card",
-    "pan" to "Card number",
-    "authCode" to "Authorisation",
-    "txdate" to "Date",
-    "txtime" to "Time",
-    "mref" to "Reference",
-    "txRef" to "Transaction reference",
-    "tid" to "Terminal",
-    "mid" to "Merchant ID",
-    "rrn" to "RRN",
-    "stan" to "STAN",
-    "aid" to "AID",
-)
-
-private fun String.receiptTitle(strings: TapToPlayStrings): String = when (this) {
-    "CustomerReceipt", "SaleReceipt" -> strings["customer_receipt"]
-    "CashierReceipt" -> strings["merchant_receipt"]
-    else -> this
+@Composable
+private fun ReceiptStatusLine(text: String, inkColor: Color) {
+    ReceiptSeparator(inkColor)
+    Text(
+        text = text.uppercase(),
+        modifier = Modifier.fillMaxWidth(),
+        color = inkColor,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
+        textAlign = TextAlign.Center,
+    )
+    ReceiptSeparator(inkColor)
 }
 
-private fun TapToPlayStrings.receiptDetailLabel(key: String, fallback: String): String = when (key) {
-    "txtype" -> this["receipt_type"]
-    "paymentMethod" -> this["receipt_payment_method"]
-    "cardType" -> this["receipt_card"]
-    "pan" -> this["receipt_card_number"]
-    "authCode" -> this["receipt_authorisation"]
-    "txdate" -> this["receipt_date"]
-    "txtime" -> this["receipt_time"]
-    "mref" -> this["reference"].removeSuffix(": %s")
-    "txRef" -> this["receipt_transaction_reference"]
-    "tid" -> this["receipt_terminal"]
-    "mid" -> this["receipt_merchant_id"]
-    else -> fallback
+@Composable
+private fun ReceiptTotalLine(item: ReceiptDisplayItem.Total, inkColor: Color) {
+    ReceiptSeparator(inkColor)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(
+            text = item.label.uppercase(),
+            color = inkColor,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+        )
+        Text(
+            text = item.value,
+            color = inkColor,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            textAlign = TextAlign.Right,
+        )
+    }
+    ReceiptSeparator(inkColor)
+}
+
+@Composable
+private fun ReceiptNoteLine(text: String, mutedInk: Color) {
+    Text(
+        text = text,
+        modifier = Modifier.fillMaxWidth(),
+        color = mutedInk,
+        style = MaterialTheme.typography.bodySmall,
+        fontFamily = FontFamily.Monospace,
+        textAlign = TextAlign.Center,
+    )
+}
+
+@Composable
+private fun ReceiptSignatureLine(label: String, mutedInk: Color) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        HorizontalDivider(color = mutedInk.copy(alpha = 0.45f))
+        Text(
+            text = label.uppercase(),
+            modifier = Modifier.fillMaxWidth(),
+            color = mutedInk,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = FontFamily.Monospace,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun ReceiptQrLine(value: String, inkColor: Color, mutedInk: Color) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .border(1.dp, inkColor.copy(alpha = 0.28f), RoundedCornerShape(4.dp))
+                .background(Color.White)
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+        ) {
+            Text(
+                text = "QR",
+                color = inkColor,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+        Text(
+            text = value,
+            modifier = Modifier.fillMaxWidth(),
+            color = mutedInk,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun ReceiptSeparator(inkColor: Color) {
+    HorizontalDivider(color = inkColor.copy(alpha = 0.20f))
+}
+
+private fun ReceiptTextAlignment.textAlign(): TextAlign = when (this) {
+    ReceiptTextAlignment.Start -> TextAlign.Start
+    ReceiptTextAlignment.Center -> TextAlign.Center
+    ReceiptTextAlignment.End -> TextAlign.End
 }
 
 @Composable
