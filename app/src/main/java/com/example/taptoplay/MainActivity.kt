@@ -37,9 +37,11 @@ import com.example.taptoplay.profiles.AndroidProfileStore
 import com.example.taptoplay.profiles.AdyenProfile
 import com.example.taptoplay.profiles.LocalProfileBootstrap
 import com.example.taptoplay.profiles.ProfileQrParser
+import com.example.taptoplay.ui.AppScreen
 import com.example.taptoplay.ui.TapToPlayApp
 import com.example.taptoplay.ui.formatMoney
 import com.example.taptoplay.ui.maskForDisplay
+import com.example.taptoplay.ui.screenForAdyenReturn
 import com.example.taptoplay.ui.theme.TapToPlayTheme
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -63,6 +65,8 @@ class MainActivity : ComponentActivity() {
     private var activeProfileIdState by mutableStateOf<String?>(null)
     private var paymentResultState by mutableStateOf<PaymentResult?>(null)
     private var paymentResultIsRefundState by mutableStateOf(false)
+    private var selectedScreenState by mutableStateOf(AppScreen.Catalog)
+    private var pendingReturnScreenState by mutableStateOf<AppScreen?>(null)
     private var statusState by mutableStateOf("Ready for boutique checkout")
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
@@ -74,6 +78,7 @@ class MainActivity : ComponentActivity() {
     private var paymentsAppStatusState by mutableStateOf("Payments App instances not loaded")
 
     private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
+        selectedScreenState = AppScreen.PaymentsApp
         val contents = result.contents ?: return@registerForActivityResult
         qrParser.parse(contents)
             .onSuccess { profile ->
@@ -87,6 +92,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val saleToAcquirerDataQrLauncher = registerForActivityResult(ScanContract()) { result ->
+        selectedScreenState = AppScreen.Checkout
         val contents = result.contents ?: return@registerForActivityResult
         saleToAcquirerDataQrParser.parse(contents)
             .onSuccess { config ->
@@ -99,6 +105,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        selectedScreenState = savedInstanceState?.screen(KEY_SELECTED_SCREEN) ?: AppScreen.Catalog
+        pendingReturnScreenState = savedInstanceState?.screen(KEY_PENDING_RETURN_SCREEN)
         profileStore = AndroidProfileStore(this)
         transactionStore = AndroidTransactionStore(this)
         boardingStateStore = AndroidBoardingStateStore(this)
@@ -128,38 +136,53 @@ class MainActivity : ComponentActivity() {
                     status = statusState,
                     paymentResult = paymentResultState,
                     paymentResultIsRefund = paymentResultIsRefundState,
+                    selectedScreen = selectedScreenState,
+                    onSelectScreen = { selectedScreenState = it },
                     onDismissResult = { paymentResultState = null },
-                    onScanProfile = { scanQr() },
-                    onScanSaleToAcquirerData = { scanSaleToAcquirerDataQr() },
+                    onScanProfile = {
+                        selectedScreenState = AppScreen.PaymentsApp
+                        scanQr()
+                    },
+                    onScanSaleToAcquirerData = {
+                        selectedScreenState = AppScreen.Checkout
+                        scanSaleToAcquirerDataQr()
+                    },
                     onUpdateSaleToAcquirerData = { config ->
+                        selectedScreenState = AppScreen.Checkout
                         saleToAcquirerDataConfigState = config
                         statusState = "SaleToAcquirerData updated from the field editor."
                     },
                     onSaveSaleToAcquirerDataFavorite = { config ->
+                        selectedScreenState = AppScreen.Checkout
                         saleToAcquirerDataFavoriteStore.save(config)
                         reloadSaleToAcquirerDataFavorites()
                         statusState = "Saved ${config.displayName} as a SaleToAcquirerData favorite."
                     },
                     onApplySaleToAcquirerDataFavorite = { config ->
+                        selectedScreenState = AppScreen.Checkout
                         saleToAcquirerDataConfigState = config
                         statusState = "SaleToAcquirerData favorite applied: ${config.displayName}."
                     },
                     onRemoveSaleToAcquirerDataFavorite = { config ->
+                        selectedScreenState = AppScreen.Checkout
                         saleToAcquirerDataFavoriteStore.remove(config.displayName)
                         reloadSaleToAcquirerDataFavorites()
                         statusState = "Removed SaleToAcquirerData favorite: ${config.displayName}."
                     },
                     onClearSaleToAcquirerData = {
+                        selectedScreenState = AppScreen.Checkout
                         saleToAcquirerDataConfigState = SaleToAcquirerDataConfig.default()
                         statusState = "SaleToAcquirerData reset to retail demo defaults."
                     },
                     onClearTransactions = {
+                        selectedScreenState = AppScreen.Transactions
                         transactionStore.clear()
                         pendingTransactionIdState = null
                         reloadTransactions()
                         statusState = "Transaction history cleared."
                     },
                     onSelectProfile = {
+                        selectedScreenState = AppScreen.PaymentsApp
                         profileStore.setActive(it)
                         reloadProfiles()
                         reloadBoardingState()
@@ -167,14 +190,38 @@ class MainActivity : ComponentActivity() {
                         paymentsAppStatusState = "Payments App instances not loaded"
                         statusState = "Active profile switched deliberately."
                     },
-                    onRemoveProfile = { profile -> removeProfile(profile) },
-                    onCheckBoarding = { profile -> launchLink(AdyenLinks.boarded(profile)) },
-                    onBoard = { profile -> board(profile) },
-                    onReboard = { profile -> launchLink(AdyenLinks.startReboard(profile)) },
-                    onRefreshPaymentsApps = { profile -> refreshPaymentsApps(profile) },
-                    onRevokePaymentsApp = { profile, instance -> revokePaymentsApp(profile, instance) },
-                    onPay = { profile, lines, totalMinor -> pay(profile, lines, totalMinor) },
-                    onRefund = { record -> refund(record) },
+                    onRemoveProfile = { profile ->
+                        selectedScreenState = AppScreen.PaymentsApp
+                        removeProfile(profile)
+                    },
+                    onCheckBoarding = { profile ->
+                        selectedScreenState = AppScreen.PaymentsApp
+                        launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
+                    },
+                    onBoard = { profile ->
+                        selectedScreenState = AppScreen.PaymentsApp
+                        board(profile)
+                    },
+                    onReboard = { profile ->
+                        selectedScreenState = AppScreen.PaymentsApp
+                        launchLink(AdyenLinks.startReboard(profile), AppScreen.PaymentsApp)
+                    },
+                    onRefreshPaymentsApps = { profile ->
+                        selectedScreenState = AppScreen.PaymentsApp
+                        refreshPaymentsApps(profile)
+                    },
+                    onRevokePaymentsApp = { profile, instance ->
+                        selectedScreenState = AppScreen.PaymentsApp
+                        revokePaymentsApp(profile, instance)
+                    },
+                    onPay = { profile, lines, totalMinor ->
+                        selectedScreenState = AppScreen.Checkout
+                        pay(profile, lines, totalMinor)
+                    },
+                    onRefund = { record ->
+                        selectedScreenState = AppScreen.Transactions
+                        refund(record)
+                    },
                 )
             }
         }
@@ -182,7 +229,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleReturnIntent(intent)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(KEY_SELECTED_SCREEN, selectedScreenState.name)
+        pendingReturnScreenState?.let { outState.putString(KEY_PENDING_RETURN_SCREEN, it.name) }
+        super.onSaveInstanceState(outState)
     }
 
     private fun reloadProfiles() {
@@ -205,6 +259,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scanQr() {
+        selectedScreenState = AppScreen.PaymentsApp
         qrLauncher.launch(
             ScanOptions()
                 .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
@@ -214,6 +269,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scanSaleToAcquirerDataQr() {
+        selectedScreenState = AppScreen.Checkout
         saleToAcquirerDataQrLauncher.launch(
             ScanOptions()
                 .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
@@ -223,10 +279,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun board(profile: AdyenProfile) {
+        selectedScreenState = AppScreen.PaymentsApp
         val requestToken = boardingRequestTokenState
         if (requestToken.isNullOrBlank()) {
             statusState = "Check boarding first so Adyen can return a boarding request token."
-            launchLink(AdyenLinks.boarded(profile))
+            launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
             return
         }
         statusState = "Requesting Adyen boarding token..."
@@ -237,13 +294,14 @@ class MainActivity : ComponentActivity() {
                     installationIdState = response.installationId ?: installationIdState
                     response.installationId?.let { boardingStateStore.saveInstallationId(profile.id, it) }
                     statusState = "Opening Adyen to finish boarding..."
-                    launchLink(AdyenLinks.board(profile, response.boardingToken))
+                    launchLink(AdyenLinks.board(profile, response.boardingToken), AppScreen.PaymentsApp)
                 }
                 .onFailure { statusState = "Boarding token failed: ${it.message}" }
         }
     }
 
     private fun removeProfile(profile: AdyenProfile) {
+        selectedScreenState = AppScreen.PaymentsApp
         boardingStateStore.clear(profile.id)
         profileStore.remove(profile.id)
         reloadProfiles()
@@ -254,6 +312,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun refreshPaymentsApps(profile: AdyenProfile) {
+        selectedScreenState = AppScreen.PaymentsApp
         paymentsAppStatusState = "Refreshing Payments App instances..."
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { paymentsAppApiClient.listPaymentsApps(profile) }
@@ -273,6 +332,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun revokePaymentsApp(profile: AdyenProfile, instance: PaymentsAppInstance) {
+        selectedScreenState = AppScreen.PaymentsApp
         paymentsAppStatusState = "Revoking Payments App instance ${instance.installationId.maskForDisplay()}..."
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -303,8 +363,9 @@ class MainActivity : ComponentActivity() {
     private fun pay(profile: AdyenProfile, lines: List<CartLine>, totalMinor: Long) {
         val installationId = installationIdState
         if (installationId.isNullOrBlank()) {
+            selectedScreenState = AppScreen.PaymentsApp
             statusState = "Check boarding first. Payments require an installation ID as POIID."
-            launchLink(AdyenLinks.boarded(profile))
+            launchLink(AdyenLinks.boarded(profile), AppScreen.PaymentsApp)
             return
         }
         val request = TerminalPaymentRequestBuilder.buildDemoPaymentRequest(
@@ -334,10 +395,11 @@ class MainActivity : ComponentActivity() {
         reloadTransactions()
         val encoded = nexoCrypto.encryptToBase64Url(profile, request.json)
         statusState = "Opening Adyen payment app with encrypted Terminal API request..."
-        launchLink(AdyenLinks.nexo(profile, encoded))
+        launchLink(AdyenLinks.nexo(profile, encoded), AppScreen.Transactions)
     }
 
     private fun refund(record: TransactionRecord) {
+        selectedScreenState = AppScreen.Transactions
         val originalTransactionId = record.adyenTransactionId
             ?: TerminalApiResponseInspector.inspect(record.responseBody)?.transactionId
         if (originalTransactionId.isNullOrBlank()) {
@@ -384,10 +446,11 @@ class MainActivity : ComponentActivity() {
         reloadTransactions()
         val encoded = nexoCrypto.encryptToBase64Url(profile, request.json)
         statusState = "Opening Adyen with a referenced refund request..."
-        launchLink(AdyenLinks.nexo(profile, encoded))
+        launchLink(AdyenLinks.nexo(profile, encoded), AppScreen.Transactions)
     }
 
-    private fun launchLink(rawUrl: String) {
+    private fun launchLink(rawUrl: String, returnScreen: AppScreen) {
+        pendingReturnScreenState = returnScreen
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(rawUrl)))
     }
 
@@ -395,6 +458,8 @@ class MainActivity : ComponentActivity() {
         val rawUri = intent?.data?.toString()
         val activeProfile = profilesState.firstOrNull { it.id == activeProfileIdState }
         val parsed = PaymentResultParser.parse(rawUri ?: return, activeProfile, nexoCrypto) ?: return
+        selectedScreenState = pendingReturnScreenState ?: screenForAdyenReturn(parsed)
+        pendingReturnScreenState = null
         if (parsed is PaymentResult.BoardingStatus) {
             paymentResultIsRefundState = false
             paymentResultState = parsed
@@ -449,3 +514,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+private const val KEY_SELECTED_SCREEN = "selectedScreen"
+private const val KEY_PENDING_RETURN_SCREEN = "pendingReturnScreen"
+
+private fun Bundle.screen(key: String): AppScreen? =
+    getString(key)?.let { name ->
+        AppScreen.entries.firstOrNull { it.name == name }
+    }

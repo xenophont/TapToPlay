@@ -52,14 +52,6 @@ import com.example.taptoplay.profiles.AdyenProfile
 import com.example.taptoplay.profiles.requiresLivePaymentConfirmation
 import kotlinx.coroutines.launch
 
-private enum class OpsTab(val label: String) {
-    Catalog("Catalog"),
-    Checkout("Checkout"),
-    PaymentsApp("Payments App"),
-    Transactions("Transactions"),
-    Diagnostics("Diagnostics"),
-}
-
 @Composable
 internal fun TapToPlayApp(
     profiles: List<AdyenProfile>,
@@ -74,6 +66,8 @@ internal fun TapToPlayApp(
     status: String,
     paymentResult: PaymentResult?,
     paymentResultIsRefund: Boolean,
+    selectedScreen: AppScreen,
+    onSelectScreen: (AppScreen) -> Unit,
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
@@ -96,7 +90,6 @@ internal fun TapToPlayApp(
     val cart = remember { Cart() }
     var cartVersion by remember { mutableStateOf(0) }
     var selectedCategory by remember { mutableStateOf("All") }
-    var selectedTab by remember { mutableStateOf(OpsTab.Catalog) }
     var showSaleToAcquirerData by remember { mutableStateOf(false) }
     var editableSaleToAcquirerData by remember(saleToAcquirerDataConfig) { mutableStateOf(saleToAcquirerDataConfig) }
     var inspectedTransaction by remember { mutableStateOf<TransactionRecord?>(null) }
@@ -106,7 +99,7 @@ internal fun TapToPlayApp(
     val products = ProductCatalog.products.filter {
         selectedCategory == "All" || it.category == selectedCategory
     }
-    val tabs = OpsTab.entries.toList()
+    val tabs = AppScreen.entries.toList()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -127,9 +120,9 @@ internal fun TapToPlayApp(
         drawerContent = {
             AppNavigationDrawer(
                 tabs = tabs,
-                selectedTab = selectedTab,
-                onSelectTab = { tab ->
-                    selectedTab = tab
+                selectedScreen = selectedScreen,
+                onSelectScreen = { screen ->
+                    onSelectScreen(screen)
                     scope.launch { drawerState.close() }
                 },
             )
@@ -146,7 +139,7 @@ internal fun TapToPlayApp(
             ) {
                 item {
                     CompactNavigationBar(
-                        selectedTab = selectedTab,
+                        selectedScreen = selectedScreen,
                         onOpenMenu = { scope.launch { drawerState.open() } },
                     )
                 }
@@ -155,8 +148,8 @@ internal fun TapToPlayApp(
                         LatestActionBanner(status = status)
                     }
                 }
-                when (selectedTab) {
-                    OpsTab.Catalog -> {
+                when (selectedScreen) {
+                    AppScreen.Catalog -> {
                         item {
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                                 items(ProductCatalog.categories) { category ->
@@ -198,11 +191,11 @@ internal fun TapToPlayApp(
                                 lines = lines,
                                 totalMinor = cart.totalMinor(),
                                 activeProfile = activeProfile,
-                                onCheckout = { selectedTab = OpsTab.Checkout },
+                                onCheckout = { onSelectScreen(AppScreen.Checkout) },
                             )
                         }
                     }
-                    OpsTab.Checkout -> {
+                    AppScreen.Checkout -> {
                         item {
                             CartPanel(
                                 lines = lines,
@@ -234,7 +227,7 @@ internal fun TapToPlayApp(
                             )
                         }
                     }
-                    OpsTab.PaymentsApp -> {
+                    AppScreen.PaymentsApp -> {
                         item {
                             ProfilePanel(
                                 profiles = profiles,
@@ -260,7 +253,7 @@ internal fun TapToPlayApp(
                             )
                         }
                     }
-                    OpsTab.Transactions -> {
+                    AppScreen.Transactions -> {
                         item {
                             TransactionHistoryPanel(
                                 records = transactionHistory,
@@ -269,7 +262,7 @@ internal fun TapToPlayApp(
                             )
                         }
                     }
-                    OpsTab.Diagnostics -> {
+                    AppScreen.Diagnostics -> {
                         item {
                             DiagnosticsPanel(
                                 activeProfile = activeProfile,
@@ -337,9 +330,9 @@ internal fun TapToPlayApp(
 
 @Composable
 private fun AppNavigationDrawer(
-    tabs: List<OpsTab>,
-    selectedTab: OpsTab,
-    onSelectTab: (OpsTab) -> Unit,
+    tabs: List<AppScreen>,
+    selectedScreen: AppScreen,
+    onSelectScreen: (AppScreen) -> Unit,
 ) {
     ModalDrawerSheet {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -352,8 +345,8 @@ private fun AppNavigationDrawer(
         }
         tabs.forEach { tab ->
             NavigationDrawerItem(
-                selected = selectedTab == tab,
-                onClick = { onSelectTab(tab) },
+                selected = selectedScreen == tab,
+                onClick = { onSelectScreen(tab) },
                 label = {
                     Text(
                         tab.label,
@@ -369,7 +362,7 @@ private fun AppNavigationDrawer(
 
 @Composable
 private fun CompactNavigationBar(
-    selectedTab: OpsTab,
+    selectedScreen: AppScreen,
     onOpenMenu: () -> Unit,
 ) {
     Row(
@@ -383,7 +376,7 @@ private fun CompactNavigationBar(
             Text("Menu")
         }
         Text(
-            selectedTab.label,
+            selectedScreen.label,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
