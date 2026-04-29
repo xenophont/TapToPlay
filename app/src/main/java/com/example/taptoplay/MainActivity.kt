@@ -312,7 +312,7 @@ class MainActivity : ComponentActivity() {
         saleToAcquirerDataQrLauncher.launch(
             ScanOptions()
                 .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                .setPrompt("Scan a SaleToAcquirerData properties QR")
+                .setPrompt("Scan a SaleToAcquirerData JSON QR")
                 .setBeepEnabled(false),
         )
     }

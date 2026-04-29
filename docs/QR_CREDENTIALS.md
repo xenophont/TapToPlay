@@ -84,7 +84,7 @@ Removing a profile does not revoke an Adyen Payments App installation. Revoke th
 
 ## SaleToAcquirerData QR Codes
 
-Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR codes are separate and should contain the plain Adyen SaleToAcquirerData JSON object so they can be scanned from `Checkout` without changing the active payment profile.
+Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR codes are separate and must contain the plain Adyen SaleToAcquirerData JSON object so they can be scanned from `Checkout` without changing the active payment profile.
 
 ```json
 {
@@ -116,11 +116,10 @@ Credential QR codes use `taptoplay.adyen.profile.v1`. SaleToAcquirerData QR code
 Rules:
 
 - The root object is the SaleToAcquirerData object itself.
-- TapToPlay Base64-encodes this object exactly as scanned and sends it as `PaymentRequest.SaleData.SaleToAcquirerData`.
+- TapToPlay Base64-encodes this object exactly as scanned and writes it into `PaymentRequest.SaleData.SaleToAcquirerData`.
 - Payloads larger than 12288 characters are rejected.
-- `displayName`, when supplied by a legacy wrapper, must be 80 characters or less.
 - The parsed object can contain at most 80 leaf fields.
-- Legacy QR codes with `schema`, `displayName`, and `saleToAcquirerData` or `properties` are still accepted, but newly generated QRs should use the plain object shape.
+- TapToPlay wrapper fields such as `schema`, `displayName`, `saleToAcquirerData`, and `properties` are rejected at the root.
 - Values may be strings, numbers, booleans, arrays, or nested objects.
 
 ## Storage and Backup Notes
@@ -129,17 +128,130 @@ The app disables Android backup and explicitly excludes encrypted preference fil
 
 ---
 
-## Español
+# Perfiles de credenciales QR
 
-TapToPlay importa perfiles de pago de Adyen escaneando un QR con JSON en crudo. Cada QR de credenciales es secreto: contiene API keys y material de cifrado de Terminal API.
+TapToPlay importa perfiles de pago de Adyen escaneando un código QR que contiene JSON sin procesar. Los perfiles se guardan en almacenamiento local cifrado y deben seleccionarse de forma deliberada en la pestaña `Payments App`.
 
-Reglas principales:
+Trata cada QR de credenciales como un secreto. Contiene credenciales de API y material de cifrado de Terminal API.
+
+## Formato JSON de credenciales
+
+```json
+{
+  "schema": "taptoplay.adyen.profile.v1",
+  "displayName": "Demo Store TEST",
+  "environment": "test",
+  "merchantId": "YourMerchantAccount",
+  "storeId": "ST322LJ223223K5F",
+  "apiKey": "AQE...",
+  "clientKey": "test_...",
+  "terminalKeyIdentifier": "CryptoKeyIdentifier",
+  "terminalKeyVersion": 1,
+  "terminalPassphrase": "shared-key-passphrase",
+  "currency": "EUR",
+  "countryCode": "ES"
+}
+```
+
+## Ejemplo de estructura live
+
+```json
+{
+  "schema": "taptoplay.adyen.profile.v1",
+  "displayName": "Boutique Madrid LIVE",
+  "environment": "live",
+  "merchantId": "YourLiveMerchantAccount",
+  "storeId": "ST322LJ223223K5F",
+  "apiKey": "live_AQE...",
+  "clientKey": "live_...",
+  "terminalKeyIdentifier": "LiveCryptoKeyIdentifier",
+  "terminalKeyVersion": 1,
+  "terminalPassphrase": "live-shared-key-passphrase",
+  "currency": "EUR",
+  "countryCode": "ES"
+}
+```
+
+Usa valores de ejemplo en la documentación y en los ejemplos. Nunca comitees un payload live real.
+
+## Reglas de validación
 
 - `schema` debe ser `taptoplay.adyen.profile.v1`.
+- Se rechazan los payloads de más de 8192 caracteres.
 - `environment` debe ser `test` o `live`.
-- El payload de credenciales no puede superar 8192 caracteres.
-- Los secretos se guardan cifrados y se muestran enmascarados.
-- `Remove` borra el perfil local, pero no revoca la instalación en Adyen.
-- `Revoke instance` invalida una instalación de Payments App en Adyen y requiere confirmación.
+- `displayName`, `merchantId`, `apiKey`, `clientKey`, los campos de clave de terminal, `currency` y `countryCode` son obligatorios.
+- `displayName` debe tener 80 caracteres o menos.
+- `merchantId`, `storeId` y `terminalKeyIdentifier` deben tener 128 caracteres o menos.
+- `apiKey`, `clientKey` y `terminalPassphrase` deben tener 512 caracteres o menos.
+- `storeId` es opcional. Cuando está presente, TapToPlay solicita boarding y listado de instancias de Payments App con alcance de tienda.
+- `currency` debe ser un código ISO 4217 en mayúsculas, como `EUR`.
+- `countryCode` debe ser un código ISO 3166-1 alfa-2 en mayúsculas, como `ES`.
+- `terminalKeyIdentifier`, `terminalKeyVersion` y `terminalPassphrase` deben coincidir con la clave compartida configurada en el Customer Area de Adyen para el cifrado de Terminal API.
 
-Los QR de SaleToAcquirerData son independientes de los QR de credenciales. Deben contener el objeto JSON plano de SaleToAcquirerData, se escanean desde `Checkout`, y TapToPlay los codifica en Base64 dentro de `PaymentRequest.SaleData.SaleToAcquirerData`.
+Los campos desconocidos se rechazan en los payloads QR de credenciales. Esto mantiene el esquema de credenciales ajustado y evita que datos accidentales formen parte de un perfil guardado.
+
+## Crear y usar un QR de credenciales
+
+1. Rellena el JSON con tus valores de Adyen de test o live.
+2. Genera un código QR a partir del texto JSON sin procesar usando una herramienta QR offline de confianza o una herramienta interna que controles.
+3. No subas payloads con credenciales reales a servicios QR públicos.
+4. Abre `Payments App` en TapToPlay.
+5. Toca `Scan QR`.
+6. Selecciona deliberadamente el perfil escaneado.
+7. Ejecuta `Check` y `Board` antes de cobrar.
+
+Para demos similares a producción, genera códigos QR separados para perfiles test y live, de forma que el cambio de entorno siga siendo explícito.
+
+## Ciclo de vida de credenciales
+
+TapToPlay guarda los perfiles escaneados en preferencias cifradas y enmascara los secretos en la interfaz. La pestaña `Payments App` incluye:
+
+- `Remove`: elimina el perfil local y borra el estado local de boarding guardado para ese perfil.
+- `Refresh`: lista las instancias de Adyen Payments App usando la API key del perfil seleccionado.
+- `Revoke instance`: revoca una instalación seleccionada de Adyen Payments App después de una confirmación.
+
+Eliminar un perfil no revoca una instalación de Adyen Payments App. Revoca la instancia por separado cuando necesites invalidar la app o el dispositivo ya boarded.
+
+## Códigos QR de SaleToAcquirerData
+
+Los QR de credenciales usan `taptoplay.adyen.profile.v1`. Los QR de SaleToAcquirerData son independientes y deben contener el objeto JSON plano de Adyen SaleToAcquirerData, para poder escanearlos desde `Checkout` sin cambiar el perfil de pago activo.
+
+```json
+{
+  "applicationInfo": {
+    "externalPlatform": {
+      "name": "COMPANY_NAME_OR_PLATFORM_NAME",
+      "version": "1.3",
+      "integrator": "COMPANY_THAT_BUILT_INTEGRATION_OR_POS_APP"
+    },
+    "merchantApplication": {
+      "name": "NAME_OF_POS_APPLICATION",
+      "version": "2.13.05"
+    },
+    "merchantDevice": {
+      "os": "OS_OF_DEVICE_THAT_RUNS_POS_APPLICATION",
+      "osVersion": "16.3"
+    }
+  },
+  "metadata": {
+    "someMetaDataKey1": "YOUR_VALUE",
+    "someMetaDataKey2": "YOUR_VALUE"
+  },
+  "shopperEmail": "S.Hopper@example.com",
+  "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
+  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION"
+}
+```
+
+Reglas:
+
+- El objeto raíz es el propio objeto SaleToAcquirerData.
+- TapToPlay codifica en Base64 este objeto exactamente como se escaneó y lo escribe en `PaymentRequest.SaleData.SaleToAcquirerData`.
+- Se rechazan los payloads de más de 12288 caracteres.
+- El objeto parseado puede contener como máximo 80 campos hoja.
+- Los campos wrapper de TapToPlay, como `schema`, `displayName`, `saleToAcquirerData` y `properties`, se rechazan en la raíz.
+- Los valores pueden ser cadenas, números, booleanos, arrays u objetos anidados.
+
+## Notas de almacenamiento y backup
+
+La app desactiva el backup de Android y excluye explícitamente los archivos de preferencias cifradas usados para perfiles, estado de boarding, historial de transacciones y favoritos de SaleToAcquirerData. Esto reduce el movimiento accidental de credenciales entre dispositivos, pero no convierte un modelo de credenciales dentro de la app en una arquitectura de producción.

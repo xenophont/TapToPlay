@@ -13,7 +13,7 @@ class SaleToAcquirerDataConfigTest {
     private val parser = SaleToAcquirerDataQrParser()
 
     @Test
-    fun parsesStructuredSaleToAcquirerDataPayload() {
+    fun rejectsLegacySaleToAcquirerDataWrapper() {
         val payload = """
             {
               "schema": "taptoplay.adyen.saleToAcquirerData.v1",
@@ -35,17 +35,14 @@ class SaleToAcquirerDataConfigTest {
             }
         """.trimIndent()
 
-        val config = parser.parse(payload).getOrThrow()
+        val result = parser.parse(payload)
 
-        assertEquals("Preauth test", config.displayName)
-        assertEquals(
-            "PreAuth",
-            config.data["additionalData"]?.jsonObject?.get("authorisationType")?.jsonPrimitive?.content,
-        )
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("Legacy TapToPlay") == true)
     }
 
     @Test
-    fun remainsCompatibleWithLegacyPropertiesPayload() {
+    fun rejectsLegacyPropertiesPayload() {
         val payload = """
             {
               "schema": "taptoplay.adyen.saleToAcquirerData.v1",
@@ -58,12 +55,10 @@ class SaleToAcquirerDataConfigTest {
             }
         """.trimIndent()
 
-        val config = parser.parse(payload).getOrThrow()
+        val result = parser.parse(payload)
 
-        assertEquals(
-            "PreAuth",
-            config.data["additionalData"]?.jsonObject?.get("authorisationType")?.jsonPrimitive?.content,
-        )
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("Legacy TapToPlay") == true)
     }
 
     @Test
@@ -121,8 +116,8 @@ class SaleToAcquirerDataConfigTest {
     }
 
     @Test
-    fun wrappedPayloadIsEncodedWithoutTapToPlayWrapperKeys() {
-        val config = parser.parse(
+    fun rejectsWrappedPayloadBeforeEncoding() {
+        val result = parser.parse(
             """
                 {
                   "schema": "taptoplay.adyen.saleToAcquirerData.v1",
@@ -134,15 +129,10 @@ class SaleToAcquirerDataConfigTest {
                   }
                 }
             """.trimIndent(),
-        ).getOrThrow()
-
-        val decoded = SaleToAcquirerDataEncoder.decodeBase64ForTest(
-            SaleToAcquirerDataEncoder.encodeBase64(config),
         )
 
-        assertEquals("YOUR_VALUE", decoded["metadata"]?.jsonObject?.get("someMetaDataKey1")?.jsonPrimitive?.content)
-        assertEquals(null, decoded["schema"])
-        assertEquals(null, decoded["saleToAcquirerData"])
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("Legacy TapToPlay") == true)
     }
 
     @Test

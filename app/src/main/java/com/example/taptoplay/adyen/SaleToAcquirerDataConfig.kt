@@ -8,7 +8,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 @Serializable
@@ -58,12 +57,13 @@ class SaleToAcquirerDataQrParser(
     fun parse(payload: String): Result<SaleToAcquirerDataConfig> = runCatching {
         require(payload.length <= MAX_PAYLOAD_CHARS) { "SaleToAcquirerData QR payload is too large" }
         val root = json.parseToJsonElement(payload).jsonObject
-        val schema = root["schema"]?.jsonPrimitive?.content
-        val data = (root["saleToAcquirerData"] ?: root["properties"])?.jsonObject ?: root
+        // Retired TapToPlay wrapper QR formats are rejected before anything reaches Terminal API encoding.
+        require(root.keys.none { it in LEGACY_WRAPPER_KEYS }) {
+            "Legacy TapToPlay SaleToAcquirerData QR wrappers are no longer supported. Scan the plain SaleToAcquirerData JSON object."
+        }
         val config = SaleToAcquirerDataConfig(
-            schema = schema ?: SaleToAcquirerDataConfig.SCHEMA,
-            displayName = root["displayName"]?.jsonPrimitive?.content ?: "Scanned SaleToAcquirerData",
-            data = data.withoutTapToPlayWrapperKeys(),
+            displayName = "Scanned SaleToAcquirerData",
+            data = root,
             mergeWithDefaults = false,
         )
         validate(config)
@@ -80,14 +80,11 @@ class SaleToAcquirerDataQrParser(
         require(config.fieldCount <= MAX_FIELD_COUNT) { "saleToAcquirerData contains too many fields" }
     }
 
-    private fun JsonObject.withoutTapToPlayWrapperKeys(): JsonObject = JsonObject(
-        filterKeys { it !in setOf("schema", "displayName", "saleToAcquirerData", "properties") },
-    )
-
     private companion object {
         const val MAX_PAYLOAD_CHARS = 12_288
         const val MAX_DISPLAY_NAME_CHARS = 80
         const val MAX_FIELD_COUNT = 80
+        val LEGACY_WRAPPER_KEYS = setOf("schema", "displayName", "saleToAcquirerData", "properties")
     }
 }
 

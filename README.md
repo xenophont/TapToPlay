@@ -128,7 +128,7 @@ Example payload:
 }
 ```
 
-Use `Scan data QR` in `Checkout`, `View` to inspect/edit fields, `Save` for favorites, and `Reset` to return to the default retail demo metadata. Legacy TapToPlay QR payloads with `schema`, `displayName`, and `saleToAcquirerData` are still accepted, but newly generated QRs should use the plain object above.
+Use `Scan data QR` in `Checkout`, `View` to inspect/edit fields, `Save` for favorites, and `Reset` to return to the default retail demo metadata. SaleToAcquirerData QR codes must contain the plain SaleToAcquirerData object; TapToPlay wrapper payloads are no longer supported.
 
 ## Payments App Operations
 
