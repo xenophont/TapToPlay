@@ -1,6 +1,8 @@
 package com.example.taptoplay.ui
 
 import com.example.taptoplay.adyen.PaymentResult
+import com.example.taptoplay.adyen.PaymentsAppInstance
+import com.example.taptoplay.adyen.PaymentsAppStatus
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -40,17 +42,25 @@ class AppScreenTest {
     }
 
     @Test
-    fun paymentsAppInstancesRefreshOnFirstEntry() {
-        assertEquals(true, shouldRefreshPaymentsAppInstances(lastEnteredAtMillis = null, nowMillis = 1_000L))
+    fun paymentsAppInstancesHideRevokedAndKeepCurrentFirst() {
+        val instances = listOf(
+            instance("active-1", PaymentsAppStatus.BOARDED),
+            instance("revoked-1", PaymentsAppStatus.REVOKED),
+            instance("current", PaymentsAppStatus.BOARDED),
+            instance("revoked-2", PaymentsAppStatus.REVOKED),
+        )
+
+        val visible = displayedPaymentsAppInstances(instances, currentInstallationId = "current", showRevoked = false)
+        val withRevoked = displayedPaymentsAppInstances(instances, currentInstallationId = "current", showRevoked = true)
+
+        assertEquals(listOf("current", "active-1"), visible.map { it.installationId })
+        assertEquals(listOf("current", "active-1", "revoked-1", "revoked-2"), withRevoked.map { it.installationId })
     }
 
-    @Test
-    fun paymentsAppInstancesDoNotRefreshWithinFiveMinutes() {
-        assertEquals(false, shouldRefreshPaymentsAppInstances(lastEnteredAtMillis = 1_000L, nowMillis = 301_000L))
-    }
-
-    @Test
-    fun paymentsAppInstancesRefreshAfterMoreThanFiveMinutes() {
-        assertEquals(true, shouldRefreshPaymentsAppInstances(lastEnteredAtMillis = 1_000L, nowMillis = 301_001L))
-    }
+    private fun instance(id: String, status: PaymentsAppStatus) = PaymentsAppInstance(
+        installationId = id,
+        merchantAccountCode = "merchant",
+        merchantStoreCode = "store",
+        status = status,
+    )
 }

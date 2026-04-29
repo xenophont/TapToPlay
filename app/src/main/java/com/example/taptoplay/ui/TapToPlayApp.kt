@@ -311,7 +311,6 @@ internal fun TapToPlayApp(
                                     activeProfile = activeProfile,
                                     installationId = installationId,
                                     instances = paymentsAppInstances,
-                                    status = paymentsAppStatus,
                                     onRefresh = onRefreshPaymentsApps,
                                     onRevoke = onRevokePaymentsApp,
                                 )

@@ -230,28 +230,42 @@ internal fun PaymentsAppOperationsPanel(
     activeProfile: AdyenProfile?,
     installationId: String?,
     instances: List<PaymentsAppInstance>,
-    status: String,
     onRefresh: (AdyenProfile) -> Unit,
     onRevoke: (AdyenProfile, PaymentsAppInstance) -> Unit,
 ) {
     var revokeTarget by remember { mutableStateOf<PaymentsAppInstance?>(null) }
+    var showRevoked by remember { mutableStateOf(false) }
+    val revokedCount = instances.count { it.status == PaymentsAppStatus.REVOKED }
+    val displayedInstances = displayedPaymentsAppInstances(
+        instances = instances,
+        currentInstallationId = installationId,
+        showRevoked = showRevoked,
+    )
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Payments App instances", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
+            Text("Payments App instances", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Button(onClick = { activeProfile?.let(onRefresh) }, enabled = activeProfile != null) {
                     Text("Refresh")
+                }
+                if (revokedCount > 0) {
+                    OutlinedButton(onClick = { showRevoked = !showRevoked }) {
+                        Text(if (showRevoked) "Hide revoked" else "Show revoked")
+                    }
                 }
             }
             if (activeProfile == null) {
                 Text("Scan or select an Adyen profile to inspect app instances.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else if (instances.isEmpty()) {
                 Text("No instances loaded yet. Refresh uses the scanned profile API key.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else if (displayedInstances.isEmpty()) {
+                Text("Only revoked instances are hidden. Show revoked to inspect them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                instances.forEach { instance ->
+                displayedInstances.forEach { instance ->
                     PaymentsAppInstanceRow(
                         instance = instance,
                         isCurrentInstallation = instance.installationId == installationId,
@@ -286,6 +300,25 @@ internal fun PaymentsAppOperationsPanel(
             },
         )
     }
+}
+
+internal fun displayedPaymentsAppInstances(
+    instances: List<PaymentsAppInstance>,
+    currentInstallationId: String?,
+    showRevoked: Boolean,
+): List<PaymentsAppInstance> {
+    val current = instances.filter {
+        it.installationId == currentInstallationId && (showRevoked || it.status != PaymentsAppStatus.REVOKED)
+    }
+    val active = instances.filter {
+        it.status != PaymentsAppStatus.REVOKED && it.installationId != currentInstallationId
+    }
+    val revoked = if (showRevoked) {
+        instances.filter { it.status == PaymentsAppStatus.REVOKED && it.installationId != currentInstallationId }
+    } else {
+        emptyList()
+    }
+    return current + active + revoked
 }
 
 @Composable

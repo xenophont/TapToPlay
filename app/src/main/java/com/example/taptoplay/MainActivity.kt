@@ -45,7 +45,6 @@ import com.example.taptoplay.ui.TapToPlayApp
 import com.example.taptoplay.ui.formatMoney
 import com.example.taptoplay.ui.maskForDisplay
 import com.example.taptoplay.ui.screenForAdyenReturn
-import com.example.taptoplay.ui.shouldRefreshPaymentsAppInstances
 import com.example.taptoplay.ui.theme.TapToPlayTheme
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -84,7 +83,6 @@ class MainActivity : ComponentActivity() {
     private var pendingTransactionIdState by mutableStateOf<String?>(null)
     private var paymentsAppInstancesState by mutableStateOf(emptyList<PaymentsAppInstance>())
     private var paymentsAppStatusState by mutableStateOf("Payments App instances not loaded")
-    private var lastPaymentsAppEnteredAtMillis: Long? = null
 
     private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
         selectScreen(AppScreen.PaymentsApp)
@@ -110,7 +108,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         selectedScreenState = savedInstanceState?.screen(KEY_SELECTED_SCREEN) ?: AppScreen.Catalog
         pendingReturnScreenState = savedInstanceState?.screen(KEY_PENDING_RETURN_SCREEN)
-        lastPaymentsAppEnteredAtMillis = savedInstanceState?.optionalLong(KEY_LAST_PAYMENTS_APP_ENTERED)
         showDrawerHintState = savedInstanceState == null
         profileStore = AndroidProfileStore(this)
         transactionStore = AndroidTransactionStore(this)
@@ -258,7 +255,6 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(KEY_SELECTED_SCREEN, selectedScreenState.name)
         pendingReturnScreenState?.let { outState.putString(KEY_PENDING_RETURN_SCREEN, it.name) }
-        lastPaymentsAppEnteredAtMillis?.let { outState.putLong(KEY_LAST_PAYMENTS_APP_ENTERED, it) }
         super.onSaveInstanceState(outState)
     }
 
@@ -289,13 +285,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun handlePaymentsAppEntered(nowMillis: Long = System.currentTimeMillis()) {
-        val shouldRefresh = shouldRefreshPaymentsAppInstances(lastPaymentsAppEnteredAtMillis, nowMillis)
-        lastPaymentsAppEnteredAtMillis = nowMillis
-        if (shouldRefresh) {
-            profilesState.firstOrNull { it.id == activeProfileIdState }?.let { profile ->
-                refreshPaymentsApps(profile)
-            }
+    private fun handlePaymentsAppEntered() {
+        profilesState.firstOrNull { it.id == activeProfileIdState }?.let { profile ->
+            refreshPaymentsApps(profile)
         }
     }
 
@@ -360,6 +352,9 @@ class MainActivity : ComponentActivity() {
         boardingTokenIssuedState = false
         showPaymentsAppDownloadPromptState = false
         statusState = statusMessage
+        if (selectedScreenState == AppScreen.PaymentsApp) {
+            refreshPaymentsApps(profile)
+        }
     }
 
     private fun checkBoarding(profile: AdyenProfile) {
@@ -427,7 +422,7 @@ class MainActivity : ComponentActivity() {
 
     private fun revokePaymentsApp(profile: AdyenProfile, instance: PaymentsAppInstance) {
         selectScreen(AppScreen.PaymentsApp)
-        paymentsAppStatusState = "Revoking Payments App instance ${instance.installationId.maskForDisplay()}..."
+        setPaymentsAppStatus("Revoking Payments App instance ${instance.installationId.maskForDisplay()}...")
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 paymentsAppApiClient.revokePaymentsApp(profile, instance.installationId)
@@ -445,13 +440,17 @@ class MainActivity : ComponentActivity() {
                             current
                         }
                     }
-                    paymentsAppStatusState = "Revoked Payments App instance ${instance.installationId.maskForDisplay()}."
-                    statusState = "Payments App instance revoked. Reboard before charging with that device."
+                    setPaymentsAppStatus("Revoked Payments App instance ${instance.installationId.maskForDisplay()}.")
                 }
                 .onFailure {
-                    paymentsAppStatusState = "Revoke failed: ${it.message}"
+                    setPaymentsAppStatus("Revoke failed: ${it.message}")
                 }
         }
+    }
+
+    private fun setPaymentsAppStatus(message: String) {
+        paymentsAppStatusState = message
+        statusState = message
     }
 
     private fun pay(profile: AdyenProfile, lines: List<CartLine>, totalMinor: Long) {
@@ -616,6 +615,9 @@ class MainActivity : ComponentActivity() {
                 parsed.error != null -> listOfNotNull("Boarding error: ${parsed.error}", parsed.errorAdvice).joinToString(" ")
                 else -> "Adyen app is not boarded yet."
             }
+            if (parsed.boarded) {
+                activeProfile?.let { refreshPaymentsApps(it) }
+            }
         } else {
             val transactionRecords = transactionStore.records()
             val parsedServiceId = parsed.serviceIdOrNull()
@@ -655,12 +657,8 @@ class MainActivity : ComponentActivity() {
 
 private const val KEY_SELECTED_SCREEN = "selectedScreen"
 private const val KEY_PENDING_RETURN_SCREEN = "pendingReturnScreen"
-private const val KEY_LAST_PAYMENTS_APP_ENTERED = "lastPaymentsAppEntered"
 
 private fun Bundle.screen(key: String): AppScreen? =
     getString(key)?.let { name ->
         AppScreen.entries.firstOrNull { it.name == name }
     }
-
-private fun Bundle.optionalLong(key: String): Long? =
-    if (containsKey(key)) getLong(key) else null
