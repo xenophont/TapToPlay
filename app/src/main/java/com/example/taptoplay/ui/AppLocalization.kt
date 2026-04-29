@@ -126,7 +126,7 @@ private val englishStrings = TapToPlayStrings(
     language = AppLanguage.English,
     values = mapOf(
         "app_name" to "TapToPlay",
-        "app_subtitle" to "Boutique POS demo",
+        "app_subtitle" to "Payments App Made Easy",
         "screen_catalog" to "Catalog",
         "screen_checkout" to "Checkout",
         "screen_payments_app" to "Payments App",
