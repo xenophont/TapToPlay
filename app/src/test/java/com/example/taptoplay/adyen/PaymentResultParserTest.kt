@@ -140,5 +140,42 @@ class PaymentResultParserTest {
         assertEquals(true, boarding.returnData?.reboarding)
     }
 
+    @Test
+    fun promotesBoardingFieldsFromReturnData() {
+        val data = Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(
+                """
+                    {
+                      "boarded": false,
+                      "installationId": "install-2",
+                      "boardingRequestToken": "req-2"
+                    }
+                """.trimIndent().toByteArray(Charsets.UTF_8),
+            )
+
+        val result = PaymentResultParser.parse("taptoplay://adyen-return?data=${data.urlEncode()}")
+
+        assertEquals(
+            PaymentResult.BoardingStatus(
+                boarded = false,
+                installationId = "install-2",
+                boardingRequestToken = "req-2",
+                error = null,
+                data = data,
+                returnData = BoardingReturnData(
+                    boarded = false,
+                    installationId = "install-2",
+                    date = null,
+                    reboarding = null,
+                    boardingRequestToken = "req-2",
+                    merchantAccountCode = null,
+                    merchantStoreCode = null,
+                ),
+            ),
+            result,
+        )
+    }
+
     private fun String.urlEncode(): String = URLEncoder.encode(this, Charsets.UTF_8.name())
 }

@@ -44,6 +44,14 @@ Treat every credential QR as a secret. It contains API credentials and Terminal 
 
 Use placeholder values in documentation and examples. Never commit a real live payload.
 
+## Profile Label Resolution
+
+For merchant-scoped profiles without `storeId`, TapToPlay uses the existing `merchantId` directly as the primary profile label. No extra Management API lookup is needed.
+
+For store-scoped profiles, `displayName` is kept as the QR fallback label. When `storeId` is present, TapToPlay uses the scanned `apiKey` with the Adyen Management API v3 `GET /stores` endpoint, filtered by `merchantId`, to find the matching store. The store `reference` is stored locally as `storeName` and becomes the primary profile label in profile selection, checkout, and diagnostics.
+
+The API credential must include the Adyen Management API stores read role. If the lookup fails or the store cannot be found, TapToPlay still stores the profile with the original `displayName` so boarding is not blocked.
+
 ## Validation Rules
 
 - `schema` must be `taptoplay.adyen.profile.v1`.
@@ -51,6 +59,7 @@ Use placeholder values in documentation and examples. Never commit a real live p
 - `environment` must be `test` or `live`.
 - `displayName`, `merchantId`, `apiKey`, `clientKey`, terminal key fields, `currency`, and `countryCode` are required.
 - `displayName` must be 80 characters or less.
+- `storeName` is optional and normally app-populated after scan. If present, it requires `storeId` and must be 300 characters or less.
 - `merchantId`, `storeId`, and `terminalKeyIdentifier` must be 128 characters or less.
 - `apiKey`, `clientKey`, and `terminalPassphrase` must be 512 characters or less.
 - `storeId` is optional. When present, TapToPlay requests store-scoped boarding and Payments App instance listing.
@@ -174,6 +183,14 @@ Trata cada QR de credenciales como un secreto. Contiene credenciales de API y ma
 
 Usa valores de ejemplo en la documentación y en los ejemplos. Nunca comitees un payload live real.
 
+## Resolucion de etiqueta de perfil
+
+En perfiles con alcance de merchant, sin `storeId`, TapToPlay usa directamente el `merchantId` existente como etiqueta principal del perfil. No hace falta otro lookup de Management API.
+
+En perfiles con alcance de tienda, `displayName` queda como etiqueta fallback del QR. Cuando existe `storeId`, TapToPlay usa la `apiKey` escaneada con el endpoint `GET /stores` de Adyen Management API v3, filtrado por `merchantId`, para encontrar la tienda correspondiente. El `reference` de la store se guarda localmente como `storeName` y pasa a ser la etiqueta principal del perfil en seleccion, checkout y diagnosticos.
+
+La credencial API debe tener el rol de lectura de stores de Management API. Si el lookup falla o no se encuentra la tienda, TapToPlay guarda igualmente el perfil con el `displayName` original para no bloquear el boarding.
+
 ## Reglas de validación
 
 - `schema` debe ser `taptoplay.adyen.profile.v1`.
@@ -181,6 +198,7 @@ Usa valores de ejemplo en la documentación y en los ejemplos. Nunca comitees un
 - `environment` debe ser `test` o `live`.
 - `displayName`, `merchantId`, `apiKey`, `clientKey`, los campos de clave de terminal, `currency` y `countryCode` son obligatorios.
 - `displayName` debe tener 80 caracteres o menos.
+- `storeName` es opcional y normalmente lo rellena la app despues del escaneo. Si aparece, requiere `storeId` y debe tener 300 caracteres o menos.
 - `merchantId`, `storeId` y `terminalKeyIdentifier` deben tener 128 caracteres o menos.
 - `apiKey`, `clientKey` y `terminalPassphrase` deben tener 512 caracteres o menos.
 - `storeId` es opcional. Cuando está presente, TapToPlay solicita boarding y listado de instancias de Payments App con alcance de tienda.

@@ -39,6 +39,25 @@ class ProfileSelectionTest {
         assertEquals(true, profile("Live", PaymentEnvironment.LIVE).requiresLivePaymentConfirmation())
     }
 
+    @Test
+    fun storeNameBecomesPrimaryProfileNameWithoutChangingProfileId() {
+        val profile = profile("Demo Store TEST", PaymentEnvironment.TEST).copy(
+            storeId = "ST322LJ223223K5F",
+            storeName = "Boutique Centro",
+        )
+
+        assertEquals("Boutique Centro", profile.profileName)
+        assertEquals("test:merchant:ST322LJ223223K5F:Demo Store TEST", profile.id)
+    }
+
+    @Test
+    fun merchantScopedProfileUsesMerchantIdAsProfileName() {
+        val profile = profile("Demo Store TEST", PaymentEnvironment.TEST)
+
+        assertEquals("merchant", profile.profileName)
+        assertEquals("test:merchant::Demo Store TEST", profile.id)
+    }
+
     private fun profile(name: String, environment: PaymentEnvironment) = AdyenProfile(
         displayName = name,
         environment = environment,

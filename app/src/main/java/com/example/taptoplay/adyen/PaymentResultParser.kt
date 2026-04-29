@@ -79,16 +79,22 @@ object PaymentResultParser {
         crypto: NexoCrypto?,
     ): PaymentResult {
         val boarded = params["boarded"]
-        val installationId = params["installationId"]
         val rawData = params["data"]
-        if (boarded != null || params["boardingRequestToken"] != null) {
+        val returnData = rawData?.let(::parseBoardingReturnData)
+        val installationId = params["installationId"] ?: returnData?.installationId
+        val boardingRequestToken = params["boardingRequestToken"] ?: returnData?.boardingRequestToken
+        val isBoardingReturn = boarded != null ||
+            boardingRequestToken != null ||
+            returnData?.boarded != null ||
+            returnData?.installationId != null
+        if (isBoardingReturn) {
             return PaymentResult.BoardingStatus(
-                boarded = boarded.equals("true", ignoreCase = true),
+                boarded = boarded?.equals("true", ignoreCase = true) ?: (returnData?.boarded == true),
                 installationId = installationId,
-                boardingRequestToken = params["boardingRequestToken"],
+                boardingRequestToken = boardingRequestToken,
                 error = params["error"],
                 data = rawData,
-                returnData = rawData?.let(::parseBoardingReturnData),
+                returnData = returnData,
             )
         }
 

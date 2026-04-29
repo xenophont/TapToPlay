@@ -42,6 +42,7 @@ internal fun ProfilePanel(
     activeProfile: AdyenProfile?,
     installationId: String?,
     boardingRequestToken: String?,
+    boardingTokenIssued: Boolean,
     onScanProfile: () -> Unit,
     onOpenCredentialQrDocs: () -> Unit,
     onSelectProfile: (String) -> Unit,
@@ -70,7 +71,7 @@ internal fun ProfilePanel(
                 Column {
                     Text("Payment profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(
-                        activeProfile?.let { "${it.displayName} | ${it.environment.name.lowercase()}" } ?: "No Adyen profile selected",
+                        activeProfile?.let { "${it.profileName} | ${it.environment.name.lowercase()}" } ?: "No Adyen profile selected",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -109,13 +110,30 @@ internal fun ProfilePanel(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         KeyValueLine("Merchant", activeProfile.merchantId)
+                        activeProfile.storeName?.let { KeyValueLine("Store name", it) }
                         activeProfile.storeId?.let { KeyValueLine("Store ID", it) }
                         KeyValueLine("Environment", activeProfile.environment.name.lowercase())
                         KeyValueLine("API key", activeProfile.maskedApiKey())
                         KeyValueLine("Terminal key", "${activeProfile.terminalKeyIdentifier} v${activeProfile.terminalKeyVersion}")
                         KeyValueLine("Passphrase", activeProfile.maskedPassphrase())
                         KeyValueLine("Installation", installationId ?: "not returned yet")
-                        KeyValueLine("Boarding request token", boardingRequestToken?.let { "received" } ?: "not received")
+                        KeyValueLine(
+                            "Boarding request token",
+                            when {
+                                boardingTokenIssued -> "exchanged for boarding token"
+                                boardingRequestToken != null -> "received from check"
+                                installationId != null -> "not needed after boarding"
+                                else -> "not received"
+                            },
+                        )
+                        KeyValueLine(
+                            "Boarding token",
+                            when {
+                                boardingTokenIssued -> "generated for latest board link"
+                                boardingRequestToken != null -> "not generated yet"
+                                else -> "not requested"
+                            },
+                        )
                     }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -137,7 +155,7 @@ internal fun ProfilePanel(
                             onClick = { onSelectProfile(profile.id) },
                             label = {
                                 Text(
-                                    profile.displayName,
+                                    profile.profileName,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -169,7 +187,7 @@ internal fun ProfilePanel(
             title = { Text("Remove payment profile?") },
             text = {
                 Text(
-                    "This removes ${profile.displayName} from the local encrypted vault and clears its saved boarding state. Adyen app authentication is not revoked unless you revoke the instance separately.",
+                    "This removes ${profile.profileName} from the local encrypted vault and clears its saved boarding state. Adyen app authentication is not revoked unless you revoke the instance separately.",
                 )
             },
         )

@@ -69,7 +69,7 @@ internal fun CartSummaryCard(
                 Text(formatMoney(totalMinor), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
             Text(
-                activeProfile?.let { "Charging profile: ${it.displayName} (${it.environment.name.lowercase()})" }
+                activeProfile?.let { "Charging profile: ${it.profileName} (${it.environment.name.lowercase()})" }
                     ?: "No payment profile selected",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

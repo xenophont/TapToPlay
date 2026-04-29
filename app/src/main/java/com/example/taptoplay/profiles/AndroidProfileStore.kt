@@ -27,7 +27,7 @@ class AndroidProfileStore(context: Context) : ProfileStore {
 
     override fun save(profile: AdyenProfile) {
         val updated = (profiles().filterNot { it.id == profile.id } + profile)
-            .sortedWith(compareBy<AdyenProfile> { it.environment.name }.thenBy { it.displayName })
+            .sortedWith(compareBy<AdyenProfile> { it.environment.name }.thenBy { it.profileName })
         prefs.edit()
             .putString(KEY_PROFILES, json.encodeToString(ListSerializer(AdyenProfile.serializer()), updated))
             .apply()

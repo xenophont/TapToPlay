@@ -14,7 +14,32 @@ class ProfileQrParserTest {
         assertEquals("Demo Store TEST", profile.displayName)
         assertEquals(PaymentEnvironment.TEST, profile.environment)
         assertEquals("ST322LJ223223K5F", profile.storeId)
+        assertEquals(null, profile.storeName)
+        assertEquals("Demo Store TEST", profile.profileName)
         assertEquals("EUR", profile.currency)
+    }
+
+    @Test
+    fun usesResolvedStoreNameAsProfileNameWhenPresent() {
+        val payload = validPayload().replace(
+            "\"storeId\": \"ST322LJ223223K5F\",",
+            "\"storeId\": \"ST322LJ223223K5F\",\n          \"storeName\": \"Boutique Centro\",",
+        )
+
+        val profile = parser.parse(payload).getOrThrow()
+
+        assertEquals("Boutique Centro", profile.storeName)
+        assertEquals("Boutique Centro", profile.profileName)
+    }
+
+    @Test
+    fun usesMerchantIdAsProfileNameForMerchantScopedProfiles() {
+        val payload = validPayload().replace("\"storeId\": \"ST322LJ223223K5F\",", "")
+
+        val profile = parser.parse(payload).getOrThrow()
+
+        assertEquals(null, profile.storeId)
+        assertEquals("YourMerchantAccount", profile.profileName)
     }
 
     @Test
@@ -52,6 +77,20 @@ class ProfileQrParserTest {
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()?.message?.contains("apiKey is too long") == true)
+    }
+
+    @Test
+    fun rejectsStoreNameWithoutStoreId() {
+        val payload = validPayload()
+            .replace(
+                "\"storeId\": \"ST322LJ223223K5F\",",
+                "\"storeName\": \"Boutique Centro\",",
+            )
+
+        val result = parser.parse(payload)
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("storeName requires storeId") == true)
     }
 
     private fun validPayload(): String = """

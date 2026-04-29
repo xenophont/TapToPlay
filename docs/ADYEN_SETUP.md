@@ -30,6 +30,8 @@ Credentials can come from either:
 
 Switching test/live is deliberate. Select the active profile in `Payments App`; test profiles use test App Links and Management API hosts, and live profiles use live App Links and Management API hosts.
 
+When a scanned profile has no `storeId`, TapToPlay treats it as merchant-level boarding and uses the existing `merchantId` as the primary profile label. When a scanned profile includes `storeId`, TapToPlay resolves the store through Adyen Management API v3 `GET /stores?merchantId=...` using the profile API key. The store `reference` becomes the primary profile label, with `displayName` kept as the QR fallback label for failed store lookups.
+
 Release builds do not embed `local.properties` Adyen values. Use QR profiles for portable demos, and never commit real credentials.
 
 ## Boarding Flow
@@ -40,7 +42,7 @@ Release builds do not embed `local.properties` Adyen values. Use QR profiles for
 4. TapToPlay opens `boarded?returnUrl=taptoplay://adyen-return`.
 5. If the Payments app is not boarded, Adyen returns `installationId` and `boardingRequestToken`.
 6. Tap `Board`.
-7. TapToPlay calls `generatePaymentsAppBoardingToken` with the returned `boardingRequestToken`.
+7. TapToPlay calls `generatePaymentsAppBoardingToken` with the returned `boardingRequestToken`. This backend-style call intentionally remains in the app for demo purposes.
 8. TapToPlay opens the `board` App Link with the Base64URL-encoded `boardingToken`.
 9. The Adyen app returns `boarded=true` and an `installationId`.
 
@@ -61,7 +63,7 @@ The `Payments App` tab includes guarded operations using the selected profile AP
 - Use `Remove` when the local demo profile should disappear from this device.
 - Use `Revoke instance` when the Adyen Payments app installation should be invalidated in Adyen and must be boarded again.
 
-The API credential must have the required roles for boarding-token generation, listing Payments App instances, and revoking instances.
+The API credential must have the required roles for boarding-token generation, listing Payments App instances, and revoking instances. Store-scoped profiles also need the stores read role for store-name lookup.
 
 ## Payment Flow
 
@@ -95,6 +97,7 @@ Refund outcome handling depends on the Terminal API response returned by the Pay
 ## Troubleshooting
 
 - QR scan fails: validate the payload against `docs/QR_CREDENTIALS.md`, including payload size and required fields.
+- Store name lookup fails: check the API key, Management API stores read role, merchant account, store ID, and environment. The profile still imports with `displayName` as fallback.
 - Boarding fails: check the API key, merchant account, store ID, environment, and Adyen API roles.
 - Payments App API refresh/revoke fails: check the selected profile API key permissions and whether the merchant/store scope is correct.
 - Adyen app does not open: confirm the Payments Test app is installed for test flows, or the live Payments app for live flows.
@@ -113,7 +116,7 @@ Flujo de boarding:
 1. En `Payments App`, selecciona el perfil.
 2. Toca `Check`.
 3. Si Adyen devuelve `boardingRequestToken`, toca `Board`.
-4. TapToPlay llama a `generatePaymentsAppBoardingToken`.
+4. TapToPlay llama a `generatePaymentsAppBoardingToken`; esta llamada tipo backend se mantiene dentro de la app solo para la demo.
 5. La app abre el link `board` y recibe `boarded=true` con `installationId`.
 
 La pestaña `Payments App` también permite listar instancias y revocar una instalación con confirmación explícita. `Remove` solo borra el perfil local cifrado; no revoca la instalación en Adyen.

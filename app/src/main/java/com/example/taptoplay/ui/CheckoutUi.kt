@@ -277,9 +277,10 @@ internal fun LivePaymentConfirmationDialog(
                 Text("This will launch a live Adyen Tap to Pay charge.")
                 KeyValueLine("Amount", formatMoney(confirmation.totalMinor))
                 KeyValueLine("Items", confirmation.lines.sumOf { it.quantity }.toString())
-                KeyValueLine("Profile", confirmation.profile.displayName)
+                KeyValueLine("Profile", confirmation.profile.profileName)
                 KeyValueLine("Environment", confirmation.profile.environment.name.lowercase())
                 KeyValueLine("Merchant", confirmation.profile.merchantId)
+                confirmation.profile.storeName?.let { KeyValueLine("Store name", it) }
                 confirmation.profile.storeId?.let { KeyValueLine("Store", it) }
             }
         },

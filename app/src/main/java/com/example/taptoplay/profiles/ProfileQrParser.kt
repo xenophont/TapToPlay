@@ -26,6 +26,8 @@ class ProfileQrParser(
         require(profile.merchantId.isNotBlank()) { "merchantId is required" }
         require(profile.merchantId.length <= MAX_ID_CHARS) { "merchantId is too long" }
         require(profile.storeId == null || profile.storeId.length <= MAX_ID_CHARS) { "storeId is too long" }
+        require(profile.storeName == null || !profile.storeId.isNullOrBlank()) { "storeName requires storeId" }
+        require(profile.storeName == null || profile.storeName.length <= MAX_RESOLVED_NAME_CHARS) { "storeName is too long" }
         require(profile.apiKey.isNotBlank()) { "apiKey is required" }
         require(profile.apiKey.length <= MAX_SECRET_CHARS) { "apiKey is too long" }
         require(profile.clientKey.isNotBlank()) { "clientKey is required" }
@@ -42,6 +44,7 @@ class ProfileQrParser(
     private companion object {
         const val MAX_PAYLOAD_CHARS = 8_192
         const val MAX_DISPLAY_NAME_CHARS = 80
+        const val MAX_RESOLVED_NAME_CHARS = 300
         const val MAX_ID_CHARS = 128
         const val MAX_SECRET_CHARS = 512
     }

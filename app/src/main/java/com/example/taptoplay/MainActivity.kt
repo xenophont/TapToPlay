@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.example.taptoplay.adyen.AdyenLinks
+import com.example.taptoplay.adyen.AdyenManagementApiClient
 import com.example.taptoplay.adyen.AndroidBoardingStateStore
 import com.example.taptoplay.adyen.AndroidTransactionStore
 import com.example.taptoplay.adyen.NexoCrypto
@@ -61,6 +62,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var saleToAcquirerDataFavoriteStore: SaleToAcquirerDataFavoriteStore
     private val qrParser = ProfileQrParser()
     private val saleToAcquirerDataQrParser = SaleToAcquirerDataQrParser()
+    private val managementApiClient = AdyenManagementApiClient()
     private val paymentsAppApiClient = PaymentsAppApiClient()
     private val nexoCrypto = NexoCrypto()
 
@@ -74,6 +76,7 @@ class MainActivity : ComponentActivity() {
     private var statusState by mutableStateOf("Ready for boutique checkout")
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
+    private var boardingTokenIssuedState by mutableStateOf(false)
     private var saleToAcquirerDataConfigState by mutableStateOf(SaleToAcquirerDataConfig.default())
     private var saleToAcquirerDataFavoritesState by mutableStateOf(emptyList<SaleToAcquirerDataConfig>())
     private var transactionHistoryState by mutableStateOf(emptyList<TransactionRecord>())
@@ -86,13 +89,7 @@ class MainActivity : ComponentActivity() {
         selectScreen(AppScreen.PaymentsApp)
         val contents = result.contents ?: return@registerForActivityResult
         qrParser.parse(contents)
-            .onSuccess { profile ->
-                profileStore.save(profile)
-                profileStore.setActive(profile.id)
-                reloadProfiles()
-                reloadBoardingState()
-                statusState = "Scanned ${profile.displayName}. Active profile updated."
-            }
+            .onSuccess { profile -> importScannedProfile(profile) }
             .onFailure { statusState = "QR rejected: ${it.message}" }
     }
 
@@ -138,6 +135,7 @@ class MainActivity : ComponentActivity() {
                     activeProfileId = activeProfileIdState,
                     installationId = installationIdState,
                     boardingRequestToken = boardingRequestTokenState,
+                    boardingTokenIssued = boardingTokenIssuedState,
                     saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
                     saleToAcquirerDataFavorites = saleToAcquirerDataFavoritesState,
                     transactionHistory = transactionHistoryState,
@@ -204,6 +202,7 @@ class MainActivity : ComponentActivity() {
                         reloadBoardingState()
                         paymentsAppInstancesState = emptyList()
                         paymentsAppStatusState = "Payments App instances not loaded"
+                        boardingTokenIssuedState = false
                         statusState = "Active profile switched deliberately."
                     },
                     onRemoveProfile = { profile ->
@@ -317,6 +316,44 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun importScannedProfile(profile: AdyenProfile) {
+        if (profile.storeId.isNullOrBlank()) {
+            saveImportedProfile(profile, "Scanned ${profile.profileName}. Active profile updated.")
+            return
+        }
+        statusState = "Resolving Adyen store name for ${profile.storeId}..."
+        lifecycleScope.launch {
+            val storeResult = withContext(Dispatchers.IO) { managementApiClient.findStoreForProfile(profile) }
+            val resolvedProfile = storeResult.getOrNull()
+                ?.takeIf { it.profileName.isNotBlank() }
+                ?.let { profile.copy(storeName = it.profileName) }
+                ?: profile
+            val statusMessage = storeResult.fold(
+                onSuccess = { store ->
+                    when (store) {
+                        null -> "Scanned ${profile.profileName}. Store ${profile.storeId} was not found under ${profile.merchantId}."
+                        else -> "Scanned ${resolvedProfile.profileName}. Store name resolved from Adyen."
+                    }
+                },
+                onFailure = { error ->
+                    "Scanned ${profile.profileName}. Store name lookup failed: ${error.message}"
+                },
+            )
+            saveImportedProfile(resolvedProfile, statusMessage)
+        }
+    }
+
+    private fun saveImportedProfile(profile: AdyenProfile, statusMessage: String) {
+        profileStore.save(profile)
+        profileStore.setActive(profile.id)
+        reloadProfiles()
+        reloadBoardingState()
+        paymentsAppInstancesState = emptyList()
+        paymentsAppStatusState = "Payments App instances not loaded"
+        boardingTokenIssuedState = false
+        statusState = statusMessage
+    }
+
     private fun board(profile: AdyenProfile) {
         selectScreen(AppScreen.PaymentsApp)
         val requestToken = boardingRequestTokenState
@@ -326,12 +363,16 @@ class MainActivity : ComponentActivity() {
             return
         }
         statusState = "Requesting Adyen boarding token..."
+        boardingTokenIssuedState = false
         lifecycleScope.launch {
             val tokenResult = withContext(Dispatchers.IO) { paymentsAppApiClient.createBoardingToken(profile, requestToken) }
             tokenResult
                 .onSuccess { response ->
                     installationIdState = response.installationId ?: installationIdState
                     response.installationId?.let { boardingStateStore.saveInstallationId(profile.id, it) }
+                    boardingRequestTokenState = null
+                    boardingStateStore.clearBoardingRequestToken(profile.id)
+                    boardingTokenIssuedState = true
                     statusState = "Opening Adyen to finish boarding..."
                     launchLink(AdyenLinks.board(profile, response.boardingToken), AppScreen.PaymentsApp)
                 }
@@ -347,7 +388,8 @@ class MainActivity : ComponentActivity() {
         reloadBoardingState()
         paymentsAppInstancesState = emptyList()
         paymentsAppStatusState = "Payments App instances not loaded"
-        statusState = "Removed ${profile.displayName} and cleared its local boarding state."
+        boardingTokenIssuedState = false
+        statusState = "Removed ${profile.profileName} and cleared its local boarding state."
     }
 
     private fun refreshPaymentsApps(profile: AdyenProfile) {
@@ -517,6 +559,13 @@ class MainActivity : ComponentActivity() {
             parsed.boardingRequestToken?.let { token ->
                 boardingRequestTokenState = token
                 activeProfileId?.let { boardingStateStore.saveBoardingRequestToken(it, token) }
+            }
+            if (parsed.boardingRequestToken == null && parsed.boarded) {
+                boardingRequestTokenState = null
+                activeProfileId?.let { boardingStateStore.clearBoardingRequestToken(it) }
+            }
+            if (parsed.boardingRequestToken != null) {
+                boardingTokenIssuedState = false
             }
             statusState = when {
                 parsed.boarded -> "Adyen app is boarded and ready."

@@ -19,6 +19,7 @@ data class AdyenProfile(
     val environment: PaymentEnvironment,
     val merchantId: String,
     val storeId: String? = null,
+    val storeName: String? = null,
     val apiKey: String,
     val clientKey: String,
     val terminalKeyIdentifier: String,
@@ -30,8 +31,13 @@ data class AdyenProfile(
     val id: String
         get() = "${environment.name.lowercase()}:$merchantId:${storeId.orEmpty()}:$displayName"
 
+    val profileName: String
+        get() = storeName?.takeIf { it.isNotBlank() }
+            ?: merchantId.takeIf { storeId.isNullOrBlank() && it.isNotBlank() }
+            ?: displayName
+
     fun maskedApiKey(): String = apiKey.mask()
-    fun maskedPassphrase(): String = terminalPassphrase.mask()
+    fun maskedPassphrase(): String = terminalPassphrase.maskPresence()
 
     companion object {
         const val SCHEMA = "taptoplay.adyen.profile.v1"
@@ -43,6 +49,8 @@ fun String.mask(): String = when {
     length <= 8 -> "****"
     else -> take(4) + "..." + takeLast(4)
 }
+
+private fun String.maskPresence(): String = if (isBlank()) "not set" else "set (hidden)"
 
 fun AdyenProfile.requiresLivePaymentConfirmation(): Boolean =
     environment == PaymentEnvironment.LIVE

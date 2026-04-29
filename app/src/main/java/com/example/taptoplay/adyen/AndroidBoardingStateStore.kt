@@ -30,6 +30,10 @@ class AndroidBoardingStateStore(context: Context) {
         prefs.edit().putString(tokenKey(profileId), token).apply()
     }
 
+    fun clearBoardingRequestToken(profileId: String) {
+        prefs.edit().remove(tokenKey(profileId)).apply()
+    }
+
     fun clear(profileId: String) {
         prefs.edit()
             .remove(installationKey(profileId))

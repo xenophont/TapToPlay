@@ -27,6 +27,7 @@ internal fun DiagnosticsPanel(
     activeProfile: AdyenProfile?,
     installationId: String?,
     boardingRequestToken: String?,
+    boardingTokenIssued: Boolean,
     saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
     transactionHistory: List<TransactionRecord>,
     paymentsAppInstances: List<PaymentsAppInstance>,
@@ -64,16 +65,33 @@ internal fun DiagnosticsPanel(
                 }
             }
             KeyValueLine("Latest action", status)
-            KeyValueLine("Profile", activeProfile?.displayName ?: "none")
+            KeyValueLine("Profile", activeProfile?.profileName ?: "none")
             KeyValueLine("Environment", activeProfile?.environment?.name?.lowercase() ?: "none")
             activeProfile?.let {
                 KeyValueLine("Merchant", it.merchantId)
+                it.storeName?.let { storeName -> KeyValueLine("Store name", storeName) }
                 it.storeId?.let { store -> KeyValueLine("Store", store) }
                 KeyValueLine("API key", it.maskedApiKey())
                 KeyValueLine("Terminal key", "${it.terminalKeyIdentifier} v${it.terminalKeyVersion}")
             }
             KeyValueLine("Installation", installationId?.maskForDisplay() ?: "not returned yet")
-            KeyValueLine("Boarding token", boardingRequestToken?.let { "received" } ?: "not received")
+            KeyValueLine(
+                "Boarding request token",
+                when {
+                    boardingTokenIssued -> "exchanged for boarding token"
+                    boardingRequestToken != null -> "received from check"
+                    installationId != null -> "not needed after boarding"
+                    else -> "not received"
+                },
+            )
+            KeyValueLine(
+                "Boarding token",
+                when {
+                    boardingTokenIssued -> "generated for latest board link"
+                    boardingRequestToken != null -> "not generated yet"
+                    else -> "not requested"
+                },
+            )
             KeyValueLine(
                 "SaleToAcquirerData",
                 "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.fieldCount} fields",

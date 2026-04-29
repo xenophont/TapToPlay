@@ -65,6 +65,8 @@ ADYEN_COUNTRY_CODE=ES
 
 TapToPlay imports Adyen profiles by scanning a QR code that contains raw JSON. Use one QR per environment, for example one for test and one for live.
 
+For merchant-scoped profiles without `storeId`, TapToPlay shows `merchantId` as the primary profile label. For store-scoped profiles, `displayName` is a fallback label: after scanning a QR with `storeId`, TapToPlay calls the Adyen Management API v3 stores endpoint with the scanned API key and merchant account, resolves the matching store `reference`, and shows that value as the primary profile label.
+
 Example test payload:
 
 ```json
@@ -135,13 +137,13 @@ Use `Scan data QR` in `Checkout`, `View` to inspect/edit fields, `Save` for favo
 The `Payments App` tab supports:
 
 - `Check`: opens the documented `boarded` App Link and parses returned boarding status and decoded return `data`.
-- `Board`: calls the Adyen Management API `generatePaymentsAppBoardingToken` endpoint with the returned `boardingRequestToken`, then opens the `board` App Link.
+- `Board`: calls the Adyen Management API `generatePaymentsAppBoardingToken` endpoint with the returned `boardingRequestToken`, then opens the `board` App Link with the generated `boardingToken`. This backend-style call stays in the app for demo purposes.
 - `Reboard`: opens `boarded?reboard=true`, then uses `Board` after Adyen returns a fresh request token.
 - `Refresh`: calls the Payments App API to list Payments App instances for the selected merchant or store.
 - `Revoke instance`: revokes a listed app instance after an explicit confirmation.
 - `Remove`: removes the local encrypted profile and its saved local boarding state. This does not revoke the Adyen Payments App instance by itself.
 
-The Management API calls use the selected scanned/bootstrap profile API key. Make sure the API credential has the required Adyen roles for boarding, listing, and revoking Payments App instances.
+The Management API calls use the selected scanned/bootstrap profile API key. Make sure the API credential has the required Adyen roles for store-name lookup when using `storeId`, boarding, listing, and revoking Payments App instances.
 
 ## Transactions, Responses, and Refunds
 
