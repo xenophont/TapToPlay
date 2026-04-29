@@ -52,16 +52,18 @@ internal fun CartSummaryCard(
     activeProfile: AdyenProfile?,
     onCheckout: () -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
+    val itemCount = lines.sumOf { it.quantity }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Cart", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(strings["cart"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(
                         if (lines.isEmpty()) {
-                            "Add garments to build a checkout."
+                            strings["cart_empty_hint"]
                         } else {
-                            "${lines.sumOf { it.quantity }} item${if (lines.sumOf { it.quantity } == 1) "" else "s"} ready"
+                            strings.itemsReady(itemCount)
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -69,14 +71,14 @@ internal fun CartSummaryCard(
                 Text(formatMoney(totalMinor), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
             Text(
-                activeProfile?.let { "Charging profile: ${it.profileName} (${it.environment.name.lowercase()})" }
-                    ?: "No payment profile selected",
+                activeProfile?.let { strings.chargingProfile(it.profileName, it.environment) }
+                    ?: strings["no_payment_profile_selected"],
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Button(onClick = onCheckout, enabled = lines.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-                Text("Go to checkout")
+                Text(strings["go_to_checkout"])
             }
         }
     }
@@ -84,6 +86,10 @@ internal fun CartSummaryCard(
 
 @Composable
 internal fun ProductCard(product: Product, onAdd: () -> Unit) {
+    val strings = LocalTapToPlayStrings.current
+    val productName = strings.productName(product)
+    val productDescription = strings.productDescription(product)
+    val productCategory = strings.categoryLabel(product.category)
     var feedbackTick by remember { mutableStateOf(0) }
     var addedFeedback by remember { mutableStateOf(false) }
     LaunchedEffect(feedbackTick) {
@@ -136,7 +142,7 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                 if (product.imageResId != 0) {
                     Image(
                         painter = painterResource(product.imageResId),
-                        contentDescription = product.name,
+                        contentDescription = productName,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
                     )
@@ -153,7 +159,7 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                     )
                 }
                 Text(
-                    product.category.uppercase(),
+                    productCategory.uppercase(strings.locale),
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(12.dp),
@@ -165,7 +171,7 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                 )
             }
             Text(
-                product.name,
+                productName,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 minLines = 2,
@@ -173,7 +179,7 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                product.description,
+                productDescription,
                 minLines = 2,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -211,7 +217,7 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                     ),
                 ) {
                     Text(
-                        if (addedFeedback) "Added" else "Add to cart",
+                        if (addedFeedback) strings["added"] else strings["add_to_cart"],
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.labelLarge,

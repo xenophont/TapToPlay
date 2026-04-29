@@ -50,6 +50,7 @@ internal fun SaleToAcquirerDataDialog(
     onSaveFavorite: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(8.dp),
@@ -63,7 +64,14 @@ internal fun SaleToAcquirerDataDialog(
                     Column(Modifier.fillMaxWidth()) {
                         Text("SaleToAcquirerData", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "${config.displayName} | ${config.fieldCount} fields",
+                            strings.format(
+                                "sale_to_acquirer_data_summary",
+                                config.displayName,
+                                strings.format(
+                                    if (config.fieldCount == 1) "field_count_one" else "field_count_many",
+                                    config.fieldCount,
+                                ),
+                            ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -74,13 +82,13 @@ internal fun SaleToAcquirerDataDialog(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         item {
-                            OutlinedButton(onClick = onSaveFavorite) { Text("Save", maxLines = 1) }
+                            OutlinedButton(onClick = onSaveFavorite) { Text(strings["save"], maxLines = 1) }
                         }
                         item {
-                            OutlinedButton(onClick = onApply) { Text("Apply", maxLines = 1) }
+                            OutlinedButton(onClick = onApply) { Text(strings["apply"], maxLines = 1) }
                         }
                         item {
-                            TextButton(onClick = onDismiss) { Text("Close", maxLines = 1) }
+                            TextButton(onClick = onDismiss) { Text(strings["close"], maxLines = 1) }
                         }
                     }
                 }
@@ -104,6 +112,7 @@ internal fun SaleToAcquirerDataDialog(
 
 @Composable
 internal fun JsonNodeRow(name: String, value: JsonElement, depth: Int) {
+    val strings = LocalTapToPlayStrings.current
     JsonNodeRow(
         name = name,
         value = value,
@@ -112,6 +121,7 @@ internal fun JsonNodeRow(name: String, value: JsonElement, depth: Int) {
         editable = false,
         onEdit = { _, _ -> },
         onRemove = {},
+        strings = strings,
     )
 }
 
@@ -124,12 +134,13 @@ private fun JsonNodeRow(
     editable: Boolean,
     onEdit: (List<String>, String) -> Unit,
     onRemove: (List<String>) -> Unit,
+    strings: TapToPlayStrings = LocalTapToPlayStrings.current,
 ) {
     var expanded by remember { mutableStateOf(depth == 0) }
     var editing by remember { mutableStateOf(false) }
     var editedValue by remember(value) { mutableStateOf(value.editableText()) }
     val isExpandable = value is JsonObject || value is JsonArray
-    val summary = value.summary()
+    val summary = value.summary(strings)
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -148,11 +159,11 @@ private fun JsonNodeRow(
                 }
                 if (isExpandable) {
                     TextButton(onClick = { expanded = !expanded }) {
-                        Text(if (expanded) "Hide" else "View")
+                        Text(if (expanded) strings["hide"] else strings["view"])
                     }
                 } else if (editable) {
                     TextButton(onClick = { editing = !editing }) {
-                        Text(if (editing) "Cancel" else "Edit")
+                        Text(if (editing) strings["cancel"] else strings["edit"])
                     }
                 }
             }
@@ -161,7 +172,7 @@ private fun JsonNodeRow(
                     value = editedValue,
                     onValueChange = { editedValue = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Value") },
+                    label = { Text(strings["value"]) },
                     singleLine = false,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -171,16 +182,16 @@ private fun JsonNodeRow(
                             editing = false
                         },
                     ) {
-                        Text("Save")
+                        Text(strings["save"])
                     }
                     TextButton(onClick = { onRemove(path) }) {
-                        Text("Remove")
+                        Text(strings["remove"])
                     }
                 }
             }
             if (editable && isExpandable && depth > 0) {
                 TextButton(onClick = { onRemove(path) }) {
-                    Text("Remove group")
+                    Text(strings["remove_group"])
                 }
             }
             if (expanded && value is JsonObject) {
@@ -193,6 +204,7 @@ private fun JsonNodeRow(
                         editable = editable,
                         onEdit = onEdit,
                         onRemove = onRemove,
+                        strings = strings,
                     )
                 }
             }
@@ -206,6 +218,7 @@ private fun JsonNodeRow(
                         editable = false,
                         onEdit = onEdit,
                         onRemove = onRemove,
+                        strings = strings,
                     )
                 }
             }
@@ -213,9 +226,9 @@ private fun JsonNodeRow(
     }
 }
 
-private fun JsonElement.summary(): String = when (this) {
-    is JsonObject -> "${size} field${if (size == 1) "" else "s"}"
-    is JsonArray -> "${size} item${if (size == 1) "" else "s"}"
+private fun JsonElement.summary(strings: TapToPlayStrings): String = when (this) {
+    is JsonObject -> strings.format(if (size == 1) "field_count_one" else "field_count_many", size)
+    is JsonArray -> strings.format(if (size == 1) "array_item_count_one" else "array_item_count_many", size)
     is JsonPrimitive -> when {
         isString -> contentOrNull.orEmpty()
         booleanOrNull != null -> booleanOrNull.toString()

@@ -53,13 +53,14 @@ internal fun ProfilePanel(
     onBoard: (AdyenProfile) -> Unit,
     onReboard: (AdyenProfile) -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     var expanded by remember { mutableStateOf(true) }
     var profilePendingRemoval by remember { mutableStateOf<AdyenProfile?>(null) }
     val boardingState = when {
-        activeProfile == null -> "No profile"
-        installationId != null -> "Boarded"
-        boardingRequestToken != null -> "Ready to board"
-        else -> "Collapsed setup"
+        activeProfile == null -> strings["boarding_no_profile"]
+        installationId != null -> strings["boarding_boarded"]
+        boardingRequestToken != null -> strings["boarding_ready_to_board"]
+        else -> strings["boarding_collapsed_setup"]
     }
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -71,34 +72,35 @@ internal fun ProfilePanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text("Payment profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(strings["payment_profile"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(
-                        activeProfile?.let { "${it.profileName} | ${it.environment.name.lowercase()}" } ?: "No Adyen profile selected",
+                        activeProfile?.let { "${it.profileName} | ${strings.environmentLabel(it.environment)}" }
+                            ?: strings["no_payment_profile_selected"],
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     AssistChip(onClick = { expanded = !expanded }, label = { Text(boardingState) })
                     Text(
-                        if (expanded) "Hide" else "Setup",
+                        if (expanded) strings["hide"] else strings["setup"],
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
             if (expanded) {
-                Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text("Scan QR") }
+                Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text(strings["scan_qr"]) }
             }
             if (expanded && profiles.isEmpty()) {
                 OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("No credential profile loaded", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(strings["no_credential_profile_loaded"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Create a credential QR from the TapToPlay schema before boarding the Adyen Payments app.",
+                            strings["credential_profile_empty_body"],
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         TextButton(onClick = onOpenCredentialQrDocs, modifier = Modifier.align(Alignment.Start)) {
-                            Text("Open QR documentation")
+                            Text(strings["open_qr_documentation"])
                         }
                     }
                 }
@@ -106,34 +108,34 @@ internal fun ProfilePanel(
             if (expanded && activeProfile != null) {
                 OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Secure device vault", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(strings["secure_device_vault"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Scanned QR profiles are stored with Android encrypted preferences. Secrets stay masked in the app.",
+                            strings["secure_device_vault_body"],
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        KeyValueLine("Merchant", activeProfile.merchantId)
-                        activeProfile.storeName?.let { KeyValueLine("Store name", it) }
-                        activeProfile.storeId?.let { KeyValueLine("Store ID", it) }
-                        KeyValueLine("Environment", activeProfile.environment.name.lowercase())
-                        KeyValueLine("API key", activeProfile.maskedApiKey())
-                        KeyValueLine("Terminal key", "${activeProfile.terminalKeyIdentifier} v${activeProfile.terminalKeyVersion}")
-                        KeyValueLine("Passphrase", activeProfile.maskedPassphrase())
-                        KeyValueLine("Installation", installationId ?: "not returned yet")
+                        KeyValueLine(strings["merchant"], activeProfile.merchantId)
+                        activeProfile.storeName?.let { KeyValueLine(strings["store_name"], it) }
+                        activeProfile.storeId?.let { KeyValueLine(strings["store_id"], it) }
+                        KeyValueLine(strings["environment"], strings.environmentLabel(activeProfile.environment))
+                        KeyValueLine(strings["api_key"], strings.secretMask(activeProfile.apiKey))
+                        KeyValueLine(strings["terminal_key"], "${activeProfile.terminalKeyIdentifier} v${activeProfile.terminalKeyVersion}")
+                        KeyValueLine(strings["passphrase"], strings.passphraseMask(activeProfile.terminalPassphrase))
+                        KeyValueLine(strings["installation"], installationId ?: strings["installation_not_returned_yet"])
                         KeyValueLine(
-                            "Boarding request token",
+                            strings["boarding_request_token"],
                             when {
-                                boardingTokenIssued -> "exchanged for boarding token"
-                                boardingRequestToken != null -> "received from check"
-                                installationId != null -> "not needed after boarding"
-                                else -> "not received"
+                                boardingTokenIssued -> strings["boarding_token_exchanged"]
+                                boardingRequestToken != null -> strings["boarding_token_received"]
+                                installationId != null -> strings["boarding_token_not_needed"]
+                                else -> strings["boarding_token_not_received"]
                             },
                         )
                         KeyValueLine(
-                            "Boarding token",
+                            strings["boarding_token"],
                             when {
-                                boardingTokenIssued -> "generated for latest board link"
-                                boardingRequestToken != null -> "not generated yet"
-                                else -> "not requested"
+                                boardingTokenIssued -> strings["boarding_token_generated"]
+                                boardingRequestToken != null -> strings["boarding_token_not_generated"]
+                                else -> strings["boarding_token_not_requested"]
                             },
                         )
                     }
@@ -145,10 +147,10 @@ internal fun ProfilePanel(
                     )
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { onCheckBoarding(activeProfile) }) { Text("Check") }
-                    Button(onClick = { onBoard(activeProfile) }) { Text("Board") }
-                    OutlinedButton(onClick = { onReboard(activeProfile) }) { Text("Reboard") }
-                    TextButton(onClick = { profilePendingRemoval = activeProfile }) { Text("Remove") }
+                    OutlinedButton(onClick = { onCheckBoarding(activeProfile) }) { Text(strings["check"]) }
+                    Button(onClick = { onBoard(activeProfile) }) { Text(strings["board"]) }
+                    OutlinedButton(onClick = { onReboard(activeProfile) }) { Text(strings["reboard"]) }
+                    TextButton(onClick = { profilePendingRemoval = activeProfile }) { Text(strings["remove"]) }
                 }
             }
             if (expanded && profiles.isNotEmpty()) {
@@ -186,16 +188,16 @@ internal fun ProfilePanel(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text("Remove")
+                    Text(strings["remove"])
                 }
             },
             dismissButton = {
-                TextButton(onClick = { profilePendingRemoval = null }) { Text("Cancel") }
+                TextButton(onClick = { profilePendingRemoval = null }) { Text(strings["cancel"]) }
             },
-            title = { Text("Remove payment profile?") },
+            title = { Text(strings["remove_payment_profile_title"]) },
             text = {
                 Text(
-                    "This removes ${profile.profileName} from the local encrypted vault and clears its saved boarding state. Adyen app authentication is not revoked unless you revoke the instance separately.",
+                    strings.format("remove_payment_profile_body", profile.profileName),
                 )
             },
         )
@@ -207,19 +209,20 @@ private fun PaymentsAppDownloadCard(
     profile: AdyenProfile,
     onDownload: () -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     OutlinedCard(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Payments app not installed", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(strings["payments_app_not_installed"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(
-                "Install the ${profile.environment.name.lowercase()} Adyen Payments app from Google Play, then return here and run Check again.",
+                strings.format("payments_app_not_installed_body", strings.environmentLabel(profile.environment)),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(onClick = onDownload, modifier = Modifier.align(Alignment.Start)) {
-                Text("Open Google Play")
+                Text(strings["open_google_play"])
             }
         }
     }
@@ -233,6 +236,7 @@ internal fun PaymentsAppOperationsPanel(
     onRefresh: (AdyenProfile) -> Unit,
     onRevoke: (AdyenProfile, PaymentsAppInstance) -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     var revokeTarget by remember { mutableStateOf<PaymentsAppInstance?>(null) }
     var showRevoked by remember { mutableStateOf(false) }
     val revokedCount = instances.count { it.status == PaymentsAppStatus.REVOKED }
@@ -243,27 +247,27 @@ internal fun PaymentsAppOperationsPanel(
     )
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Payments App instances", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(strings["payments_app_instances"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(onClick = { activeProfile?.let(onRefresh) }, enabled = activeProfile != null) {
-                    Text("Refresh")
+                    Text(strings["refresh"])
                 }
                 if (revokedCount > 0) {
                     OutlinedButton(onClick = { showRevoked = !showRevoked }) {
-                        Text(if (showRevoked) "Hide revoked" else "Show revoked")
+                        Text(if (showRevoked) strings["hide_revoked"] else strings["show_revoked"])
                     }
                 }
             }
             if (activeProfile == null) {
-                Text("Scan or select an Adyen profile to inspect app instances.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(strings["instances_no_profile"], color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else if (instances.isEmpty()) {
-                Text("No instances loaded yet. Refresh uses the scanned profile API key.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(strings["instances_empty"], color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else if (displayedInstances.isEmpty()) {
-                Text("Only revoked instances are hidden. Show revoked to inspect them.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(strings["instances_only_revoked_hidden"], color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 displayedInstances.forEach { instance ->
                     PaymentsAppInstanceRow(
@@ -286,16 +290,16 @@ internal fun PaymentsAppOperationsPanel(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text("Revoke")
+                    Text(strings["revoke"])
                 }
             },
             dismissButton = {
-                TextButton(onClick = { revokeTarget = null }) { Text("Cancel") }
+                TextButton(onClick = { revokeTarget = null }) { Text(strings["cancel"]) }
             },
-            title = { Text("Revoke Payments App instance?") },
+            title = { Text(strings["revoke_instance_title"]) },
             text = {
                 Text(
-                    "This revokes installation ${instance.installationId.maskForDisplay()} through Adyen. Payments on that app/device need reboarding afterward.",
+                    strings.format("revoke_instance_body", instance.installationId.maskForDisplay()),
                 )
             },
         )
@@ -327,6 +331,7 @@ private fun PaymentsAppInstanceRow(
     isCurrentInstallation: Boolean,
     onRevoke: () -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -338,16 +343,23 @@ private fun PaymentsAppInstanceRow(
             Column(Modifier.weight(1f)) {
                 Text(instance.installationId.maskForDisplay(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(
-                    listOfNotNull(instance.merchantAccountCode, instance.merchantStoreCode).joinToString(" | ").ifBlank { "No merchant/store returned" },
+                    listOfNotNull(instance.merchantAccountCode, instance.merchantStoreCode).joinToString(" | ").ifBlank { strings["no_merchant_store_returned"] },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            AssistChip(onClick = {}, label = { Text(if (isCurrentInstallation) "Current" else instance.status.name.lowercase()) })
+            AssistChip(onClick = {}, label = { Text(if (isCurrentInstallation) strings["current"] else instance.status.localizedLabel(strings)) })
         }
         TextButton(onClick = onRevoke, enabled = instance.status != PaymentsAppStatus.REVOKED) {
-            Text("Revoke instance")
+            Text(strings["revoke_instance"])
         }
     }
+}
+
+internal fun PaymentsAppStatus.localizedLabel(strings: TapToPlayStrings): String = when (this) {
+    PaymentsAppStatus.BOARDING -> strings["payments_app_status_boarding"]
+    PaymentsAppStatus.BOARDED -> strings["payments_app_status_boarded"]
+    PaymentsAppStatus.REVOKED -> strings["payments_app_status_revoked"]
+    PaymentsAppStatus.UNKNOWN -> strings["payments_app_status_unknown"]
 }

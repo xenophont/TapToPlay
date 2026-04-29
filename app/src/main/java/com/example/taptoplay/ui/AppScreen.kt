@@ -2,12 +2,14 @@ package com.example.taptoplay.ui
 
 import com.example.taptoplay.adyen.PaymentResult
 
-internal enum class AppScreen(val label: String) {
-    Catalog("Catalog"),
-    Checkout("Checkout"),
-    PaymentsApp("Payments App"),
-    Transactions("Transactions"),
-    Diagnostics("Diagnostics"),
+internal enum class AppScreen {
+    Catalog,
+    Checkout,
+    PaymentsApp,
+    Transactions,
+    Diagnostics,
+    Language,
+    About,
 }
 
 internal fun screenForAdyenReturn(result: PaymentResult): AppScreen = when (result) {

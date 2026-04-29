@@ -36,10 +36,11 @@ internal fun DiagnosticsPanel(
     showLatestAction: Boolean,
     onShowLatestActionChange: (Boolean) -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Diagnostics", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            Text("Redacted operational state for the selected profile.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(strings["screen_diagnostics"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(strings["diagnostics_body"], color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -51,7 +52,7 @@ internal fun DiagnosticsPanel(
                 Checkbox(checked = showLatestAction, onCheckedChange = onShowLatestActionChange)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "Show latest action on top",
+                        strings["show_latest_action_on_top"],
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -64,60 +65,67 @@ internal fun DiagnosticsPanel(
                     )
                 }
             }
-            KeyValueLine("Latest action", status)
-            KeyValueLine("Profile", activeProfile?.profileName ?: "none")
-            KeyValueLine("Environment", activeProfile?.environment?.name?.lowercase() ?: "none")
+            KeyValueLine(strings["latest_action"], status)
+            KeyValueLine(strings["profile"], activeProfile?.profileName ?: strings["none"])
+            KeyValueLine(strings["environment"], activeProfile?.environment?.let { strings.environmentLabel(it) } ?: strings["none"])
             activeProfile?.let {
-                KeyValueLine("Merchant", it.merchantId)
-                it.storeName?.let { storeName -> KeyValueLine("Store name", storeName) }
-                it.storeId?.let { store -> KeyValueLine("Store", store) }
-                KeyValueLine("API key", it.maskedApiKey())
-                KeyValueLine("Terminal key", "${it.terminalKeyIdentifier} v${it.terminalKeyVersion}")
+                KeyValueLine(strings["merchant"], it.merchantId)
+                it.storeName?.let { storeName -> KeyValueLine(strings["store_name"], storeName) }
+                it.storeId?.let { store -> KeyValueLine(strings["store"], store) }
+                KeyValueLine(strings["api_key"], strings.secretMask(it.apiKey))
+                KeyValueLine(strings["terminal_key"], "${it.terminalKeyIdentifier} v${it.terminalKeyVersion}")
             }
-            KeyValueLine("Installation", installationId?.maskForDisplay() ?: "not returned yet")
+            KeyValueLine(strings["installation"], installationId?.maskForDisplay() ?: strings["installation_not_returned_yet"])
             KeyValueLine(
-                "Boarding request token",
+                strings["boarding_request_token"],
                 when {
-                    boardingTokenIssued -> "exchanged for boarding token"
-                    boardingRequestToken != null -> "received from check"
-                    installationId != null -> "not needed after boarding"
-                    else -> "not received"
+                    boardingTokenIssued -> strings["boarding_token_exchanged"]
+                    boardingRequestToken != null -> strings["boarding_token_received"]
+                    installationId != null -> strings["boarding_token_not_needed"]
+                    else -> strings["boarding_token_not_received"]
                 },
             )
             KeyValueLine(
-                "Boarding token",
+                strings["boarding_token"],
                 when {
-                    boardingTokenIssued -> "generated for latest board link"
-                    boardingRequestToken != null -> "not generated yet"
-                    else -> "not requested"
+                    boardingTokenIssued -> strings["boarding_token_generated"]
+                    boardingRequestToken != null -> strings["boarding_token_not_generated"]
+                    else -> strings["boarding_token_not_requested"]
                 },
             )
             KeyValueLine(
                 "SaleToAcquirerData",
-                "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.fieldCount} fields",
+                strings.format(
+                    "sale_to_acquirer_data_summary",
+                    saleToAcquirerDataConfig.displayName,
+                    strings.format(
+                        if (saleToAcquirerDataConfig.fieldCount == 1) "field_count_one" else "field_count_many",
+                        saleToAcquirerDataConfig.fieldCount,
+                    ),
+                ),
             )
-            KeyValueLine("Payments App API", paymentsAppStatus)
+            KeyValueLine(strings["payments_app_api"], paymentsAppStatus)
             KeyValueLine(
-                "Loaded instances",
+                strings["loaded_instances"],
                 paymentsAppInstances
                     .groupingBy { it.status }
                     .eachCount()
                     .entries
-                    .joinToString { "${it.key.name.lowercase()}: ${it.value}" }
-                    .ifBlank { "none" },
+                    .joinToString { "${it.key.localizedLabel(strings)}: ${it.value}" }
+                    .ifBlank { strings["none"] },
             )
             KeyValueLine(
-                "Transaction history",
+                strings["transaction_history"],
                 transactionHistory
                     .groupingBy { it.status }
                     .eachCount()
                     .entries
-                    .joinToString { "${it.key.name.lowercase()}: ${it.value}" }
-                    .ifBlank { "none" },
+                    .joinToString { "${it.key.localizedLabel(strings)}: ${it.value}" }
+                    .ifBlank { strings["none"] },
             )
             transactionHistory.firstOrNull()?.let { latest ->
-                KeyValueLine("Latest ServiceID", latest.serviceId ?: "not recorded")
-                KeyValueLine("Latest summary", latest.responseSummary ?: latest.status.name.lowercase())
+                KeyValueLine(strings["latest_service_id"], latest.serviceId ?: strings["not_set"])
+                KeyValueLine(strings["latest_summary"], latest.responseSummary ?: latest.status.localizedLabel(strings))
             }
         }
     }

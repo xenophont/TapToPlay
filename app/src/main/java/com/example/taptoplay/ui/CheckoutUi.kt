@@ -71,20 +71,21 @@ internal fun CartPanel(
     onPay: (AdyenProfile) -> Unit,
     onOpenPaymentsApp: () -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     val needsPaymentsAppSetup = installationId.isNullOrBlank()
     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Checkout", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                TextButton(onClick = onClear, enabled = lines.isNotEmpty()) { Text("Clear") }
+                Text(strings["screen_checkout"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = onClear, enabled = lines.isNotEmpty()) { Text(strings["clear"]) }
             }
             if (lines.isEmpty()) {
-                Text("Add garments to start a Tap to Pay checkout.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(strings["checkout_empty_hint"], color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 lines.forEach { line ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(line.product.name, fontWeight = FontWeight.Medium)
+                            Text(strings.productName(line.product), fontWeight = FontWeight.Medium)
                             Text("${line.quantity} x ${formatMoney(line.product.priceMinor)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(formatMoney(line.lineTotalMinor), fontWeight = FontWeight.SemiBold)
@@ -100,7 +101,7 @@ internal fun CartPanel(
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Total", style = MaterialTheme.typography.titleLarge)
+                Text(strings["total"], style = MaterialTheme.typography.titleLarge)
                 Text(formatMoney(totalMinor), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
             OutlinedCard(shape = RoundedCornerShape(8.dp)) {
@@ -124,11 +125,14 @@ internal fun CartPanel(
                                 .width(96.dp)
                                 .height(40.dp),
                         ) {
-                            Text("Reset", maxLines = 1)
+                            Text(strings["reset"], maxLines = 1)
                         }
                     }
                     Text(
-                        "${saleToAcquirerDataConfig.displayName} | ${saleToAcquirerDataConfig.fieldCount} JSON field${if (saleToAcquirerDataConfig.fieldCount == 1) "" else "s"}",
+                        strings.saleToAcquirerDataSummary(
+                            saleToAcquirerDataConfig.displayName,
+                            saleToAcquirerDataConfig.fieldCount,
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     LazyRow(
@@ -136,17 +140,17 @@ internal fun CartPanel(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         item {
-                            OutlinedButton(onClick = onScanSaleToAcquirerData) { Text("Scan data QR", maxLines = 1) }
+                            OutlinedButton(onClick = onScanSaleToAcquirerData) { Text(strings["scan_data_qr"], maxLines = 1) }
                         }
                         item {
-                            OutlinedButton(onClick = onInspectSaleToAcquirerData) { Text("View", maxLines = 1) }
+                            OutlinedButton(onClick = onInspectSaleToAcquirerData) { Text(strings["view"], maxLines = 1) }
                         }
                         item {
-                            OutlinedButton(onClick = onSaveSaleToAcquirerDataFavorite) { Text("Save", maxLines = 1) }
+                            OutlinedButton(onClick = onSaveSaleToAcquirerDataFavorite) { Text(strings["save"], maxLines = 1) }
                         }
                     }
                     if (saleToAcquirerDataFavorites.isNotEmpty()) {
-                        Text("Favorites", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                        Text(strings["favorites"], style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                             items(saleToAcquirerDataFavorites) { favorite ->
                                 OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.width(220.dp)) {
@@ -159,13 +163,13 @@ internal fun CartPanel(
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                         Text(
-                                            "${favorite.fieldCount} JSON field${if (favorite.fieldCount == 1) "" else "s"}",
+                                            strings.jsonFieldCount(favorite.fieldCount),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                         )
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            TextButton(onClick = { onApplySaleToAcquirerDataFavorite(favorite) }) { Text("Use") }
-                                            TextButton(onClick = { onRemoveSaleToAcquirerDataFavorite(favorite) }) { Text("Remove") }
+                                            TextButton(onClick = { onApplySaleToAcquirerDataFavorite(favorite) }) { Text(strings["use"]) }
+                                            TextButton(onClick = { onRemoveSaleToAcquirerDataFavorite(favorite) }) { Text(strings["remove"]) }
                                         }
                                     }
                                 }
@@ -179,7 +183,7 @@ internal fun CartPanel(
                 enabled = lines.isNotEmpty() && activeProfile != null,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (activeProfile?.environment == PaymentEnvironment.LIVE) "Charge live payment" else "Charge test payment")
+                Text(if (activeProfile?.environment == PaymentEnvironment.LIVE) strings["charge_live_payment"] else strings["charge_test_payment"])
             }
             AnimatedVisibility(
                 visible = needsPaymentsAppSetup,
@@ -194,6 +198,7 @@ internal fun CartPanel(
 
 @Composable
 private fun PaymentsAppStatusPrompt(onClick: () -> Unit) {
+    val strings = LocalTapToPlayStrings.current
     val pulse = rememberInfiniteTransition(label = "boardingPromptPulse")
     val scale by pulse.animateFloat(
         initialValue = 0.985f,
@@ -216,13 +221,13 @@ private fun PaymentsAppStatusPrompt(onClick: () -> Unit) {
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                "Payment App not boarded",
+                strings["payments_app_not_boarded"],
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.error,
             )
             Text(
-                "Open Payments App status to check boarding, get a request token, or finish setup before charging.",
+                strings["payments_app_not_boarded_body"],
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(
@@ -242,7 +247,7 @@ private fun PaymentsAppStatusPrompt(onClick: () -> Unit) {
                 ),
             ) {
                 Text(
-                    "Open Payments App status",
+                    strings["open_payments_app_status"],
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.SemiBold,
@@ -258,6 +263,7 @@ internal fun LivePaymentConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val strings = LocalTapToPlayStrings.current
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -265,23 +271,23 @@ internal fun LivePaymentConfirmationDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
             ) {
-                Text("Charge live")
+                Text(strings["charge_live"])
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(strings["cancel"]) }
         },
-        title = { Text("Confirm live payment") },
+        title = { Text(strings["confirm_live_payment"]) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("This will launch a live Adyen Tap to Pay charge.")
-                KeyValueLine("Amount", formatMoney(confirmation.totalMinor))
-                KeyValueLine("Items", confirmation.lines.sumOf { it.quantity }.toString())
-                KeyValueLine("Profile", confirmation.profile.profileName)
-                KeyValueLine("Environment", confirmation.profile.environment.name.lowercase())
-                KeyValueLine("Merchant", confirmation.profile.merchantId)
-                confirmation.profile.storeName?.let { KeyValueLine("Store name", it) }
-                confirmation.profile.storeId?.let { KeyValueLine("Store", it) }
+                Text(strings["confirm_live_payment_body"])
+                KeyValueLine(strings["amount"], formatMoney(confirmation.totalMinor))
+                KeyValueLine(strings["items"], confirmation.lines.sumOf { it.quantity }.toString())
+                KeyValueLine(strings["profile"], confirmation.profile.profileName)
+                KeyValueLine(strings["environment"], strings.environmentLabel(confirmation.profile.environment))
+                KeyValueLine(strings["merchant"], confirmation.profile.merchantId)
+                confirmation.profile.storeName?.let { KeyValueLine(strings["store_name"], it) }
+                confirmation.profile.storeId?.let { KeyValueLine(strings["store"], it) }
             }
         },
     )

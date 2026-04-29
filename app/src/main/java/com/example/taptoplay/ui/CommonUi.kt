@@ -38,6 +38,7 @@ internal fun KeyValueLine(label: String, value: String) {
 
 @Composable
 internal fun ExpandableValueRow(label: String, value: String) {
+    val strings = LocalTapToPlayStrings.current
     var expanded by remember { mutableStateOf(false) }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -56,7 +57,7 @@ internal fun ExpandableValueRow(label: String, value: String) {
                     )
                 }
                 TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Hide" else "View")
+                    Text(if (expanded) strings["hide"] else strings["view"])
                 }
             }
         }
