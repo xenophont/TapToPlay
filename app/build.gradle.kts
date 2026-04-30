@@ -1,3 +1,4 @@
+import org.gradle.api.GradleException
 import java.util.Properties
 
 plugins {
@@ -14,6 +15,21 @@ val localProperties = Properties().apply {
 }
 
 fun localProperty(name: String): String = localProperties.getProperty(name, "")
+fun localOrGradleProperty(name: String): String =
+    localProperty(name).ifBlank { providers.gradleProperty(name).orNull.orEmpty() }.trim()
+
+fun gradleStringProperty(name: String, defaultValue: String): String =
+    providers.gradleProperty(name).orNull?.trim()?.takeIf { it.isNotEmpty() } ?: defaultValue
+
+fun gradleIntProperty(name: String, defaultValue: Int): Int {
+    val value = providers.gradleProperty(name).orNull?.trim()
+    return when {
+        value.isNullOrEmpty() -> defaultValue
+        else -> value.toIntOrNull()
+            ?: throw GradleException("$name must be an integer, but was '$value'.")
+    }
+}
+
 fun quotedBuildConfig(name: String): String =
     "\"${localProperty(name).replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
@@ -31,6 +47,15 @@ val adyenBuildConfigKeys = listOf(
     "ADYEN_COUNTRY_CODE",
 )
 
+val playSigningKeys = listOf(
+    "TAPTOPLAY_RELEASE_STORE_FILE",
+    "TAPTOPLAY_RELEASE_STORE_PASSWORD",
+    "TAPTOPLAY_RELEASE_KEY_ALIAS",
+    "TAPTOPLAY_RELEASE_KEY_PASSWORD",
+)
+val missingPlaySigningKeys = playSigningKeys.filter { localOrGradleProperty(it).isEmpty() }
+val playReleaseSigningReady = missingPlaySigningKeys.isEmpty()
+
 android {
     namespace = "com.example.taptoplay"
     compileSdk {
@@ -39,12 +64,23 @@ android {
         }
     }
 
+    signingConfigs {
+        if (playReleaseSigningReady) {
+            create("playRelease") {
+                storeFile = rootProject.file(localOrGradleProperty("TAPTOPLAY_RELEASE_STORE_FILE"))
+                storePassword = localOrGradleProperty("TAPTOPLAY_RELEASE_STORE_PASSWORD")
+                keyAlias = localOrGradleProperty("TAPTOPLAY_RELEASE_KEY_ALIAS")
+                keyPassword = localOrGradleProperty("TAPTOPLAY_RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     defaultConfig {
-        applicationId = "com.example.taptoplay"
+        applicationId = "com.xenophont.taptoplay"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = gradleIntProperty("tapToPlayVersionCode", 1)
+        versionName = gradleStringProperty("tapToPlayVersionName", "1.0.0-internal")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,6 +94,9 @@ android {
         release {
             adyenBuildConfigKeys.forEach { key ->
                 buildConfigField("String", key, "\"\"")
+            }
+            if (playReleaseSigningReady) {
+                signingConfig = signingConfigs.getByName("playRelease")
             }
             isMinifyEnabled = false
             proguardFiles(
@@ -97,4 +136,13 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+gradle.taskGraph.whenReady {
+    if (allTasks.any { it.path == ":app:bundleRelease" } && !playReleaseSigningReady) {
+        throw GradleException(
+            "Play release signing is not configured. Add these local.properties keys before " +
+                "running bundleRelease: ${missingPlaySigningKeys.joinToString()}."
+        )
+    }
 }

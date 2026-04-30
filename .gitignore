@@ -17,3 +17,9 @@
 local.properties
 pendientes.txt
 AGENTS.md
+*.jks
+*.keystore
+*.p12
+play-service-account.json
+app/release/
+docs/PLAY_DISTRIBUTION.md

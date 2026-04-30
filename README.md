@@ -59,7 +59,22 @@ ADYEN_COUNTRY_CODE=ES
 ```powershell
 .\gradlew test
 .\gradlew assembleDebug
+.\gradlew bundleRelease
 ```
+
+## Google Play Testing
+
+The Play application ID is `com.xenophont.taptoplay`. Confirm that this is final
+before the first Play Console upload because Google Play package names cannot be
+changed or reused later.
+
+Release builds read signing settings from local-only properties and continue to
+receive blank Adyen bootstrap values. Testers should scan credential QR profiles
+on device. Increment `tapToPlayVersionCode` in `gradle.properties` before every
+new Play upload.
+
+Use `docs/PRIVACY_POLICY_DRAFT.md` as a starting point before closed, open, or
+production release.
 
 ## Credential QR Codes
 
