@@ -92,6 +92,8 @@ class ReceiptDisplayUiTest {
             lines = listOf(
                 line("KEY: header1"),
                 line("KEY: Header2"),
+                line("KEY=header1"),
+                line("KEY = header2"),
                 line("name=COPIA P/ COMERCIANTE&key=merchantTitle"),
                 line("key=filler"),
                 line("name=Fecha&value=29/04/2026&key=txdate"),
@@ -106,6 +108,7 @@ class ReceiptDisplayUiTest {
         val rows = display.items.filterIsInstance<ReceiptDisplayItem.Row>()
 
         assertTrue(display.items.any { it == ReceiptDisplayItem.TextLine("COPIA P/ COMERCIANTE", ReceiptTextAlignment.Center, true) })
+        assertTrue(display.items.none { it is ReceiptDisplayItem.TextLine && it.text.contains("KEY", ignoreCase = true) })
         assertTrue(rows.any { it.label == "Fecha" && it.value == "29/04/2026" })
         assertTrue(rows.any { it.label == "Hora" && it.value == "20:57:25" })
         assertTrue(rows.any { it.label == "Tarjeta" && it.value == "****7579" })

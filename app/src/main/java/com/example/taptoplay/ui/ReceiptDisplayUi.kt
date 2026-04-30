@@ -139,7 +139,7 @@ private fun String.receiptEntry(): ReceiptEntry? {
         fields.keys.any { it.equals("name", ignoreCase = true) } ||
         fields.keys.any { it.equals("value", ignoreCase = true) }
     return if (hasStructuredReceiptKeys) {
-        fields.structuredReceiptEntry()
+        fields.structuredReceiptEntry() ?: simpleReceiptEntry()
     } else {
         simpleReceiptEntry()
     }
