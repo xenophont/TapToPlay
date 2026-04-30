@@ -90,8 +90,8 @@ class ReceiptDisplayUiTest {
             documentQualifier = "CashierReceipt",
             requiredSignature = false,
             lines = listOf(
-                line("key=header1"),
-                line("key=header2"),
+                line("KEY: header1"),
+                line("KEY: Header2"),
                 line("name=COPIA P/ COMERCIANTE&key=merchantTitle"),
                 line("key=filler"),
                 line("name=Fecha&value=29/04/2026&key=txdate"),

@@ -105,6 +105,7 @@ private fun ReceiptLine.toReceiptDisplayItem(strings: TapToPlayStrings): Receipt
     val (rawKey, rawValue, rawLabel) = entry
     val key = rawKey.canonicalReceiptKey()
     val value = rawValue.trim()
+    if (key == "key" && value.canonicalReceiptKey() in receiptHiddenKeyValues) return null
     return when {
         key.startsWith("header") || key in receiptTitleKeys -> ReceiptDisplayItem.TextLine(
             text = value,
@@ -280,6 +281,8 @@ private val receiptStatusKeys = setOf("approved", "refused", "void")
 private val receiptFooterKeys = setOf("thanks", "retain")
 
 private val receiptSignatureKeys = setOf("sigline", "signature", "merchantsigline")
+
+private val receiptHiddenKeyValues = setOf("header1", "header2")
 
 private val receiptTitleKeys = setOf(
     "merchanttitle",

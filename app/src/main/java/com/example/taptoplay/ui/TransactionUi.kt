@@ -52,6 +52,9 @@ import com.example.taptoplay.adyen.TerminalApiResponseInspector
 import com.example.taptoplay.adyen.TransactionRecord
 import com.example.taptoplay.adyen.TransactionStatus
 import com.example.taptoplay.adyen.pspReferenceOrNull
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -143,12 +146,12 @@ private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
                 pspReference?.let {
                     Text(
                         it,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.End,
-                        modifier = Modifier.widthIn(max = 112.dp),
+                        modifier = Modifier.widthIn(max = 128.dp),
                     )
                 }
                 TextButton(onClick = onInspect) { Text(strings["inspect"]) }
@@ -220,6 +223,7 @@ internal fun TransactionDialog(
     val highlights = remember(record.responseBody) { TerminalApiResponseInspector.compactSummary(record.responseBody) }
     val receipts = responseInsight?.receipts.orEmpty()
     val pspReference = remember(record.pspReference, record.responseBody) { record.pspReferenceOrNull() }
+    val createdAtLabel = remember(record.createdAt) { formatTransactionTimestamp(record.createdAt) }
     val canRefund = record.status == TransactionStatus.APPROVED &&
         record.refundOfTransactionId == null &&
         (record.adyenTransactionId != null || responseInsight?.transactionId != null)
@@ -248,7 +252,7 @@ internal fun TransactionDialog(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        record.createdAt,
+                        createdAtLabel,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -594,6 +598,14 @@ private fun ReceiptTextAlignment.textAlign(): TextAlign = when (this) {
     ReceiptTextAlignment.Center -> TextAlign.Center
     ReceiptTextAlignment.End -> TextAlign.End
 }
+
+internal fun formatTransactionTimestamp(value: String, zoneId: ZoneId = ZoneId.systemDefault()): String =
+    runCatching {
+        transactionTimestampFormatter.format(Instant.parse(value).atZone(zoneId))
+    }.getOrDefault(value)
+
+private val transactionTimestampFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 @Composable
 private fun RequestSummary(record: TransactionRecord) {
