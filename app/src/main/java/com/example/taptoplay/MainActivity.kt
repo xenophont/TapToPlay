@@ -44,6 +44,7 @@ import com.example.taptoplay.ui.AppScreen
 import com.example.taptoplay.ui.AppLanguage
 import com.example.taptoplay.ui.AppLanguageStore
 import com.example.taptoplay.ui.LocalTapToPlayStrings
+import com.example.taptoplay.ui.PrivacyPolicy
 import com.example.taptoplay.ui.TapToPlayApp
 import com.example.taptoplay.ui.formatMoney
 import com.example.taptoplay.ui.maskForDisplay
@@ -171,6 +172,10 @@ class MainActivity : ComponentActivity() {
                         onOpenCredentialQrDocs = {
                             selectScreen(AppScreen.PaymentsApp)
                             openCredentialQrDocs()
+                        },
+                        onOpenPrivacyPolicy = {
+                            selectScreen(AppScreen.About)
+                            openPrivacyPolicy()
                         },
                         onDownloadPaymentsApp = { profile ->
                             selectScreen(AppScreen.PaymentsApp)
@@ -597,6 +602,14 @@ class MainActivity : ComponentActivity() {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(CredentialQrDocumentation.URL)))
         } catch (_: ActivityNotFoundException) {
             statusState = strings["status_no_browser_qr_docs"]
+        }
+    }
+
+    private fun openPrivacyPolicy() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
+        } catch (_: ActivityNotFoundException) {
+            statusState = strings["status_no_browser_privacy_policy"]
         }
     }
 

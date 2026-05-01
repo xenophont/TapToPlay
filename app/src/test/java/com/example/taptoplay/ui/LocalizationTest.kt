@@ -50,6 +50,7 @@ class LocalizationTest {
         allLocalizedStringSets().forEach { strings ->
             assertTrue(strings.screenLabel(AppScreen.Language).isNotBlank())
             assertTrue(strings.screenLabel(AppScreen.About).isNotBlank())
+            assertTrue(strings["privacy_policy"].isNotBlank())
         }
     }
 }
