@@ -30,6 +30,20 @@ class LocalizationTest {
             "Gemaakt door Javier de No, met hulp van Codex en GPT-5.5, voor het team 💚🚀",
             stringsFor(AppLanguage.Dutch)["about_message"],
         )
+        assertTrue(stringsFor(AppLanguage.French)["about_message"].contains("Javier de No"))
+        assertTrue(stringsFor(AppLanguage.Japanese)["about_message"].contains("Javier de No"))
+        assertTrue(stringsFor(AppLanguage.Quenya)["about_message"].contains("Javier de No"))
+    }
+
+    @Test
+    fun requestedLanguagesAreAvailable() {
+        assertEquals("Nederlands", AppLanguage.Dutch.nativeName)
+        assertEquals("Euskara", AppLanguage.Basque.nativeName)
+        assertEquals("Easter egg", AppLanguage.Quenya.englishName)
+        assertEquals(
+            listOf("en", "es", "nl", "fr", "de", "it", "sv", "ja", "zh-Hans", "ko", "eu", "qya"),
+            AppLanguage.entries.map { it.tag },
+        )
     }
 
     @Test

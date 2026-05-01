@@ -10,6 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,39 +32,22 @@ import androidx.compose.ui.unit.dp
 import com.xenophont.taptoplay.R
 
 @Composable
-internal fun AboutPanel() {
+internal fun AboutPanel(
+    modifier: Modifier = Modifier,
+) {
     val strings = LocalTapToPlayStrings.current
     val context = LocalContext.current
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(top = 4.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            strings["about_message"],
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        OutlinedButton(
-            onClick = {
-                try {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
-                } catch (_: ActivityNotFoundException) {
-                    Toast.makeText(context, strings["status_no_browser_privacy_policy"], Toast.LENGTH_LONG).show()
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(strings["privacy_policy"])
-        }
         val imageShape = RoundedCornerShape(8.dp)
         Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.78f)
                 .aspectRatio(3f / 4f)
                 .clip(imageShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -75,6 +59,26 @@ internal fun AboutPanel() {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
+        }
+        Text(
+            strings["about_message"],
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.weight(1f))
+        OutlinedButton(
+            onClick = {
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
+                } catch (_: ActivityNotFoundException) {
+                    Toast.makeText(context, strings["status_no_browser_privacy_policy"], Toast.LENGTH_LONG).show()
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(strings["privacy_policy"])
         }
     }
 }

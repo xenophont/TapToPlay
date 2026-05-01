@@ -6,10 +6,19 @@ import com.xenophont.taptoplay.catalog.Product
 import com.xenophont.taptoplay.profiles.PaymentEnvironment
 import java.util.Locale
 
-internal enum class AppLanguage(val tag: String, val nativeName: String) {
-    English("en", "English"),
-    Spanish("es", "Español"),
-    Dutch("nl", "Nederlands");
+internal enum class AppLanguage(val tag: String, val nativeName: String, val englishName: String) {
+    English("en", "English", "English"),
+    Spanish("es", "Español", "Spanish"),
+    Dutch("nl", "Nederlands", "Dutch"),
+    French("fr", "Français", "French"),
+    German("de", "Deutsch", "German"),
+    Italian("it", "Italiano", "Italian"),
+    Swedish("sv", "Svenska", "Swedish"),
+    Japanese("ja", "日本語", "Japanese"),
+    Chinese("zh-Hans", "中文", "Chinese"),
+    Korean("ko", "한국어", "Korean"),
+    Basque("eu", "Euskara", "Euskera"),
+    Quenya("qya", "Quenya", "Easter egg");
 
     companion object {
         fun fromTag(tag: String?): AppLanguage =
@@ -117,6 +126,15 @@ internal fun stringsFor(language: AppLanguage): TapToPlayStrings = when (languag
     AppLanguage.English -> englishStrings
     AppLanguage.Spanish -> spanishStrings
     AppLanguage.Dutch -> dutchStrings
+    AppLanguage.French -> frenchStrings
+    AppLanguage.German -> germanStrings
+    AppLanguage.Italian -> italianStrings
+    AppLanguage.Swedish -> swedishStrings
+    AppLanguage.Japanese -> japaneseStrings
+    AppLanguage.Chinese -> chineseStrings
+    AppLanguage.Korean -> koreanStrings
+    AppLanguage.Basque -> basqueStrings
+    AppLanguage.Quenya -> quenyaStrings
 }
 
 internal fun allLocalizedStringSets(): List<TapToPlayStrings> =
@@ -1101,6 +1119,174 @@ private val dutchStrings = TapToPlayStrings(
         "Knitwear" to "Knitwear",
         "Accessories" to "Accessoires",
     ),
+)
+
+private val frenchStrings = fallbackStrings(
+    AppLanguage.French,
+    "screen_catalog" to "Catalogue",
+    "screen_checkout" to "Caisse",
+    "screen_transactions" to "Transactions",
+    "screen_diagnostics" to "Diagnostics",
+    "screen_language" to "Langue",
+    "screen_about" to "À propos",
+    "language_title" to "Langue de l'app",
+    "language_body" to "Choisissez la langue de TapToPlay sur cet appareil. Le réglage est enregistré localement.",
+    "language_current" to "Langue actuelle",
+    "language_option_selected" to "Sélectionnée",
+    "about_message" to "Créé par Javier de No, avec l'aide de Codex et GPT-5.5, pour l'équipe 💚🚀",
+    "privacy_policy" to "Lire la politique de confidentialité",
+    "status_language_changed" to "Langue changée en %s.",
+    "status_no_browser_privacy_policy" to "Aucun navigateur n'est disponible pour ouvrir la politique de confidentialité.",
+)
+
+private val germanStrings = fallbackStrings(
+    AppLanguage.German,
+    "screen_catalog" to "Katalog",
+    "screen_checkout" to "Kasse",
+    "screen_transactions" to "Transaktionen",
+    "screen_diagnostics" to "Diagnose",
+    "screen_language" to "Sprache",
+    "screen_about" to "Info",
+    "language_title" to "App-Sprache",
+    "language_body" to "Wähle aus, wie TapToPlay auf diesem Gerät spricht. Die Einstellung wird lokal gespeichert.",
+    "language_current" to "Aktuelle Sprache",
+    "language_option_selected" to "Ausgewählt",
+    "about_message" to "Gemacht von Javier de No, mit Hilfe von Codex und GPT-5.5, für das Team 💚🚀",
+    "privacy_policy" to "Datenschutzerklärung lesen",
+    "status_language_changed" to "Sprache auf %s geändert.",
+    "status_no_browser_privacy_policy" to "Kein Browser verfügbar, um die Datenschutzerklärung zu öffnen.",
+)
+
+private val italianStrings = fallbackStrings(
+    AppLanguage.Italian,
+    "screen_catalog" to "Catalogo",
+    "screen_checkout" to "Cassa",
+    "screen_transactions" to "Transazioni",
+    "screen_diagnostics" to "Diagnostica",
+    "screen_language" to "Lingua",
+    "screen_about" to "Info",
+    "language_title" to "Lingua dell'app",
+    "language_body" to "Scegli come parla TapToPlay su questo dispositivo. L'impostazione viene salvata localmente.",
+    "language_current" to "Lingua attuale",
+    "language_option_selected" to "Selezionata",
+    "about_message" to "Realizzato da Javier de No, con l'aiuto di Codex e GPT-5.5, per il team 💚🚀",
+    "privacy_policy" to "Leggi l'informativa sulla privacy",
+    "status_language_changed" to "Lingua cambiata in %s.",
+    "status_no_browser_privacy_policy" to "Nessun browser disponibile per aprire l'informativa sulla privacy.",
+)
+
+private val swedishStrings = fallbackStrings(
+    AppLanguage.Swedish,
+    "screen_catalog" to "Katalog",
+    "screen_checkout" to "Kassa",
+    "screen_transactions" to "Transaktioner",
+    "screen_diagnostics" to "Diagnostik",
+    "screen_language" to "Språk",
+    "screen_about" to "Om",
+    "language_title" to "Appspråk",
+    "language_body" to "Välj hur TapToPlay talar på den här enheten. Inställningen sparas lokalt.",
+    "language_current" to "Aktuellt språk",
+    "language_option_selected" to "Valt",
+    "about_message" to "Gjord av Javier de No, med hjälp av Codex och GPT-5.5, för teamet 💚🚀",
+    "privacy_policy" to "Läs integritetspolicyn",
+    "status_language_changed" to "Språk ändrat till %s.",
+    "status_no_browser_privacy_policy" to "Ingen webbläsare finns tillgänglig för att öppna integritetspolicyn.",
+)
+
+private val japaneseStrings = fallbackStrings(
+    AppLanguage.Japanese,
+    "screen_catalog" to "カタログ",
+    "screen_checkout" to "会計",
+    "screen_transactions" to "取引",
+    "screen_diagnostics" to "診断",
+    "screen_language" to "言語",
+    "screen_about" to "概要",
+    "language_title" to "アプリの言語",
+    "language_body" to "このデバイスでのTapToPlayの表示言語を選択します。設定はローカルに保存されます。",
+    "language_current" to "現在の言語",
+    "language_option_selected" to "選択中",
+    "about_message" to "Javier de NoがCodexとGPT-5.5の助けを借りて、チームのために作りました 💚🚀",
+    "privacy_policy" to "プライバシーポリシーを読む",
+    "status_language_changed" to "言語を%sに変更しました。",
+    "status_no_browser_privacy_policy" to "プライバシーポリシーを開けるブラウザがありません。",
+)
+
+private val chineseStrings = fallbackStrings(
+    AppLanguage.Chinese,
+    "screen_catalog" to "商品目录",
+    "screen_checkout" to "结账",
+    "screen_transactions" to "交易",
+    "screen_diagnostics" to "诊断",
+    "screen_language" to "语言",
+    "screen_about" to "关于",
+    "language_title" to "应用语言",
+    "language_body" to "选择 TapToPlay 在此设备上的显示语言。设置会保存在本机。",
+    "language_current" to "当前语言",
+    "language_option_selected" to "已选择",
+    "about_message" to "由 Javier de No 制作，在 Codex 和 GPT-5.5 的帮助下，献给团队 💚🚀",
+    "privacy_policy" to "阅读隐私政策",
+    "status_language_changed" to "语言已切换为%s。",
+    "status_no_browser_privacy_policy" to "没有可用于打开隐私政策的浏览器。",
+)
+
+private val koreanStrings = fallbackStrings(
+    AppLanguage.Korean,
+    "screen_catalog" to "카탈로그",
+    "screen_checkout" to "결제",
+    "screen_transactions" to "거래",
+    "screen_diagnostics" to "진단",
+    "screen_language" to "언어",
+    "screen_about" to "정보",
+    "language_title" to "앱 언어",
+    "language_body" to "이 기기에서 TapToPlay가 사용할 언어를 선택하세요. 설정은 로컬에 저장됩니다.",
+    "language_current" to "현재 언어",
+    "language_option_selected" to "선택됨",
+    "about_message" to "Javier de No가 Codex와 GPT-5.5의 도움을 받아 팀을 위해 만들었습니다 💚🚀",
+    "privacy_policy" to "개인정보 처리방침 읽기",
+    "status_language_changed" to "언어가 %s(으)로 변경되었습니다.",
+    "status_no_browser_privacy_policy" to "개인정보 처리방침을 열 수 있는 브라우저가 없습니다.",
+)
+
+private val basqueStrings = fallbackStrings(
+    AppLanguage.Basque,
+    "screen_catalog" to "Katalogoa",
+    "screen_checkout" to "Kutxa",
+    "screen_transactions" to "Transakzioak",
+    "screen_diagnostics" to "Diagnostikoa",
+    "screen_language" to "Hizkuntza",
+    "screen_about" to "Honi buruz",
+    "language_title" to "Aplikazioaren hizkuntza",
+    "language_body" to "Aukeratu TapToPlayk gailu honetan nola hitz egingo duen. Ezarpena lokalki gordetzen da.",
+    "language_current" to "Uneko hizkuntza",
+    "language_option_selected" to "Hautatua",
+    "about_message" to "Javier de Nok egina, Codex eta GPT-5.5en laguntzarekin, taldearentzat 💚🚀",
+    "privacy_policy" to "Irakurri pribatutasun politika",
+    "status_language_changed" to "Hizkuntza %s(e)ra aldatu da.",
+    "status_no_browser_privacy_policy" to "Ez dago nabigatzailerik pribatutasun politika irekitzeko.",
+)
+
+private val quenyaStrings = fallbackStrings(
+    AppLanguage.Quenya,
+    "screen_language" to "Lambe",
+    "screen_about" to "Násie",
+    "language_title" to "Appa lambe",
+    "language_body" to "Á cilë i lambe TapToPlay quetuva sina tyellë. I cilme ná memorinwa sinomë.",
+    "language_current" to "Síra lambe",
+    "language_option_selected" to "Cilinwa",
+    "about_message" to "Carna Javier de No, ar Codex ar GPT-5.5 ve meldo, an i lië 💚🚀",
+    "privacy_policy" to "Á henta i privacy parma",
+    "status_language_changed" to "Lambe ahyanë na %s.",
+)
+
+private fun fallbackStrings(
+    language: AppLanguage,
+    vararg overrides: Pair<String, String>,
+): TapToPlayStrings = TapToPlayStrings(
+    language = language,
+    values = englishStringsValues(*overrides),
+    productNames = emptyMap(),
+    productDescriptions = emptyMap(),
+    categories = emptyMap(),
 )
 
 private fun englishStringsValues(vararg overrides: Pair<String, String>): Map<String, String> =

@@ -364,7 +364,7 @@ internal fun TapToPlayApp(
                         }
                         AppScreen.About -> {
                             item {
-                                AboutPanel()
+                                AboutPanel(Modifier.fillParentMaxHeight())
                             }
                         }
                     }
