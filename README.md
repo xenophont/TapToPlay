@@ -207,18 +207,199 @@ This is still a demo security model because credentials live on-device. For prod
 
 ## Español
 
-TapToPlay es una demo POS retail en Kotlin/Compose para una tienda premium usando Adyen Tap to Pay en Android. Muestra primero el catálogo boutique y después una consola operativa de Adyen para checkout, boarding, gestión de instancias de Payments App, inspección de transacciones, diagnósticos, pruebas de SaleToAcquirerData y refunds referenciados.
+TapToPlay es una demo de TPV retail premium en Kotlin/Compose para Adyen Tap to Pay en Android. Presenta primero un catálogo de ropa boutique y después añade una consola operativa de Adyen para checkout, boarding de Payments App, gestión de instancias de la app, inspección de transacciones, diagnósticos, pruebas de SaleToAcquirerData y reembolsos referenciados.
 
-Usa esta arquitectura solo para demos. Las credenciales se guardan cifradas en el dispositivo, los secretos se muestran enmascarados, los backups están desactivados, los builds release no reciben credenciales de `local.properties`, y cada pago live requiere confirmación explícita.
+## Aviso de seguridad de la demo
 
-Flujo rápido:
+Adyen recomienda crear las solicitudes de sesión, boarding y pago desde un backend. Este proyecto admite intencionadamente perfiles de credenciales dentro de la app para que la demo pueda ejecutarse desde un único dispositivo Android. Eso mantiene los secretos fuera de git, pero no hace que los secretos sean seguros dentro de un APK distribuido.
 
-1. Ejecuta la app debug.
-2. En `Payments App`, escanea o selecciona un perfil.
-3. Toca `Check` y después `Board` si hace falta.
-4. En `Catalog`, añade productos.
-5. En `Checkout`, lanza pagos test o confirma pagos live.
-6. En `Transactions`, inspecciona requests, responses, recibos y refunds.
-7. En `Diagnostics`, revisa el estado operativo en formato redactado.
+Usa esta arquitectura solo para demos. Una app de producción debería mover las claves API, las llamadas de tokens de boarding, el material de cifrado de Terminal API y los permisos operativos de revocación/listado a un backend o a otro componente seguro de nivel productivo.
 
-No comitees QR, JSON ni archivos con credenciales reales. Para el detalle de boarding y QR, revisa `docs/ADYEN_SETUP.md` y `docs/QR_CREDENTIALS.md`.
+TapToPlay refuerza el modelo de demo donde resulta práctico:
+
+- `local.properties` está ignorado por git y las builds release reciben valores de arranque de Adyen en blanco.
+- Los perfiles escaneados, el estado de boarding, los registros de transacciones y los favoritos de SaleToAcquirerData se guardan con preferencias cifradas de Android.
+- La copia de seguridad de Android está desactivada, y los archivos sensibles de preferencias cifradas también se excluyen de las reglas de backup y transferencia de dispositivo.
+- Los secretos se muestran enmascarados en la UI.
+- Los pagos live requieren un diálogo de confirmación por cada cobro.
+- Los enlaces de retorno cortos como `result=success` no se tratan como pagos aprobados; los estados aprobado/rechazado requieren un payload completo de respuesta de Terminal API.
+
+## Configuración local
+
+1. Abre el proyecto en Android Studio.
+2. Instala la app Adyen Payments Test en un dispositivo Android compatible.
+3. Opcionalmente, añade credenciales de arranque solo para debug en `local.properties`.
+4. Ejecuta la app debug en el dispositivo.
+5. Abre `Payments App`, escanea un perfil QR de credenciales o usa el perfil local de arranque.
+6. Toca `Check` para que la app Adyen Payments devuelva el estado de boarding.
+7. Si la app no está boarded, toca `Board` para intercambiar el token de solicitud de boarding devuelto y terminar la configuración.
+8. Abre `Catalog`, añade productos y después abre `Checkout` para lanzar un pago.
+
+Ejemplo de claves de `local.properties`:
+
+```properties
+ADYEN_ENVIRONMENT=test
+ADYEN_PROFILE_NAME=Demo Store TEST
+ADYEN_MERCHANT_ID=YourMerchantAccount
+ADYEN_STORE_ID=ST322LJ223223K5F
+ADYEN_API_KEY=AQE...
+ADYEN_CLIENT_KEY=test_...
+ADYEN_TERMINAL_KEY_IDENTIFIER=CryptoKeyIdentifier
+ADYEN_TERMINAL_KEY_VERSION=1
+ADYEN_TERMINAL_PASSPHRASE=shared-key-passphrase
+ADYEN_CURRENCY=EUR
+ADYEN_COUNTRY_CODE=ES
+```
+
+`local.properties` está ignorado por git. No pongas credenciales reales en archivos versionados.
+
+## Pestañas de la app
+
+- `Catalog`: la primera superficie retail usable. Añade prendas boutique al carrito.
+- `Checkout`: totales del carrito, lanzamiento de pagos test/live, escaneo QR de SaleToAcquirerData, favoritos y edición de campos.
+- `Payments App`: escaneo QR de credenciales, selección del perfil activo, check/board/reboard, eliminación de perfiles, consulta de instancias de Payments App y revocación protegida.
+- `Transactions`: intentos guardados de pago/reembolso con solicitud, respuesta, recibo, AdditionalResponse e inspección de reembolsos.
+- `Diagnostics`: resúmenes redactados del perfil, boarding, SaleToAcquirerData, API de Payments App y estado de transacciones.
+
+## Comandos útiles
+
+```powershell
+.\gradlew test
+.\gradlew assembleDebug
+.\gradlew bundleRelease
+```
+
+## Pruebas en Google Play
+
+El ID de aplicación de Play es `com.xenophont.taptoplay`. Confirma que es definitivo antes de la primera subida a Play Console, porque los nombres de paquete de Google Play no se pueden cambiar ni reutilizar después.
+
+Las builds release leen la configuración de firma desde propiedades solo locales y siguen recibiendo valores de arranque de Adyen en blanco. Los testers deberían escanear perfiles QR de credenciales en el dispositivo. Incrementa `tapToPlayVersionCode` en `gradle.properties` antes de cada nueva subida a Play.
+
+Usa `docs/PRIVACY_POLICY_DRAFT.md` como punto de partida antes de una release cerrada, abierta o de producción.
+
+## Códigos QR de credenciales
+
+TapToPlay importa perfiles de Adyen escaneando un código QR que contiene JSON sin procesar. Usa un QR por entorno, por ejemplo uno para test y otro para live.
+
+Para perfiles de ámbito merchant sin `storeId`, TapToPlay muestra `merchantId` como etiqueta principal del perfil. Para perfiles de ámbito tienda, `displayName` es una etiqueta de fallback: después de escanear un QR con `storeId`, TapToPlay llama al endpoint de tiendas de Adyen Management API v3 con la clave API escaneada y la cuenta merchant, resuelve el `reference` de la tienda correspondiente y muestra ese valor como etiqueta principal del perfil.
+
+Payload de ejemplo para test:
+
+```json
+{
+  "schema": "taptoplay.adyen.profile.v1",
+  "displayName": "Demo Store TEST",
+  "environment": "test",
+  "merchantId": "YourMerchantAccount",
+  "storeId": "ST322LJ223223K5F",
+  "apiKey": "AQE...",
+  "clientKey": "test_...",
+  "terminalKeyIdentifier": "CryptoKeyIdentifier",
+  "terminalKeyVersion": 1,
+  "terminalPassphrase": "shared-key-passphrase",
+  "currency": "EUR",
+  "countryCode": "ES"
+}
+```
+
+Para crear el QR:
+
+1. Rellena el JSON con tus valores de Adyen test o live.
+2. Genera un código QR a partir del texto JSON sin procesar usando una herramienta QR offline de confianza o una herramienta interna que controles.
+3. Trata la imagen QR como una contraseña, porque contiene claves API y material de cifrado de terminal.
+4. Abre `Payments App`, toca `Scan QR`, escanea el perfil y selecciónalo deliberadamente.
+
+No comitees imágenes QR ni archivos JSON con credenciales reales. Para más detalle y un ejemplo de estructura live, consulta `docs/QR_CREDENTIALS.md`.
+
+## Códigos QR de SaleToAcquirerData
+
+TapToPlay puede escanear un código QR para reemplazar el objeto `SaleToAcquirerData` de las siguientes solicitudes de pago. Esto es útil para probar funcionalidades de Adyen controladas mediante `SaleToAcquirerData`.
+
+El QR recomendado contiene el objeto JSON plano de Adyen `SaleToAcquirerData`. TapToPlay codifica exactamente ese objeto en Base64 y lo escribe en `PaymentRequest.SaleData.SaleToAcquirerData`.
+
+Payload de ejemplo:
+
+```json
+{
+  "applicationInfo": {
+    "externalPlatform": {
+      "name": "COMPANY_NAME_OR_PLATFORM_NAME",
+      "version": "1.3",
+      "integrator": "COMPANY_THAT_BUILT_INTEGRATION_OR_POS_APP"
+    },
+    "merchantApplication": {
+      "name": "NAME_OF_POS_APPLICATION",
+      "version": "2.13.05"
+    },
+    "merchantDevice": {
+      "os": "OS_OF_DEVICE_THAT_RUNS_POS_APPLICATION",
+      "osVersion": "16.3"
+    }
+  },
+  "metadata": {
+    "someMetaDataKey1": "YOUR_VALUE",
+    "someMetaDataKey2": "YOUR_VALUE"
+  },
+  "shopperEmail": "S.Hopper@example.com",
+  "shopperReference": "YOUR_UNIQUE_SHOPPER_ID",
+  "shopperStatement": "YOUR_PAYMENT_DESCRIPTION"
+}
+```
+
+Usa `Scan data QR` en `Checkout`, `View` para inspeccionar/editar campos, `Save` para favoritos y `Reset` para volver a los metadatos retail de demo por defecto. Los códigos QR de SaleToAcquirerData deben contener el objeto SaleToAcquirerData plano; los payloads envoltorio de TapToPlay ya no están soportados.
+
+## Operaciones de Payments App
+
+La pestaña `Payments App` admite:
+
+- `Check`: abre el App Link documentado `boarded` y parsea el estado de boarding devuelto y el `data` de retorno decodificado.
+- `Board`: llama al endpoint `generatePaymentsAppBoardingToken` de Adyen Management API con el `boardingRequestToken` devuelto y después abre el App Link `board` con el `boardingToken` generado. Esta llamada de estilo backend se mantiene dentro de la app con fines de demo.
+- `Reboard`: abre `boarded?reboard=true` y después usa `Board` cuando Adyen devuelve un token de solicitud nuevo.
+- `Refresh`: llama a la Payments App API para listar instancias de Payments App para el merchant o tienda seleccionados.
+- `Revoke instance`: revoca una instancia listada de la app después de una confirmación explícita.
+- `Remove`: elimina el perfil local cifrado y su estado local de boarding guardado. Esto no revoca por sí solo la instancia de Adyen Payments App.
+
+Las llamadas a Management API usan la clave API del perfil escaneado/de arranque seleccionado. Asegúrate de que la credencial API tenga los roles requeridos de Adyen para consultar nombres de tienda al usar `storeId`, hacer boarding, listar y revocar instancias de Payments App.
+
+## Transacciones, respuestas y reembolsos
+
+Cada intento de pago o reembolso se guarda en la pestaña `Transactions`. Toca `Inspect` para revisar:
+
+- La solicitud estructurada de Terminal API, incluyendo `ServiceID`, categoría de mensaje, Merchant Reference y SaleToAcquirerData decodificado.
+- La respuesta decodificada de Terminal API cuando esté disponible.
+- Una vista legible de campos de respuesta con los valores clave arriba.
+- Valores decodificados de `AdditionalResponse`.
+- Datos de recibo generados por Adyen cuando se devuelvan.
+- La URI de retorno sin procesar y el JSON raw detrás de acciones intencionadas de inspección.
+
+Si una respuesta de pago aprobado incluye un identificador de transacción de Terminal API, el inspector de transacciones habilita `Refund`. Esto lanza un reembolso referenciado usando un `ReversalRequest` contra la transacción original.
+
+## Compilación y despliegue
+
+Desde Android Studio:
+
+1. Abre esta carpeta de proyecto.
+2. Deja que Gradle termine la sincronización.
+3. Selecciona la configuración de ejecución `app`.
+4. Conecta un dispositivo Android compatible con NFC.
+5. Pulsa Run.
+
+Desde PowerShell:
+
+```powershell
+.\gradlew assembleDebug
+adb install -r app\build\outputs\apk\debug\app-debug.apk
+```
+
+Para pagos test, instala la app Adyen Payments Test en el mismo dispositivo. Para pagos live, instala la app Adyen Payments live, escanea un perfil QR live, selecciónalo explícitamente, ejecuta `Check` y `Board`, y después confirma cada cobro live en checkout.
+
+## Límite actual de pagos
+
+La app construye App Links reales de Adyen para entornos test/live y realiza llamadas a Management API desde la app de demo. La construcción de payloads de Terminal API vive en el paquete `adyen`, y el cifrado permanece aislado en `adyen/NexoCrypto.kt`. Los App Links de pago usan el parámetro documentado `request` con un sobre Nexo cifrado y codificado en Base64URL.
+
+Este sigue siendo un modelo de seguridad de demo porque las credenciales viven en el dispositivo. Para producción, mueve el almacenamiento de credenciales y el trabajo de tokens/sesiones a un backend o a un componente seguro reforzado.
+
+## Más documentación
+
+- `docs/ADYEN_SETUP.md`: boarding, reboarding, listado/revocación de Payments App, configuración test/live y troubleshooting.
+- `docs/QR_CREDENTIALS.md`: esquema JSON de QR, ejemplos, límites y gestión de seguridad.
