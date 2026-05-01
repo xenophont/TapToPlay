@@ -57,7 +57,7 @@ val missingPlaySigningKeys = playSigningKeys.filter { localOrGradleProperty(it).
 val playReleaseSigningReady = missingPlaySigningKeys.isEmpty()
 
 android {
-    namespace = "com.example.taptoplay"
+    namespace = "com.xenophont.taptoplay"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1

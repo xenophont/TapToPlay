@@ -1,0 +1,95 @@
+package com.xenophont.taptoplay.profiles
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class ProfileSelectionTest {
+    @Test
+    fun activeProfileSwitchesOnlyWhenRequested() {
+        val store = MemoryProfileStore()
+        val testProfile = profile("Test", PaymentEnvironment.TEST)
+        val liveProfile = profile("Live", PaymentEnvironment.LIVE)
+
+        store.save(testProfile)
+        store.save(liveProfile)
+        store.setActive(testProfile.id)
+        store.setActive(liveProfile.id)
+
+        assertEquals(liveProfile.id, store.activeProfileId())
+    }
+
+    @Test
+    fun removingActiveProfileSelectsNextAvailableProfile() {
+        val store = MemoryProfileStore()
+        val testProfile = profile("Test", PaymentEnvironment.TEST)
+        val liveProfile = profile("Live", PaymentEnvironment.LIVE)
+
+        store.save(testProfile)
+        store.save(liveProfile)
+        store.setActive(testProfile.id)
+        store.remove(testProfile.id)
+
+        assertEquals(liveProfile.id, store.activeProfileId())
+        assertEquals(listOf(liveProfile), store.profiles())
+    }
+
+    @Test
+    fun onlyLiveProfilesRequireChargeConfirmation() {
+        assertEquals(false, profile("Test", PaymentEnvironment.TEST).requiresLivePaymentConfirmation())
+        assertEquals(true, profile("Live", PaymentEnvironment.LIVE).requiresLivePaymentConfirmation())
+    }
+
+    @Test
+    fun storeNameBecomesPrimaryProfileNameWithoutChangingProfileId() {
+        val profile = profile("Demo Store TEST", PaymentEnvironment.TEST).copy(
+            storeId = "ST322LJ223223K5F",
+            storeName = "Boutique Centro",
+        )
+
+        assertEquals("Boutique Centro", profile.profileName)
+        assertEquals("test:merchant:ST322LJ223223K5F:Demo Store TEST", profile.id)
+    }
+
+    @Test
+    fun merchantScopedProfileUsesMerchantIdAsProfileName() {
+        val profile = profile("Demo Store TEST", PaymentEnvironment.TEST)
+
+        assertEquals("merchant", profile.profileName)
+        assertEquals("test:merchant::Demo Store TEST", profile.id)
+    }
+
+    private fun profile(name: String, environment: PaymentEnvironment) = AdyenProfile(
+        displayName = name,
+        environment = environment,
+        merchantId = "merchant",
+        apiKey = "api",
+        clientKey = "client",
+        terminalKeyIdentifier = "key",
+        terminalKeyVersion = 1,
+        terminalPassphrase = "passphrase",
+        currency = "EUR",
+        countryCode = "ES",
+    )
+}
+
+private class MemoryProfileStore : ProfileStore {
+    private val profiles = mutableListOf<AdyenProfile>()
+    private var active: String? = null
+
+    override fun profiles(): List<AdyenProfile> = profiles
+    override fun activeProfileId(): String? = active
+    override fun save(profile: AdyenProfile) {
+        profiles.removeAll { it.id == profile.id }
+        profiles.add(profile)
+    }
+
+    override fun setActive(profileId: String) {
+        require(profiles.any { it.id == profileId })
+        active = profileId
+    }
+
+    override fun remove(profileId: String) {
+        profiles.removeAll { it.id == profileId }
+        if (active == profileId) active = profiles.firstOrNull()?.id
+    }
+}

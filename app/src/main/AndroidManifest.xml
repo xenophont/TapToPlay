@@ -27,7 +27,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TapToPlay">
         <activity
-            android:name="com.example.taptoplay.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:launchMode="singleTask"
@@ -48,10 +48,6 @@
                     android:scheme="taptoplay" />
             </intent-filter>
         </activity>
-        <activity-alias
-            android:name="com.xenophont.taptoplay.MainActivity"
-            android:exported="true"
-            android:targetActivity="com.example.taptoplay.MainActivity" />
     </application>
 
 </manifest>
