@@ -3,6 +3,7 @@ package com.xenophont.taptoplay.ui
 import com.xenophont.taptoplay.catalog.ProductCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -65,6 +66,46 @@ class LocalizationTest {
             assertTrue(strings.screenLabel(AppScreen.Language).isNotBlank())
             assertTrue(strings.screenLabel(AppScreen.About).isNotBlank())
             assertTrue(strings["privacy_policy"].isNotBlank())
+        }
+    }
+
+    @Test
+    fun requestedLanguagesDoNotFallBackForCoreCheckoutCopy() {
+        val english = stringsFor(AppLanguage.English)
+        val coreKeys = listOf(
+            "cart",
+            "add_to_cart",
+            "checkout_empty_hint",
+            "payment_profile",
+            "transactions_empty_title",
+            "receipt",
+            "privacy_policy",
+            "status_ready",
+        )
+        val localizedLanguages = listOf(
+            AppLanguage.French,
+            AppLanguage.German,
+            AppLanguage.Italian,
+            AppLanguage.Swedish,
+            AppLanguage.Japanese,
+            AppLanguage.Chinese,
+            AppLanguage.Korean,
+            AppLanguage.Basque,
+            AppLanguage.Quenya,
+        )
+
+        localizedLanguages.forEach { language ->
+            val localized = stringsFor(language)
+            coreKeys.forEach { key ->
+                assertNotEquals("$language should localize $key", english[key], localized[key])
+            }
+            ProductCatalog.products.forEach { product ->
+                assertNotEquals(
+                    "$language should localize product ${product.id}",
+                    product.name,
+                    localized.productName(product),
+                )
+            }
         }
     }
 }

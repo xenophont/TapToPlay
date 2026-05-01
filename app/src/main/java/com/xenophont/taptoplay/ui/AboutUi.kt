@@ -10,7 +10,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,11 +35,10 @@ internal fun AboutPanel(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalTapToPlayStrings.current
-    val context = LocalContext.current
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 4.dp, bottom = 18.dp),
+            .padding(top = 4.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -67,18 +65,25 @@ internal fun AboutPanel(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        Spacer(Modifier.weight(1f))
-        OutlinedButton(
-            onClick = {
-                try {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
-                } catch (_: ActivityNotFoundException) {
-                    Toast.makeText(context, strings["status_no_browser_privacy_policy"], Toast.LENGTH_LONG).show()
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(strings["privacy_policy"])
-        }
+    }
+}
+
+@Composable
+internal fun PrivacyPolicyStickyButton(
+    modifier: Modifier = Modifier,
+) {
+    val strings = LocalTapToPlayStrings.current
+    val context = LocalContext.current
+    OutlinedButton(
+        onClick = {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
+            } catch (_: ActivityNotFoundException) {
+                Toast.makeText(context, strings["status_no_browser_privacy_policy"], Toast.LENGTH_LONG).show()
+            }
+        },
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Text(strings["privacy_policy"])
     }
 }

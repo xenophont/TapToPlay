@@ -368,7 +368,20 @@ internal fun TapToPlayApp(
                             }
                         }
                     }
-                    item { Spacer(Modifier.height(18.dp)) }
+                    item {
+                        Spacer(Modifier.height(if (selectedScreen == AppScreen.About) 88.dp else 18.dp))
+                    }
+                }
+                if (selectedScreen == AppScreen.About) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.96f))
+                            .padding(horizontal = 18.dp, vertical = 12.dp),
+                    ) {
+                        PrivacyPolicyStickyButton(Modifier.fillMaxWidth())
+                    }
                 }
                 AnimatedVisibility(
                     visible = shouldShowCartFab,
