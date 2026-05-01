@@ -1,8 +1,5 @@
 package com.xenophont.taptoplay.ui
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -78,8 +75,8 @@ internal fun PrivacyPolicyStickyButton(
     OutlinedButton(
         onClick = {
             try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
-            } catch (_: ActivityNotFoundException) {
+                context.startActivity(PrivacyPolicy.viewIntent())
+            } catch (_: RuntimeException) {
                 Toast.makeText(context, noBrowserMessage, Toast.LENGTH_LONG).show()
             }
         },
