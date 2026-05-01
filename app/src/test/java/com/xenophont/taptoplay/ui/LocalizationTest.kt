@@ -108,4 +108,45 @@ class LocalizationTest {
             }
         }
     }
+
+    @Test
+    fun requestedLanguagesDoNotUseEnglishFallbackForExpandedCopy() {
+        val english = stringsFor(AppLanguage.English)
+        val expandedKeys = listOf(
+            "scan_profile_prompt",
+            "status_qr_rejected",
+            "terminal_api_request",
+            "raw_return_uri",
+        )
+        val localizedLanguages = AppLanguage.entries - AppLanguage.English - AppLanguage.Spanish
+
+        localizedLanguages.forEach { language ->
+            val localized = stringsFor(language)
+            expandedKeys.forEach { key ->
+                assertNotEquals("$language should not fall back to English for $key", english[key], localized[key])
+            }
+        }
+    }
+
+    @Test
+    fun protectedProductAndProtocolTermsStayStable() {
+        val exactKeys = listOf(
+            "app_name",
+            "screen_payments_app",
+            "environment_test",
+            "environment_live",
+            "service_id",
+            "merchant_reference",
+            "sale_transaction",
+        )
+
+        allLocalizedStringSets().forEach { strings ->
+            exactKeys.forEach { key ->
+                assertEquals("${strings.language} should keep protected term $key", stringsFor(AppLanguage.English)[key], strings[key])
+            }
+            assertTrue(strings["payments_app_api"].contains("Payments App"))
+            assertTrue(strings["decoded_sale_to_acquirer_data"].contains("SaleToAcquirerData"))
+            assertTrue(strings["adyen_app_is_state"].contains("Installation ID"))
+        }
+    }
 }
