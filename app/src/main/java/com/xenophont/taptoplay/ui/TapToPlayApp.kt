@@ -180,6 +180,10 @@ internal fun TapToPlayApp(
         }
     }
 
+    LaunchedEffect(selectedScreen) {
+        listState.scrollToItem(0)
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -365,7 +369,7 @@ internal fun TapToPlayApp(
                         }
                         AppScreen.About -> {
                             item {
-                                AboutPanel(Modifier.fillParentMaxHeight())
+                                AboutPanel()
                             }
                         }
                     }
