@@ -104,7 +104,6 @@ internal fun TapToPlayApp(
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
     onOpenCredentialQrDocs: () -> Unit,
-    onOpenPrivacyPolicy: () -> Unit,
     onDownloadPaymentsApp: (AdyenProfile) -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
     onUpdateSaleToAcquirerData: (SaleToAcquirerDataConfig) -> Unit,
@@ -365,7 +364,7 @@ internal fun TapToPlayApp(
                         }
                         AppScreen.About -> {
                             item {
-                                AboutPanel(onOpenPrivacyPolicy = onOpenPrivacyPolicy)
+                                AboutPanel()
                             }
                         }
                     }

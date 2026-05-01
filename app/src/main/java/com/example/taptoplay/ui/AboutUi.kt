@@ -1,5 +1,9 @@
 package com.example.taptoplay.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,10 +31,9 @@ import androidx.compose.ui.unit.dp
 import com.example.taptoplay.R
 
 @Composable
-internal fun AboutPanel(
-    onOpenPrivacyPolicy: () -> Unit,
-) {
+internal fun AboutPanel() {
     val strings = LocalTapToPlayStrings.current
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -45,7 +49,13 @@ internal fun AboutPanel(
             color = MaterialTheme.colorScheme.onBackground,
         )
         OutlinedButton(
-            onClick = onOpenPrivacyPolicy,
+            onClick = {
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
+                } catch (_: ActivityNotFoundException) {
+                    Toast.makeText(context, strings["status_no_browser_privacy_policy"], Toast.LENGTH_LONG).show()
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(strings["privacy_policy"])
