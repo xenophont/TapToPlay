@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +37,19 @@ internal fun AboutPanel(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Text(
+            strings["about_message"],
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        OutlinedButton(
+            onClick = onOpenPrivacyPolicy,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(strings["privacy_policy"])
+        }
         val imageShape = RoundedCornerShape(8.dp)
         Box(
             modifier = Modifier
@@ -52,16 +65,6 @@ internal fun AboutPanel(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
-        }
-        Text(
-            strings["about_message"],
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        TextButton(onClick = onOpenPrivacyPolicy) {
-            Text(strings["privacy_policy"])
         }
     }
 }
