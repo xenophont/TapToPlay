@@ -89,7 +89,7 @@ class LocalizationTest {
         )
 
         resourceFiles()
-            .filterKeys { it != "values" && it != "values-es" && it != "values-nl" }
+            .filterKeys { it != "values" && it != "values-nl" }
             .forEach { (qualifier, file) ->
                 val localized = file.strings
                 coreKeys.forEach { key ->
@@ -116,7 +116,7 @@ class LocalizationTest {
         )
 
         resourceFiles()
-            .filterKeys { it != "values" && it != "values-es" }
+            .filterKeys { it != "values" }
             .forEach { (qualifier, file) ->
                 val localized = file.strings
                 expandedKeys.forEach { key ->

@@ -13,20 +13,20 @@
     <string name="amount">Bedrag</string>
     <string name="api_key">API key</string>
     <string name="app_name" translatable="false">TapToPlay</string>
-    <string name="app_subtitle">Payments App Made Easy</string>
+    <string name="app_subtitle">Payments App eenvoudig</string>
     <string name="apply">Toepassen</string>
     <string name="array_item_count_many">%1$d items</string>
     <string name="array_item_count_one">1 item</string>
     <string name="base64_decode_failed">De Base64-waarde kon niet als JSON worden gedecodeerd.</string>
-    <string name="board">Board</string>
+    <string name="board">Configureren</string>
     <string name="boarded">geboard</string>
     <string name="boarding_boarded">Geboard</string>
     <string name="boarding_collapsed_setup">Setup ingeklapt</string>
     <string name="boarding_no_profile">Geen profiel</string>
     <string name="boarding_ready_to_board">Klaar voor boarding</string>
-    <string name="boarding_request_token">Boarding request token</string>
+    <string name="boarding_request_token">Configuratie aanvraagt-token</string>
     <string name="boarding_returned">Boarding teruggekeerd</string>
-    <string name="boarding_token">Boarding token</string>
+    <string name="boarding_token">Configuratie token</string>
     <string name="boarding_token_exchanged">omgewisseld voor boarding token</string>
     <string name="boarding_token_generated">gegenereerd voor de laatste Board-link</string>
     <string name="boarding_token_not_generated">nog niet gegenereerd</string>
@@ -44,7 +44,7 @@
     <string name="charge_live_payment">Live betaling starten</string>
     <string name="charge_test_payment">Testbetaling starten</string>
     <string name="charging_profile">Betaalprofiel: %1$s (%2$s)</string>
-    <string name="check">Check</string>
+    <string name="check">Controleren</string>
     <string name="checkout_empty_hint">Voeg items toe om een Tap to Pay-betaling te starten.</string>
     <string name="clear">Wissen</string>
     <string name="close">Sluiten</string>
@@ -62,7 +62,7 @@
     <string name="environment">Omgeving</string>
     <string name="environment_live" translatable="false">live</string>
     <string name="environment_test" translatable="false">test</string>
-    <string name="error_condition">Error condition</string>
+    <string name="error_condition">Foutvoorwaarde</string>
     <string name="failure_refused_without_reason">Adyen heeft de betaling geweigerd zonder reden.</string>
     <string name="favorites">Favorieten</string>
     <string name="field_count_many">%1$d velden</string>
@@ -98,7 +98,7 @@
     <string name="merchant">Merchant</string>
     <string name="merchant_receipt">Merchantbon</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
-    <string name="message_category">Message category</string>
+    <string name="message_category">Berichtcategorie</string>
     <string name="no_credential_profile_loaded">Geen credentialprofiel geladen</string>
     <string name="no_merchant_store_returned">Geen merchant/winkel ontvangen</string>
     <string name="no_payment_profile_selected">Geen betaalprofiel geselecteerd</string>
@@ -114,7 +114,7 @@
     <string name="open_menu">Menu openen</string>
     <string name="open_payments_app_status">Payments App-status openen</string>
     <string name="open_qr_documentation">QR-documentatie openen</string>
-    <string name="passphrase">Passphrase</string>
+    <string name="passphrase">Wachtzin</string>
     <string name="payment_approved">Betaling goedgekeurd</string>
     <string name="payment_profile">Betaalprofiel</string>
     <string name="payment_refused">Betaling geweigerd</string>
@@ -125,7 +125,7 @@
     <string name="payments_app_not_installed">Payments app niet geinstalleerd</string>
     <string name="payments_app_not_installed_body">Installeer de %1$s Adyen Payments app via Google Play, kom terug en voer Check opnieuw uit.</string>
     <string name="payments_app_status_boarded">geboard</string>
-    <string name="payments_app_status_boarding">boarding</string>
+    <string name="payments_app_status_boarding">configuratie</string>
     <string name="payments_app_status_revoked">ingetrokken</string>
     <string name="payments_app_status_unknown">onbekend</string>
     <string name="previous_merchant">Vorige merchant: %1$s</string>
@@ -137,7 +137,7 @@
     <string name="raw_terminal_api_request">Ruwe Terminal API-request</string>
     <string name="raw_terminal_api_response">Ruwe Terminal API-response</string>
     <string name="readable_response">Leesbare response</string>
-    <string name="reboard">Reboard</string>
+    <string name="reboard">Opnieuw configureren</string>
     <string name="reboarding_flow_started">Reboardingflow gestart</string>
     <string name="receipt">Bon</string>
     <string name="receipt_account_type">Rekeningtype</string>
@@ -146,7 +146,7 @@
     <string name="receipt_authorisation">Autorisatie</string>
     <string name="receipt_authorization_response">Autorisatierespons</string>
     <string name="receipt_authorization_type">Autorisatietype</string>
-    <string name="receipt_buyer_id">Buyer ID</string>
+    <string name="receipt_buyer_id">Koper-ID</string>
     <string name="receipt_card">Kaart</string>
     <string name="receipt_card_number">Kaartnummer</string>
     <string name="receipt_cardholder_name">Kaarthouder</string>
@@ -162,7 +162,7 @@
     <string name="receipt_dcc_source">DCC-bron</string>
     <string name="receipt_discount_amount">Korting</string>
     <string name="receipt_expiry_date">Vervaldatum</string>
-    <string name="receipt_funding_source">Funding source</string>
+    <string name="receipt_funding_source">Financieringsbron</string>
     <string name="receipt_merchant_id">Merchant ID</string>
     <string name="receipt_original_amount">Oorspronkelijk bedrag</string>
     <string name="receipt_pan_sequence">PAN-volgnummer</string>
@@ -193,10 +193,10 @@
     <string name="remove_group">Groep verwijderen</string>
     <string name="remove_payment_profile_body">Dit verwijdert %1$s uit de lokale versleutelde kluis en wist de opgeslagen boardingstatus. Authenticatie in de Adyen-app wordt pas ingetrokken als je de instantie apart revoke\'t.</string>
     <string name="remove_payment_profile_title">Betaalprofiel verwijderen?</string>
-    <string name="request">Request</string>
+    <string name="request">Verzoek</string>
     <string name="request_summary">Requestsamenvatting</string>
     <string name="reset">Resetten</string>
-    <string name="response">Response</string>
+    <string name="response">Antwoord</string>
     <string name="result">Resultaat</string>
     <string name="revoke">Intrekken</string>
     <string name="revoke_instance">Instantie intrekken</string>
@@ -211,7 +211,7 @@
     <string name="scan_profile_prompt">Scan een TapToPlay Adyen-profiel-QR</string>
     <string name="scan_qr">QR scannen</string>
     <string name="scan_sale_to_acquirer_prompt">Scan een SaleToAcquirerData JSON-QR</string>
-    <string name="screen_about">About</string>
+    <string name="screen_about">Over</string>
     <string name="screen_catalog">Catalogus</string>
     <string name="screen_checkout">Afrekenen</string>
     <string name="screen_diagnostics">Diagnose</string>
@@ -223,7 +223,7 @@
     <string name="secure_device_vault">Veilige kluis op apparaat</string>
     <string name="secure_device_vault_body">Gescande QR-profielen worden opgeslagen met Android encrypted preferences. Geheimen blijven gemaskeerd in de app.</string>
     <string name="service_id" translatable="false">ServiceID</string>
-    <string name="setup">Setup</string>
+    <string name="setup">Configuratie</string>
     <string name="show_latest_action_on_top">Laatste actie bovenaan tonen</string>
     <string name="show_raw_json">Ruwe JSON tonen</string>
     <string name="show_revoked">Ingetrokken tonen</string>
@@ -281,7 +281,7 @@
     <string name="summary_failed">Mislukt | %1$s</string>
     <string name="summary_refused">Geweigerd%1$s</string>
     <string name="terminal_api_request">Terminal API-request</string>
-    <string name="terminal_key">Terminal key</string>
+    <string name="terminal_key">Terminalsleutel</string>
     <string name="total">Totaal</string>
     <string name="transaction">Transactie</string>
     <string name="transaction_history">Transactiegeschiedenis</string>
@@ -310,11 +310,11 @@
     <string name="product_leather_tote_name">Zachte market tote</string>
     <string name="product_leather_tote_description">Ongevoerde tote van generfd leer, formaat voor winkelvloerbenodigdheden.</string>
     <string name="category_all">Alles</string>
-    <string name="category_outerwear">Outerwear</string>
-    <string name="category_shirts">Shirts</string>
+    <string name="category_outerwear">Bovenkleding</string>
+    <string name="category_shirts">Overhemden</string>
     <string name="category_trousers">Broeken</string>
     <string name="category_dresses">Jurken</string>
-    <string name="category_knitwear">Knitwear</string>
+    <string name="category_knitwear">Breisels</string>
     <string name="category_accessories">Accessoires</string>
     <plurals name="cart_item_ready">
         <item quantity="one">1 item klaar</item>
