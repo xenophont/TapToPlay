@@ -36,10 +36,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.cart.CartLine
 import com.xenophont.taptoplay.catalog.Product
 import com.xenophont.taptoplay.profiles.AdyenProfile
@@ -52,18 +56,17 @@ internal fun CartSummaryCard(
     activeProfile: AdyenProfile?,
     onCheckout: () -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     val itemCount = lines.sumOf { it.quantity }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(strings["cart"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.cart), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(
                         if (lines.isEmpty()) {
-                            strings["cart_empty_hint"]
+                            stringResource(R.string.cart_empty_hint)
                         } else {
-                            strings.itemsReady(itemCount)
+                            pluralStringResource(R.plurals.cart_item_ready, itemCount, itemCount)
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -71,14 +74,15 @@ internal fun CartSummaryCard(
                 Text(formatMoney(totalMinor), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
             Text(
-                activeProfile?.let { strings.chargingProfile(it.profileName, it.environment) }
-                    ?: strings["no_payment_profile_selected"],
+                activeProfile?.let {
+                    stringResource(R.string.charging_profile, it.profileName, stringResource(it.environment.environmentLabelRes()))
+                } ?: stringResource(R.string.no_payment_profile_selected),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Button(onClick = onCheckout, enabled = lines.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-                Text(strings["go_to_checkout"])
+                Text(stringResource(R.string.go_to_checkout))
             }
         }
     }
@@ -86,10 +90,10 @@ internal fun CartSummaryCard(
 
 @Composable
 internal fun ProductCard(product: Product, onAdd: () -> Unit) {
-    val strings = LocalTapToPlayStrings.current
-    val productName = strings.productName(product)
-    val productDescription = strings.productDescription(product)
-    val productCategory = strings.categoryLabel(product.category)
+    val productName = product.localizedName()
+    val productDescription = product.localizedDescription()
+    val productCategory = categoryLabel(product.category)
+    val locale = LocalConfiguration.current.locales[0]
     var feedbackTick by remember { mutableStateOf(0) }
     var addedFeedback by remember { mutableStateOf(false) }
     LaunchedEffect(feedbackTick) {
@@ -159,7 +163,7 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                     )
                 }
                 Text(
-                    productCategory.uppercase(strings.locale),
+                    productCategory.uppercase(locale),
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(12.dp),
@@ -217,7 +221,7 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                     ),
                 ) {
                     Text(
-                        if (addedFeedback) strings["added"] else strings["add_to_cart"],
+                        if (addedFeedback) stringResource(R.string.added) else stringResource(R.string.add_to_cart),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.labelLarge,

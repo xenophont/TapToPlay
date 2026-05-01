@@ -29,9 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.adyen.PaymentsAppInstance
 import com.xenophont.taptoplay.adyen.PaymentsAppStatus
 import com.xenophont.taptoplay.profiles.AdyenProfile
@@ -53,14 +55,13 @@ internal fun ProfilePanel(
     onBoard: (AdyenProfile) -> Unit,
     onReboard: (AdyenProfile) -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     var expanded by remember { mutableStateOf(true) }
     var profilePendingRemoval by remember { mutableStateOf<AdyenProfile?>(null) }
     val boardingState = when {
-        activeProfile == null -> strings["boarding_no_profile"]
-        installationId != null -> strings["boarding_boarded"]
-        boardingRequestToken != null -> strings["boarding_ready_to_board"]
-        else -> strings["boarding_collapsed_setup"]
+        activeProfile == null -> stringResource(R.string.boarding_no_profile)
+        installationId != null -> stringResource(R.string.boarding_boarded)
+        boardingRequestToken != null -> stringResource(R.string.boarding_ready_to_board)
+        else -> stringResource(R.string.boarding_collapsed_setup)
     }
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -72,35 +73,35 @@ internal fun ProfilePanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text(strings["payment_profile"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.payment_profile), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(
-                        activeProfile?.let { "${it.profileName} | ${strings.environmentLabel(it.environment)}" }
-                            ?: strings["no_payment_profile_selected"],
+                        activeProfile?.let { "${it.profileName} | ${it.environment.localizedLabel()}" }
+                            ?: stringResource(R.string.no_payment_profile_selected),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     AssistChip(onClick = { expanded = !expanded }, label = { Text(boardingState) })
                     Text(
-                        if (expanded) strings["hide"] else strings["setup"],
+                        if (expanded) stringResource(R.string.hide) else stringResource(R.string.setup),
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
             if (expanded) {
-                Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text(strings["scan_qr"]) }
+                Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.scan_qr)) }
             }
             if (expanded && profiles.isEmpty()) {
                 OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(strings["no_credential_profile_loaded"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.no_credential_profile_loaded), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(
-                            strings["credential_profile_empty_body"],
+                            stringResource(R.string.credential_profile_empty_body),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         TextButton(onClick = onOpenCredentialQrDocs, modifier = Modifier.align(Alignment.Start)) {
-                            Text(strings["open_qr_documentation"])
+                            Text(stringResource(R.string.open_qr_documentation))
                         }
                     }
                 }
@@ -108,34 +109,34 @@ internal fun ProfilePanel(
             if (expanded && activeProfile != null) {
                 OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(strings["secure_device_vault"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.secure_device_vault), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(
-                            strings["secure_device_vault_body"],
+                            stringResource(R.string.secure_device_vault_body),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        KeyValueLine(strings["merchant"], activeProfile.merchantId)
-                        activeProfile.storeName?.let { KeyValueLine(strings["store_name"], it) }
-                        activeProfile.storeId?.let { KeyValueLine(strings["store_id"], it) }
-                        KeyValueLine(strings["environment"], strings.environmentLabel(activeProfile.environment))
-                        KeyValueLine(strings["api_key"], strings.secretMask(activeProfile.apiKey))
-                        KeyValueLine(strings["terminal_key"], "${activeProfile.terminalKeyIdentifier} v${activeProfile.terminalKeyVersion}")
-                        KeyValueLine(strings["passphrase"], strings.passphraseMask(activeProfile.terminalPassphrase))
-                        KeyValueLine(strings["installation"], installationId ?: strings["installation_not_returned_yet"])
+                        KeyValueLine(stringResource(R.string.merchant), activeProfile.merchantId)
+                        activeProfile.storeName?.let { KeyValueLine(stringResource(R.string.store_name), it) }
+                        activeProfile.storeId?.let { KeyValueLine(stringResource(R.string.store_id), it) }
+                        KeyValueLine(stringResource(R.string.environment), activeProfile.environment.localizedLabel())
+                        KeyValueLine(stringResource(R.string.api_key), secretMask(activeProfile.apiKey))
+                        KeyValueLine(stringResource(R.string.terminal_key), "${activeProfile.terminalKeyIdentifier} v${activeProfile.terminalKeyVersion}")
+                        KeyValueLine(stringResource(R.string.passphrase), passphraseMask(activeProfile.terminalPassphrase))
+                        KeyValueLine(stringResource(R.string.installation), installationId ?: stringResource(R.string.installation_not_returned_yet))
                         KeyValueLine(
-                            strings["boarding_request_token"],
+                            stringResource(R.string.boarding_request_token),
                             when {
-                                boardingTokenIssued -> strings["boarding_token_exchanged"]
-                                boardingRequestToken != null -> strings["boarding_token_received"]
-                                installationId != null -> strings["boarding_token_not_needed"]
-                                else -> strings["boarding_token_not_received"]
+                                boardingTokenIssued -> stringResource(R.string.boarding_token_exchanged)
+                                boardingRequestToken != null -> stringResource(R.string.boarding_token_received)
+                                installationId != null -> stringResource(R.string.boarding_token_not_needed)
+                                else -> stringResource(R.string.boarding_token_not_received)
                             },
                         )
                         KeyValueLine(
-                            strings["boarding_token"],
+                            stringResource(R.string.boarding_token),
                             when {
-                                boardingTokenIssued -> strings["boarding_token_generated"]
-                                boardingRequestToken != null -> strings["boarding_token_not_generated"]
-                                else -> strings["boarding_token_not_requested"]
+                                boardingTokenIssued -> stringResource(R.string.boarding_token_generated)
+                                boardingRequestToken != null -> stringResource(R.string.boarding_token_not_generated)
+                                else -> stringResource(R.string.boarding_token_not_requested)
                             },
                         )
                     }
@@ -147,10 +148,10 @@ internal fun ProfilePanel(
                     )
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { onCheckBoarding(activeProfile) }) { Text(strings["check"]) }
-                    Button(onClick = { onBoard(activeProfile) }) { Text(strings["board"]) }
-                    OutlinedButton(onClick = { onReboard(activeProfile) }) { Text(strings["reboard"]) }
-                    TextButton(onClick = { profilePendingRemoval = activeProfile }) { Text(strings["remove"]) }
+                    OutlinedButton(onClick = { onCheckBoarding(activeProfile) }) { Text(stringResource(R.string.check)) }
+                    Button(onClick = { onBoard(activeProfile) }) { Text(stringResource(R.string.board)) }
+                    OutlinedButton(onClick = { onReboard(activeProfile) }) { Text(stringResource(R.string.reboard)) }
+                    TextButton(onClick = { profilePendingRemoval = activeProfile }) { Text(stringResource(R.string.remove)) }
                 }
             }
             if (expanded && profiles.isNotEmpty()) {
@@ -188,16 +189,16 @@ internal fun ProfilePanel(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text(strings["remove"])
+                    Text(stringResource(R.string.remove))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { profilePendingRemoval = null }) { Text(strings["cancel"]) }
+                TextButton(onClick = { profilePendingRemoval = null }) { Text(stringResource(R.string.cancel)) }
             },
-            title = { Text(strings["remove_payment_profile_title"]) },
+            title = { Text(stringResource(R.string.remove_payment_profile_title)) },
             text = {
                 Text(
-                    strings.format("remove_payment_profile_body", profile.profileName),
+                    stringResource(R.string.remove_payment_profile_body, profile.profileName),
                 )
             },
         )
@@ -209,20 +210,19 @@ private fun PaymentsAppDownloadCard(
     profile: AdyenProfile,
     onDownload: () -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     OutlinedCard(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(strings["payments_app_not_installed"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.payments_app_not_installed), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(
-                strings.format("payments_app_not_installed_body", strings.environmentLabel(profile.environment)),
+                stringResource(R.string.payments_app_not_installed_body, profile.environment.localizedLabel()),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(onClick = onDownload, modifier = Modifier.align(Alignment.Start)) {
-                Text(strings["open_google_play"])
+                Text(stringResource(R.string.open_google_play))
             }
         }
     }
@@ -236,7 +236,6 @@ internal fun PaymentsAppOperationsPanel(
     onRefresh: (AdyenProfile) -> Unit,
     onRevoke: (AdyenProfile, PaymentsAppInstance) -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     var revokeTarget by remember { mutableStateOf<PaymentsAppInstance?>(null) }
     var showRevoked by remember { mutableStateOf(false) }
     val revokedCount = instances.count { it.status == PaymentsAppStatus.REVOKED }
@@ -247,27 +246,27 @@ internal fun PaymentsAppOperationsPanel(
     )
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(strings["payments_app_instances"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.payments_app_instances), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(onClick = { activeProfile?.let(onRefresh) }, enabled = activeProfile != null) {
-                    Text(strings["refresh"])
+                    Text(stringResource(R.string.refresh))
                 }
                 if (revokedCount > 0) {
                     OutlinedButton(onClick = { showRevoked = !showRevoked }) {
-                        Text(if (showRevoked) strings["hide_revoked"] else strings["show_revoked"])
+                        Text(if (showRevoked) stringResource(R.string.hide_revoked) else stringResource(R.string.show_revoked))
                     }
                 }
             }
             if (activeProfile == null) {
-                Text(strings["instances_no_profile"], color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.instances_no_profile), color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else if (instances.isEmpty()) {
-                Text(strings["instances_empty"], color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.instances_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else if (displayedInstances.isEmpty()) {
-                Text(strings["instances_only_revoked_hidden"], color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.instances_only_revoked_hidden), color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 displayedInstances.forEach { instance ->
                     PaymentsAppInstanceRow(
@@ -290,16 +289,16 @@ internal fun PaymentsAppOperationsPanel(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text(strings["revoke"])
+                    Text(stringResource(R.string.revoke))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { revokeTarget = null }) { Text(strings["cancel"]) }
+                TextButton(onClick = { revokeTarget = null }) { Text(stringResource(R.string.cancel)) }
             },
-            title = { Text(strings["revoke_instance_title"]) },
+            title = { Text(stringResource(R.string.revoke_instance_title)) },
             text = {
                 Text(
-                    strings.format("revoke_instance_body", instance.installationId.maskForDisplay()),
+                    stringResource(R.string.revoke_instance_body, instance.installationId.maskForDisplay()),
                 )
             },
         )
@@ -331,7 +330,7 @@ private fun PaymentsAppInstanceRow(
     isCurrentInstallation: Boolean,
     onRevoke: () -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
+    val noMerchantStore = stringResource(R.string.no_merchant_store_returned)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -343,23 +342,16 @@ private fun PaymentsAppInstanceRow(
             Column(Modifier.weight(1f)) {
                 Text(instance.installationId.maskForDisplay(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(
-                    listOfNotNull(instance.merchantAccountCode, instance.merchantStoreCode).joinToString(" | ").ifBlank { strings["no_merchant_store_returned"] },
+                    listOfNotNull(instance.merchantAccountCode, instance.merchantStoreCode).joinToString(" | ").ifBlank { noMerchantStore },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            AssistChip(onClick = {}, label = { Text(if (isCurrentInstallation) strings["current"] else instance.status.localizedLabel(strings)) })
+            AssistChip(onClick = {}, label = { Text(if (isCurrentInstallation) stringResource(R.string.current) else instance.status.localizedLabel()) })
         }
         TextButton(onClick = onRevoke, enabled = instance.status != PaymentsAppStatus.REVOKED) {
-            Text(strings["revoke_instance"])
+            Text(stringResource(R.string.revoke_instance))
         }
     }
-}
-
-internal fun PaymentsAppStatus.localizedLabel(strings: TapToPlayStrings): String = when (this) {
-    PaymentsAppStatus.BOARDING -> strings["payments_app_status_boarding"]
-    PaymentsAppStatus.BOARDED -> strings["payments_app_status_boarded"]
-    PaymentsAppStatus.REVOKED -> strings["payments_app_status_revoked"]
-    PaymentsAppStatus.UNKNOWN -> strings["payments_app_status_unknown"]
 }

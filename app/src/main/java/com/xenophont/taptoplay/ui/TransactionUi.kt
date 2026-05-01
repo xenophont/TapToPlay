@@ -36,6 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.adyen.PaymentReceipt
 import com.xenophont.taptoplay.adyen.PaymentResult
 import com.xenophont.taptoplay.adyen.TerminalApiRequestInsight
@@ -76,7 +81,6 @@ internal fun TransactionHistoryPanel(
     onInspect: (TransactionRecord) -> Unit,
     onClear: () -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
@@ -85,17 +89,17 @@ internal fun TransactionHistoryPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    Text(strings["screen_transactions"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.screen_transactions), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text(
-                        if (records.isEmpty()) strings["transactions_empty_title"] else strings.savedPaymentAttempts(records.size),
+                        if (records.isEmpty()) stringResource(R.string.transactions_empty_title) else savedPaymentAttemptsLabel(records.size),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = onClear, enabled = records.isNotEmpty()) { Text(strings["clear"]) }
+                TextButton(onClick = onClear, enabled = records.isNotEmpty()) { Text(stringResource(R.string.clear)) }
             }
             if (records.isEmpty()) {
                 Text(
-                    strings["transactions_empty_body"],
+                    stringResource(R.string.transactions_empty_body),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
@@ -109,7 +113,6 @@ internal fun TransactionHistoryPanel(
 
 @Composable
 private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
-    val strings = LocalTapToPlayStrings.current
     val pspReference = remember(record.pspReference, record.responseBody) { record.pspReferenceOrNull() }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -125,14 +128,14 @@ private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
                     TransactionStatusChip(record.status)
                 }
                 Text(
-                    "${strings.itemCount(record.itemCount)} | ${record.saleToAcquirerDataName}",
+                    "${itemCountLabel(record.itemCount)} | ${record.saleToAcquirerDataName}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 record.failureReason?.let {
                     Text(
-                        strings.format("adyen_issue", it),
+                        stringResource(R.string.adyen_issue, it),
                         color = MaterialTheme.colorScheme.error,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -154,7 +157,7 @@ private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
                         modifier = Modifier.widthIn(max = 128.dp),
                     )
                 }
-                TextButton(onClick = onInspect) { Text(strings["inspect"]) }
+                TextButton(onClick = onInspect) { Text(stringResource(R.string.inspect)) }
             }
         }
     }
@@ -162,49 +165,39 @@ private fun TransactionRow(record: TransactionRecord, onInspect: () -> Unit) {
 
 @Composable
 private fun TransactionStatusChip(status: TransactionStatus) {
-    AssistChip(onClick = {}, label = { Text(status.localizedLabel(LocalTapToPlayStrings.current)) })
-}
-
-internal fun TransactionStatus.localizedLabel(strings: TapToPlayStrings): String = when (this) {
-    TransactionStatus.LAUNCHED -> strings["transaction_status_pending"]
-    TransactionStatus.APPROVED -> strings["transaction_status_approved"]
-    TransactionStatus.REFUSED -> strings["transaction_status_refused"]
-    TransactionStatus.FAILED -> strings["transaction_status_failed"]
-    TransactionStatus.REFUND_LAUNCHED -> strings["transaction_status_refunding"]
-    TransactionStatus.REFUNDED -> strings["transaction_status_refunded"]
+    AssistChip(onClick = {}, label = { Text(status.localizedLabel()) })
 }
 
 @Composable
 internal fun PaymentResultDialog(result: PaymentResult, isRefund: Boolean, onDismiss: () -> Unit) {
-    val strings = LocalTapToPlayStrings.current
     val title = when (result) {
-        is PaymentResult.BoardingStatus -> strings["boarding_returned"]
-        is PaymentResult.Success -> if (isRefund) strings["refund_approved"] else strings["payment_approved"]
-        is PaymentResult.Refused -> strings["payment_refused"]
-        is PaymentResult.Failure -> strings["adyen_result"]
+        is PaymentResult.BoardingStatus -> stringResource(R.string.boarding_returned)
+        is PaymentResult.Success -> if (isRefund) stringResource(R.string.refund_approved) else stringResource(R.string.payment_approved)
+        is PaymentResult.Refused -> stringResource(R.string.payment_refused)
+        is PaymentResult.Failure -> stringResource(R.string.adyen_result)
     }
     val message = when (result) {
         is PaymentResult.BoardingStatus -> {
-            val state = if (result.boarded) strings["boarded"] else strings["not_boarded"]
+            val state = if (result.boarded) stringResource(R.string.boarded) else stringResource(R.string.not_boarded)
+            val notSupplied = stringResource(R.string.not_supplied)
+            val returnData = result.returnData
+            val previousMerchant = returnData?.merchantAccountCode?.let { stringResource(R.string.previous_merchant, it) }
+            val previousStore = returnData?.merchantStoreCode?.let { stringResource(R.string.previous_store, it) }
+            val reboarding = returnData?.reboarding?.takeIf { it }?.let { stringResource(R.string.reboarding_flow_started) }
+            val returnSummary = listOfNotNull(previousMerchant, previousStore, reboarding).joinToString(" | ").ifBlank { null }
             listOfNotNull(
-                strings.format("adyen_app_is_state", state, result.installationId ?: strings["not_supplied"]),
-                result.returnData?.let { data ->
-                    listOfNotNull(
-                        data.merchantAccountCode?.let { strings.format("previous_merchant", it) },
-                        data.merchantStoreCode?.let { strings.format("previous_store", it) },
-                        data.reboarding?.takeIf { it }?.let { strings["reboarding_flow_started"] },
-                    ).joinToString(" | ").ifBlank { null }
-                },
+                stringResource(R.string.adyen_app_is_state, state, result.installationId ?: notSupplied),
+                returnSummary,
                 result.errorAdvice,
             ).joinToString("\n")
         }
-        is PaymentResult.Success -> strings.format("reference", result.pspReference ?: strings["not_supplied"])
-        is PaymentResult.Refused -> result.reason ?: strings["no_refusal_reason"]
+        is PaymentResult.Success -> stringResource(R.string.reference, result.pspReference ?: stringResource(R.string.not_supplied))
+        is PaymentResult.Refused -> result.reason ?: stringResource(R.string.no_refusal_reason)
         is PaymentResult.Failure -> result.message
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text(strings["done"]) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) } },
         title = { Text(title) },
         text = { Text(message) },
     )
@@ -216,7 +209,6 @@ internal fun TransactionDialog(
     onRefund: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     var selectedSection by remember { mutableStateOf(TransactionSection.Request) }
     val requestInsight = remember(record.requestJson) { TerminalApiRequestInspector.inspect(record.requestJson) }
     val responseInsight = remember(record.responseBody) { TerminalApiResponseInspector.inspect(record.responseBody) }
@@ -239,14 +231,14 @@ internal fun TransactionDialog(
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        strings["transaction"],
+                        stringResource(R.string.transaction),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        pspReference ?: strings["not_supplied"],
+                        pspReference ?: stringResource(R.string.not_supplied),
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -262,8 +254,8 @@ internal fun TransactionDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        OutlinedButton(onClick = onRefund, enabled = canRefund) { Text(strings["refund"], maxLines = 1) }
-                        TextButton(onClick = onDismiss) { Text(strings["close"]) }
+                        OutlinedButton(onClick = onRefund, enabled = canRefund) { Text(stringResource(R.string.refund), maxLines = 1) }
+                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
                     }
                 }
                 FlowRow(
@@ -274,18 +266,18 @@ internal fun TransactionDialog(
                     FilterChip(
                         selected = selectedSection == TransactionSection.Request,
                         onClick = { selectedSection = TransactionSection.Request },
-                        label = { Text(strings["request"]) },
+                        label = { Text(stringResource(R.string.request)) },
                     )
                     FilterChip(
                         selected = selectedSection == TransactionSection.Response,
                         onClick = { selectedSection = TransactionSection.Response },
-                        label = { Text(strings["response"]) },
+                        label = { Text(stringResource(R.string.response)) },
                     )
                     FilterChip(
                         selected = selectedSection == TransactionSection.Receipt,
                         onClick = { selectedSection = TransactionSection.Receipt },
                         enabled = record.responseBody != null,
-                        label = { Text(strings["receipt"]) },
+                        label = { Text(stringResource(R.string.receipt)) },
                     )
                 }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
@@ -297,10 +289,10 @@ internal fun TransactionDialog(
                             }
                             item {
                                 StructuredJsonSection(
-                                    title = strings["terminal_api_request"],
-                                    rawLabel = strings["raw_terminal_api_request"],
+                                    title = stringResource(R.string.terminal_api_request),
+                                    rawLabel = stringResource(R.string.raw_terminal_api_request),
                                     raw = record.requestJson,
-                                    rootName = strings["request"],
+                                    rootName = stringResource(R.string.request),
                                 )
                             }
                             item {
@@ -312,7 +304,7 @@ internal fun TransactionDialog(
                                 item {
                                     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
                                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text(strings["important_response_fields"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                            Text(stringResource(R.string.important_response_fields), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                             highlights.forEach { (label, value) ->
                                                 KeyValueLine(label = label, value = value)
                                             }
@@ -324,31 +316,31 @@ internal fun TransactionDialog(
                                 item {
                                     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
                                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(strings["adyen_failure_detail"], fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
+                                            Text(stringResource(R.string.adyen_failure_detail), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
                                             Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                 }
                             }
                             item {
-                                Text(strings["adyen_response"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.adyen_response), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             }
                             item {
                                 Text(
-                                    record.responseSummary ?: strings["no_response_received"],
+                                    record.responseSummary ?: stringResource(R.string.no_response_received),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             responseInsight?.let { insight -> item { ResponseFieldList(insight) } }
                             record.responseBody?.let { body ->
                                 item {
-                                    Text(strings["raw_terminal_api_response"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                    Text(stringResource(R.string.raw_terminal_api_response), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                 }
                                 item { MonospaceBlock(body) }
                             }
                             record.responseUri?.let { response ->
                                 item {
-                                    Text(strings["raw_return_uri"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                    Text(stringResource(R.string.raw_return_uri), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                 }
                                 item { MonospaceBlock(response) }
                             }
@@ -357,7 +349,7 @@ internal fun TransactionDialog(
                             if (receipts.isEmpty()) {
                                 item {
                                     Text(
-                                        strings["no_receipt_data"],
+                                        stringResource(R.string.no_receipt_data),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
@@ -376,7 +368,7 @@ internal fun TransactionDialog(
 
 @Composable
 private fun DigitalReceiptCard(receipt: PaymentReceipt) {
-    val strings = LocalTapToPlayStrings.current
+    val strings = currentTapToPlayStrings()
     val display = remember(receipt, strings.language) { receipt.toReceiptDisplay(strings) }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -388,14 +380,14 @@ private fun DigitalReceiptCard(receipt: PaymentReceipt) {
                 Column(Modifier.weight(1f)) {
                     Text(display.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
-                        strings["adyen_generated_receipt_data"],
+                        stringResource(R.string.adyen_generated_receipt_data),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (display.requiredSignature) {
-                    AssistChip(onClick = {}, label = { Text(strings["signature"]) })
+                    AssistChip(onClick = {}, label = { Text(stringResource(R.string.signature)) })
                 }
             }
             ReceiptPaper(display)
@@ -609,17 +601,16 @@ private val transactionTimestampFormatter: DateTimeFormatter =
 
 @Composable
 private fun RequestSummary(record: TransactionRecord) {
-    val strings = LocalTapToPlayStrings.current
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(strings["request_summary"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            KeyValueLine(strings["amount"], record.amountLabel)
-            KeyValueLine(strings["items"], record.itemCount.toString())
-            record.messageCategory?.let { KeyValueLine(strings["message_category"], it) }
-            record.serviceId?.let { KeyValueLine(strings["service_id"], it) }
-            record.saleTransactionId?.let { KeyValueLine(strings["merchant_reference"], it) }
-            record.adyenTransactionId?.let { KeyValueLine(strings["adyen_transaction"], it) }
-            record.refundOfTransactionId?.let { KeyValueLine(strings["refund_of"], it) }
+            Text(stringResource(R.string.request_summary), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            KeyValueLine(stringResource(R.string.amount), record.amountLabel)
+            KeyValueLine(stringResource(R.string.items), record.itemCount.toString())
+            record.messageCategory?.let { KeyValueLine(stringResource(R.string.message_category), it) }
+            record.serviceId?.let { KeyValueLine(stringResource(R.string.service_id), it) }
+            record.saleTransactionId?.let { KeyValueLine(stringResource(R.string.merchant_reference), it) }
+            record.adyenTransactionId?.let { KeyValueLine(stringResource(R.string.adyen_transaction), it) }
+            record.refundOfTransactionId?.let { KeyValueLine(stringResource(R.string.refund_of), it) }
         }
     }
 }
@@ -631,18 +622,17 @@ private fun StructuredJsonSection(
     raw: String,
     rootName: String,
 ) {
-    val strings = LocalTapToPlayStrings.current
     var showRaw by remember(raw) { mutableStateOf(false) }
     val parsed = remember(raw) { parseJsonElement(raw) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             TextButton(onClick = { showRaw = !showRaw }) {
-                Text(if (showRaw) strings["hide_raw_json"] else strings["show_raw_json"], maxLines = 1)
+                Text(if (showRaw) stringResource(R.string.hide_raw_json) else stringResource(R.string.show_raw_json), maxLines = 1)
             }
         }
         if (parsed == null) {
-            Text(strings["json_parse_failed"], color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.json_parse_failed), color = MaterialTheme.colorScheme.error)
         } else {
             JsonElementTree(rootName = rootName, value = parsed)
         }
@@ -655,18 +645,17 @@ private fun StructuredJsonSection(
 
 @Composable
 private fun DecodedSaleToAcquirerDataSection(insight: TerminalApiRequestInsight) {
-    val strings = LocalTapToPlayStrings.current
     var showRaw by remember(insight.saleToAcquirerDataJson, insight.saleToAcquirerDataBase64) { mutableStateOf(false) }
     val decodedJson = insight.saleToAcquirerDataJson
     val parsed = remember(decodedJson) { decodedJson?.let(::parseJsonElement) }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(strings["decoded_sale_to_acquirer_data"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.decoded_sale_to_acquirer_data), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(
                 if (decodedJson == null) {
-                    strings["no_sale_to_acquirer_data"]
+                    stringResource(R.string.no_sale_to_acquirer_data)
                 } else {
-                    strings["structured_sale_to_acquirer_data"]
+                    stringResource(R.string.structured_sale_to_acquirer_data)
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
@@ -676,23 +665,23 @@ private fun DecodedSaleToAcquirerDataSection(insight: TerminalApiRequestInsight)
                 onClick = { showRaw = !showRaw },
                 enabled = decodedJson != null || insight.saleToAcquirerDataBase64 != null,
             ) {
-                Text(if (showRaw) strings["hide_raw_json"] else strings["show_raw_json"], maxLines = 1)
+                Text(if (showRaw) stringResource(R.string.hide_raw_json) else stringResource(R.string.show_raw_json), maxLines = 1)
             }
         }
         when {
             parsed != null -> JsonElementTree(rootName = "SaleToAcquirerData", value = parsed)
-            decodedJson != null -> Text(strings["json_parse_failed"], color = MaterialTheme.colorScheme.error)
-            insight.saleToAcquirerDataBase64 != null -> Text(strings["base64_decode_failed"], color = MaterialTheme.colorScheme.error)
+            decodedJson != null -> Text(stringResource(R.string.json_parse_failed), color = MaterialTheme.colorScheme.error)
+            insight.saleToAcquirerDataBase64 != null -> Text(stringResource(R.string.base64_decode_failed), color = MaterialTheme.colorScheme.error)
             else -> OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    strings["no_sale_to_acquirer_data"],
+                    stringResource(R.string.no_sale_to_acquirer_data),
                     modifier = Modifier.padding(12.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         if (showRaw) {
-            Text(strings["raw_sale_to_acquirer_data"], style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.raw_sale_to_acquirer_data), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             MonospaceBlock(decodedJson ?: insight.saleToAcquirerDataBase64.orEmpty())
         }
     }
@@ -700,15 +689,14 @@ private fun DecodedSaleToAcquirerDataSection(insight: TerminalApiRequestInsight)
 
 @Composable
 private fun ResponseFieldList(insight: TerminalApiResponseInsight) {
-    val strings = LocalTapToPlayStrings.current
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(strings["readable_response"], style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                KeyValueLine(strings["category"], insight.category)
-                insight.result?.let { KeyValueLine(strings["result"], it) }
-                insight.transactionId?.let { KeyValueLine(strings["transaction_id"], it) }
-                insight.errorCondition?.let { KeyValueLine(strings["error_condition"], it) }
+                Text(stringResource(R.string.readable_response), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                KeyValueLine(stringResource(R.string.category), insight.category)
+                insight.result?.let { KeyValueLine(stringResource(R.string.result), it) }
+                insight.transactionId?.let { KeyValueLine(stringResource(R.string.transaction_id), it) }
+                insight.errorCondition?.let { KeyValueLine(stringResource(R.string.error_condition), it) }
             }
         }
         if (insight.additionalResponseFields.isNotEmpty()) {
@@ -718,7 +706,7 @@ private fun ResponseFieldList(insight: TerminalApiResponseInsight) {
             }
         } else if (!insight.additionalResponseRaw.isNullOrBlank()) {
             AdditionalResponseFieldCard(
-                label = strings["additional_response_raw"],
+                label = stringResource(R.string.additional_response_raw),
                 value = insight.additionalResponseRaw,
             )
         }
@@ -740,13 +728,12 @@ private fun AdditionalResponseFieldCard(
     value: String,
     decodedValue: String? = null,
 ) {
-    val strings = LocalTapToPlayStrings.current
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             SelectableValueText(value)
             decodedValue?.let {
-                Text(strings["decoded"], style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.decoded), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                 SelectableValueText(it)
             }
         }
@@ -774,6 +761,13 @@ private fun JsonElementTree(rootName: String, value: JsonElement) {
     } else {
         JsonNodeRow(name = rootName, value = value, depth = 0)
     }
+}
+
+@Composable
+private fun currentTapToPlayStrings(): TapToPlayStrings {
+    val context = LocalContext.current
+    val language = AppLanguage.fromTag(LocalConfiguration.current.locales[0].toLanguageTag())
+    return remember(context, language) { stringsFor(context, language) }
 }
 
 private fun parseJsonElement(raw: String): JsonElement? =

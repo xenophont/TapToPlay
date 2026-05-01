@@ -2,15 +2,18 @@ package com.xenophont.taptoplay
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import com.xenophont.taptoplay.adyen.AdyenLinks
 import com.xenophont.taptoplay.adyen.AdyenManagementApiClient
@@ -43,7 +46,6 @@ import com.xenophont.taptoplay.profiles.ProfileQrParser
 import com.xenophont.taptoplay.ui.AppScreen
 import com.xenophont.taptoplay.ui.AppLanguage
 import com.xenophont.taptoplay.ui.AppLanguageStore
-import com.xenophont.taptoplay.ui.LocalTapToPlayStrings
 import com.xenophont.taptoplay.ui.TapToPlayApp
 import com.xenophont.taptoplay.ui.formatMoney
 import com.xenophont.taptoplay.ui.maskForDisplay
@@ -56,6 +58,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.util.Locale
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
@@ -78,7 +81,7 @@ class MainActivity : ComponentActivity() {
     private var selectedLanguageState by mutableStateOf(AppLanguage.English)
     private var pendingReturnScreenState by mutableStateOf<AppScreen?>(null)
     private var showDrawerHintState by mutableStateOf(false)
-    private var statusState by mutableStateOf(stringsFor(AppLanguage.English)["status_ready"])
+    private var statusState by mutableStateOf("")
     private var installationIdState by mutableStateOf<String?>(null)
     private var boardingRequestTokenState by mutableStateOf<String?>(null)
     private var boardingTokenIssuedState by mutableStateOf(false)
@@ -88,10 +91,10 @@ class MainActivity : ComponentActivity() {
     private var transactionHistoryState by mutableStateOf(emptyList<TransactionRecord>())
     private var pendingTransactionIdState by mutableStateOf<String?>(null)
     private var paymentsAppInstancesState by mutableStateOf(emptyList<PaymentsAppInstance>())
-    private var paymentsAppStatusState by mutableStateOf(stringsFor(AppLanguage.English)["status_payments_instances_not_loaded"])
+    private var paymentsAppStatusState by mutableStateOf("")
 
     private val strings
-        get() = stringsFor(selectedLanguageState)
+        get() = stringsFor(this, selectedLanguageState)
 
     private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
         selectScreen(AppScreen.PaymentsApp)
@@ -140,7 +143,19 @@ class MainActivity : ComponentActivity() {
         handleReturnIntent(intent)
 
         setContent {
-            CompositionLocalProvider(LocalTapToPlayStrings provides stringsFor(selectedLanguageState)) {
+            val baseConfiguration = LocalConfiguration.current
+            val localizedConfiguration = remember(selectedLanguageState, baseConfiguration) {
+                Configuration(baseConfiguration).apply {
+                    setLocale(Locale.forLanguageTag(selectedLanguageState.tag))
+                }
+            }
+            val localizedContext = remember(selectedLanguageState, localizedConfiguration) {
+                createConfigurationContext(localizedConfiguration)
+            }
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalConfiguration provides localizedConfiguration,
+                LocalContext provides localizedContext,
+            ) {
                 TapToPlayTheme {
                     TapToPlayApp(
                         profiles = profilesState,
@@ -679,7 +694,7 @@ class MainActivity : ComponentActivity() {
         selectedLanguageState = language
         languageStore.save(language)
         statusState = strings.languageChanged(language)
-        val defaultPaymentsStatuses = AppLanguage.entries.map { stringsFor(it)["status_payments_instances_not_loaded"] }
+        val defaultPaymentsStatuses = AppLanguage.entries.map { stringsFor(this, it)["status_payments_instances_not_loaded"] }
         if (paymentsAppStatusState in defaultPaymentsStatuses) {
             paymentsAppStatusState = strings["status_payments_instances_not_loaded"]
         }

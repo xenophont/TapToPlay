@@ -14,9 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.adyen.PaymentsAppInstance
 import com.xenophont.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.xenophont.taptoplay.adyen.TransactionRecord
@@ -36,11 +38,24 @@ internal fun DiagnosticsPanel(
     showLatestAction: Boolean,
     onShowLatestActionChange: (Boolean) -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
+    val paymentsAppStatusLabels = mapOf(
+        com.xenophont.taptoplay.adyen.PaymentsAppStatus.BOARDING to stringResource(R.string.payments_app_status_boarding),
+        com.xenophont.taptoplay.adyen.PaymentsAppStatus.BOARDED to stringResource(R.string.payments_app_status_boarded),
+        com.xenophont.taptoplay.adyen.PaymentsAppStatus.REVOKED to stringResource(R.string.payments_app_status_revoked),
+        com.xenophont.taptoplay.adyen.PaymentsAppStatus.UNKNOWN to stringResource(R.string.payments_app_status_unknown),
+    )
+    val transactionStatusLabels = mapOf(
+        com.xenophont.taptoplay.adyen.TransactionStatus.LAUNCHED to stringResource(R.string.transaction_status_pending),
+        com.xenophont.taptoplay.adyen.TransactionStatus.APPROVED to stringResource(R.string.transaction_status_approved),
+        com.xenophont.taptoplay.adyen.TransactionStatus.REFUSED to stringResource(R.string.transaction_status_refused),
+        com.xenophont.taptoplay.adyen.TransactionStatus.FAILED to stringResource(R.string.transaction_status_failed),
+        com.xenophont.taptoplay.adyen.TransactionStatus.REFUND_LAUNCHED to stringResource(R.string.transaction_status_refunding),
+        com.xenophont.taptoplay.adyen.TransactionStatus.REFUNDED to stringResource(R.string.transaction_status_refunded),
+    )
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(strings["screen_diagnostics"], style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            Text(strings["diagnostics_body"], color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.screen_diagnostics), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.diagnostics_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -52,7 +67,7 @@ internal fun DiagnosticsPanel(
                 Checkbox(checked = showLatestAction, onCheckedChange = onShowLatestActionChange)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        strings["show_latest_action_on_top"],
+                        stringResource(R.string.show_latest_action_on_top),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -65,67 +80,60 @@ internal fun DiagnosticsPanel(
                     )
                 }
             }
-            KeyValueLine(strings["latest_action"], status)
-            KeyValueLine(strings["profile"], activeProfile?.profileName ?: strings["none"])
-            KeyValueLine(strings["environment"], activeProfile?.environment?.let { strings.environmentLabel(it) } ?: strings["none"])
+            KeyValueLine(stringResource(R.string.latest_action), status)
+            KeyValueLine(stringResource(R.string.profile), activeProfile?.profileName ?: stringResource(R.string.none))
+            KeyValueLine(stringResource(R.string.environment), activeProfile?.environment?.localizedLabel() ?: stringResource(R.string.none))
             activeProfile?.let {
-                KeyValueLine(strings["merchant"], it.merchantId)
-                it.storeName?.let { storeName -> KeyValueLine(strings["store_name"], storeName) }
-                it.storeId?.let { store -> KeyValueLine(strings["store"], store) }
-                KeyValueLine(strings["api_key"], strings.secretMask(it.apiKey))
-                KeyValueLine(strings["terminal_key"], "${it.terminalKeyIdentifier} v${it.terminalKeyVersion}")
+                KeyValueLine(stringResource(R.string.merchant), it.merchantId)
+                it.storeName?.let { storeName -> KeyValueLine(stringResource(R.string.store_name), storeName) }
+                it.storeId?.let { store -> KeyValueLine(stringResource(R.string.store), store) }
+                KeyValueLine(stringResource(R.string.api_key), secretMask(it.apiKey))
+                KeyValueLine(stringResource(R.string.terminal_key), "${it.terminalKeyIdentifier} v${it.terminalKeyVersion}")
             }
-            KeyValueLine(strings["installation"], installationId?.maskForDisplay() ?: strings["installation_not_returned_yet"])
+            KeyValueLine(stringResource(R.string.installation), installationId?.maskForDisplay() ?: stringResource(R.string.installation_not_returned_yet))
             KeyValueLine(
-                strings["boarding_request_token"],
+                stringResource(R.string.boarding_request_token),
                 when {
-                    boardingTokenIssued -> strings["boarding_token_exchanged"]
-                    boardingRequestToken != null -> strings["boarding_token_received"]
-                    installationId != null -> strings["boarding_token_not_needed"]
-                    else -> strings["boarding_token_not_received"]
+                    boardingTokenIssued -> stringResource(R.string.boarding_token_exchanged)
+                    boardingRequestToken != null -> stringResource(R.string.boarding_token_received)
+                    installationId != null -> stringResource(R.string.boarding_token_not_needed)
+                    else -> stringResource(R.string.boarding_token_not_received)
                 },
             )
             KeyValueLine(
-                strings["boarding_token"],
+                stringResource(R.string.boarding_token),
                 when {
-                    boardingTokenIssued -> strings["boarding_token_generated"]
-                    boardingRequestToken != null -> strings["boarding_token_not_generated"]
-                    else -> strings["boarding_token_not_requested"]
+                    boardingTokenIssued -> stringResource(R.string.boarding_token_generated)
+                    boardingRequestToken != null -> stringResource(R.string.boarding_token_not_generated)
+                    else -> stringResource(R.string.boarding_token_not_requested)
                 },
             )
             KeyValueLine(
                 "SaleToAcquirerData",
-                strings.format(
-                    "sale_to_acquirer_data_summary",
-                    saleToAcquirerDataConfig.displayName,
-                    strings.format(
-                        if (saleToAcquirerDataConfig.fieldCount == 1) "field_count_one" else "field_count_many",
-                        saleToAcquirerDataConfig.fieldCount,
-                    ),
-                ),
+                saleToAcquirerDataSummary(saleToAcquirerDataConfig.displayName, saleToAcquirerDataConfig.fieldCount),
             )
-            KeyValueLine(strings["payments_app_api"], paymentsAppStatus)
+            KeyValueLine(stringResource(R.string.payments_app_api), paymentsAppStatus)
             KeyValueLine(
-                strings["loaded_instances"],
+                stringResource(R.string.loaded_instances),
                 paymentsAppInstances
                     .groupingBy { it.status }
                     .eachCount()
                     .entries
-                    .joinToString { "${it.key.localizedLabel(strings)}: ${it.value}" }
-                    .ifBlank { strings["none"] },
+                    .joinToString { "${paymentsAppStatusLabels.getValue(it.key)}: ${it.value}" }
+                    .ifBlank { stringResource(R.string.none) },
             )
             KeyValueLine(
-                strings["transaction_history"],
+                stringResource(R.string.transaction_history),
                 transactionHistory
                     .groupingBy { it.status }
                     .eachCount()
                     .entries
-                    .joinToString { "${it.key.localizedLabel(strings)}: ${it.value}" }
-                    .ifBlank { strings["none"] },
+                    .joinToString { "${transactionStatusLabels.getValue(it.key)}: ${it.value}" }
+                    .ifBlank { stringResource(R.string.none) },
             )
             transactionHistory.firstOrNull()?.let { latest ->
-                KeyValueLine(strings["latest_service_id"], latest.serviceId ?: strings["not_set"])
-                KeyValueLine(strings["latest_summary"], latest.responseSummary ?: latest.status.localizedLabel(strings))
+                KeyValueLine(stringResource(R.string.latest_service_id), latest.serviceId ?: stringResource(R.string.not_set))
+                KeyValueLine(stringResource(R.string.latest_summary), latest.responseSummary ?: transactionStatusLabels.getValue(latest.status))
             }
         }
     }

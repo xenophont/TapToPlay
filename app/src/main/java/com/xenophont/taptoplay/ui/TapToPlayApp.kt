@@ -61,11 +61,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.adyen.PaymentResult
 import com.xenophont.taptoplay.adyen.PaymentsAppInstance
 import com.xenophont.taptoplay.adyen.SaleToAcquirerDataConfig
@@ -122,7 +124,6 @@ internal fun TapToPlayApp(
     onPay: (AdyenProfile, List<CartLine>, Long) -> Unit,
     onRefund: (TransactionRecord) -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     val cart = remember { Cart() }
     var cartVersion by remember { mutableStateOf(0) }
     var selectedCategory by remember { mutableStateOf("All") }
@@ -226,7 +227,7 @@ internal fun TapToPlayApp(
                                         FilterChip(
                                             selected = selectedCategory == category,
                                             onClick = { selectedCategory = category },
-                                            label = { Text(strings.categoryLabel(category), maxLines = 1) },
+                                            label = { Text(categoryLabel(category), maxLines = 1) },
                                         )
                                     }
                                 }
@@ -485,16 +486,16 @@ internal fun TapToPlayApp(
 
 @Composable
 private fun DrawerPeekHint(onClick: () -> Unit) {
-    val strings = LocalTapToPlayStrings.current
     val shape = RoundedCornerShape(topEnd = 18.dp, bottomEnd = 18.dp)
     val lineColor = MaterialTheme.colorScheme.primary
+    val openMenuDescription = stringResource(R.string.open_menu)
     Box(
         modifier = Modifier
             .size(width = 52.dp, height = 132.dp)
             .background(MaterialTheme.colorScheme.surface, shape)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .clickable(onClick = onClick)
-            .semantics { contentDescription = strings["open_menu"] },
+            .semantics { contentDescription = openMenuDescription },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(width = 26.dp, height = 70.dp)) {
@@ -530,12 +531,12 @@ private fun DrawerPeekHint(onClick: () -> Unit) {
 
 @Composable
 private fun ScrollToCartFab(onClick: () -> Unit) {
-    val strings = LocalTapToPlayStrings.current
+    val scrollToCartDescription = stringResource(R.string.scroll_to_cart)
     FloatingActionButton(
         onClick = onClick,
         modifier = Modifier
             .size(56.dp)
-            .semantics { contentDescription = strings["scroll_to_cart"] },
+            .semantics { contentDescription = scrollToCartDescription },
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
     ) {
@@ -589,26 +590,25 @@ private fun AppNavigationDrawer(
     selectedScreen: AppScreen,
     onSelectScreen: (AppScreen) -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     ModalDrawerSheet {
         Column(
             modifier = Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(strings["app_name"], style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                 Text(
-                    strings["app_subtitle"],
+                    stringResource(R.string.app_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             primaryTabs.forEach { tab ->
-                DrawerItem(tab = tab, selectedScreen = selectedScreen, strings = strings, onSelectScreen = onSelectScreen)
+                DrawerItem(tab = tab, selectedScreen = selectedScreen, onSelectScreen = onSelectScreen)
             }
             Spacer(Modifier.weight(1f))
             supportTabs.forEach { tab ->
-                DrawerItem(tab = tab, selectedScreen = selectedScreen, strings = strings, onSelectScreen = onSelectScreen)
+                DrawerItem(tab = tab, selectedScreen = selectedScreen, onSelectScreen = onSelectScreen)
             }
             Spacer(Modifier.height(12.dp))
         }
@@ -619,7 +619,6 @@ private fun AppNavigationDrawer(
 private fun DrawerItem(
     tab: AppScreen,
     selectedScreen: AppScreen,
-    strings: TapToPlayStrings,
     onSelectScreen: (AppScreen) -> Unit,
 ) {
     NavigationDrawerItem(
@@ -627,7 +626,7 @@ private fun DrawerItem(
         onClick = { onSelectScreen(tab) },
         label = {
             Text(
-                strings.screenLabel(tab),
+                tab.localizedLabel(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -641,7 +640,6 @@ private fun CompactNavigationBar(
     selectedScreen: AppScreen,
     onOpenMenu: () -> Unit,
 ) {
-    val strings = LocalTapToPlayStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -650,10 +648,10 @@ private fun CompactNavigationBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         OutlinedButton(onClick = onOpenMenu, modifier = Modifier.height(40.dp)) {
-            Text(strings["menu"])
+            Text(stringResource(R.string.menu))
         }
         Text(
-            strings.screenLabel(selectedScreen),
+            selectedScreen.localizedLabel(),
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
@@ -665,7 +663,6 @@ private fun CompactNavigationBar(
 
 @Composable
 private fun LatestActionBanner(status: String) {
-    val strings = LocalTapToPlayStrings.current
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -673,7 +670,7 @@ private fun LatestActionBanner(status: String) {
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                strings["latest_action"],
+                stringResource(R.string.latest_action),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontWeight = FontWeight.SemiBold,

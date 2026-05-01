@@ -18,10 +18,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.xenophont.taptoplay.R
 
 @Composable
 internal fun KeyValueLine(label: String, value: String) {
@@ -38,7 +40,6 @@ internal fun KeyValueLine(label: String, value: String) {
 
 @Composable
 internal fun ExpandableValueRow(label: String, value: String) {
-    val strings = LocalTapToPlayStrings.current
     var expanded by remember { mutableStateOf(false) }
     OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -57,7 +58,7 @@ internal fun ExpandableValueRow(label: String, value: String) {
                     )
                 }
                 TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) strings["hide"] else strings["view"])
+                    Text(if (expanded) stringResource(R.string.hide) else stringResource(R.string.view))
                 }
             }
         }

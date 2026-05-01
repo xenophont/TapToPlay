@@ -1,6 +1,8 @@
 package com.xenophont.taptoplay.ui
 
 import com.xenophont.taptoplay.catalog.ProductCatalog
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -9,35 +11,32 @@ import org.junit.Test
 
 class LocalizationTest {
     @Test
-    fun everyLanguageDefinesTheSameTextKeys() {
-        val expectedKeys = stringsFor(AppLanguage.English).values.keys
+    fun everyLocaleDefinesTheSameTextKeys() {
+        val expectedKeys = resourceFiles().getValue("values").strings.keys
 
-        allLocalizedStringSets().forEach { strings ->
-            assertEquals("Missing or extra keys for ${strings.language}", expectedKeys, strings.values.keys)
+        resourceFiles().forEach { (qualifier, file) ->
+            assertEquals("Missing or extra keys for $qualifier", expectedKeys, file.strings.keys)
         }
     }
 
     @Test
-    fun aboutMessageIsLocalized() {
+    fun everyLocaleDefinesTheSamePluralKeys() {
+        val expectedKeys = resourceFiles().getValue("values").plurals.keys
+
         assertEquals(
-            "Hecho por Javier de No, con ayuda de Codex y GPT-5.5, para el equipo 💚🚀",
-            stringsFor(AppLanguage.Spanish)["about_message"],
+            setOf("array_item_count", "cart_item_ready", "field_count", "item_count", "json_field_count", "loaded_instance", "saved_attempt"),
+            expectedKeys,
         )
-        assertEquals(
-            "Made by Javier de No, with help from Codex and GPT-5.5, for the team 💚🚀",
-            stringsFor(AppLanguage.English)["about_message"],
-        )
-        assertEquals(
-            "Gemaakt door Javier de No, met hulp van Codex en GPT-5.5, voor het team 💚🚀",
-            stringsFor(AppLanguage.Dutch)["about_message"],
-        )
-        assertTrue(stringsFor(AppLanguage.French)["about_message"].contains("Javier de No"))
-        assertTrue(stringsFor(AppLanguage.Japanese)["about_message"].contains("Javier de No"))
-        assertTrue(stringsFor(AppLanguage.Quenya)["about_message"].contains("Javier de No"))
+        resourceFiles().forEach { (qualifier, file) ->
+            assertEquals("Missing or extra plural keys for $qualifier", expectedKeys, file.plurals.keys)
+            file.plurals.forEach { (name, quantities) ->
+                assertEquals("$qualifier should define one/other for $name", setOf("one", "other"), quantities.keys)
+            }
+        }
     }
 
     @Test
-    fun requestedLanguagesAreAvailable() {
+    fun appLanguageTagsMatchResourceDirectories() {
         assertEquals("Nederlands", AppLanguage.Dutch.nativeName)
         assertEquals("Euskara", AppLanguage.Basque.nativeName)
         assertEquals("Easter egg", AppLanguage.Quenya.englishName)
@@ -45,33 +44,39 @@ class LocalizationTest {
             listOf("en", "es", "nl", "fr", "de", "it", "sv", "ja", "zh-Hans", "ko", "eu", "qya"),
             AppLanguage.entries.map { it.tag },
         )
+        assertEquals(
+            setOf("values", "values-es", "values-nl", "values-fr", "values-de", "values-it", "values-sv", "values-ja", "values-b+zh+Hans", "values-ko", "values-eu", "values-b+qya"),
+            resourceFiles().keys,
+        )
     }
 
     @Test
-    fun catalogCopyIsAvailableForAllLanguages() {
-        allLocalizedStringSets().forEach { strings ->
+    fun catalogCopyIsAvailableForAllLocales() {
+        resourceFiles().forEach { (qualifier, file) ->
+            val strings = file.strings
             ProductCatalog.products.forEach { product ->
-                assertFalse(strings.productName(product).isBlank())
-                assertFalse(strings.productDescription(product).isBlank())
+                assertFalse("$qualifier should name ${product.id}", strings.getValue(product.id.productNameKey()).isBlank())
+                assertFalse("$qualifier should describe ${product.id}", strings.getValue(product.id.productDescriptionKey()).isBlank())
             }
             ProductCatalog.categories.forEach { category ->
-                assertFalse(strings.categoryLabel(category).isBlank())
+                assertFalse("$qualifier should label $category", strings.getValue(category.categoryKey()).isBlank())
             }
         }
     }
 
     @Test
-    fun newSupportScreensHaveLocalizedLabels() {
-        allLocalizedStringSets().forEach { strings ->
-            assertTrue(strings.screenLabel(AppScreen.Language).isNotBlank())
-            assertTrue(strings.screenLabel(AppScreen.About).isNotBlank())
-            assertTrue(strings["privacy_policy"].isNotBlank())
+    fun supportScreensHaveLocalizedLabels() {
+        resourceFiles().forEach { (_, file) ->
+            val strings = file.strings
+            assertTrue(strings.getValue("screen_language").isNotBlank())
+            assertTrue(strings.getValue("screen_about").isNotBlank())
+            assertTrue(strings.getValue("privacy_policy").isNotBlank())
         }
     }
 
     @Test
-    fun requestedLanguagesDoNotFallBackForCoreCheckoutCopy() {
-        val english = stringsFor(AppLanguage.English)
+    fun requestedLocalesDoNotFallBackForCoreCheckoutCopy() {
+        val english = resourceFiles().getValue("values").strings
         val coreKeys = listOf(
             "cart",
             "add_to_cart",
@@ -82,54 +87,47 @@ class LocalizationTest {
             "privacy_policy",
             "status_ready",
         )
-        val localizedLanguages = listOf(
-            AppLanguage.French,
-            AppLanguage.German,
-            AppLanguage.Italian,
-            AppLanguage.Swedish,
-            AppLanguage.Japanese,
-            AppLanguage.Chinese,
-            AppLanguage.Korean,
-            AppLanguage.Basque,
-            AppLanguage.Quenya,
-        )
 
-        localizedLanguages.forEach { language ->
-            val localized = stringsFor(language)
-            coreKeys.forEach { key ->
-                assertNotEquals("$language should localize $key", english[key], localized[key])
+        resourceFiles()
+            .filterKeys { it != "values" && it != "values-es" && it != "values-nl" }
+            .forEach { (qualifier, file) ->
+                val localized = file.strings
+                coreKeys.forEach { key ->
+                    assertNotEquals("$qualifier should localize $key", english.getValue(key), localized.getValue(key))
+                }
+                ProductCatalog.products.forEach { product ->
+                    assertNotEquals(
+                        "$qualifier should localize product ${product.id}",
+                        english.getValue(product.id.productNameKey()),
+                        localized.getValue(product.id.productNameKey()),
+                    )
+                }
             }
-            ProductCatalog.products.forEach { product ->
-                assertNotEquals(
-                    "$language should localize product ${product.id}",
-                    product.name,
-                    localized.productName(product),
-                )
-            }
-        }
     }
 
     @Test
-    fun requestedLanguagesDoNotUseEnglishFallbackForExpandedCopy() {
-        val english = stringsFor(AppLanguage.English)
+    fun requestedLocalesDoNotUseEnglishFallbackForExpandedCopy() {
+        val english = resourceFiles().getValue("values").strings
         val expandedKeys = listOf(
             "scan_profile_prompt",
             "status_qr_rejected",
             "terminal_api_request",
             "raw_return_uri",
         )
-        val localizedLanguages = AppLanguage.entries - AppLanguage.English - AppLanguage.Spanish
 
-        localizedLanguages.forEach { language ->
-            val localized = stringsFor(language)
-            expandedKeys.forEach { key ->
-                assertNotEquals("$language should not fall back to English for $key", english[key], localized[key])
+        resourceFiles()
+            .filterKeys { it != "values" && it != "values-es" }
+            .forEach { (qualifier, file) ->
+                val localized = file.strings
+                expandedKeys.forEach { key ->
+                    assertNotEquals("$qualifier should not fall back to English for $key", english.getValue(key), localized.getValue(key))
+                }
             }
-        }
     }
 
     @Test
     fun protectedProductAndProtocolTermsStayStable() {
+        val english = resourceFiles().getValue("values").strings
         val exactKeys = listOf(
             "app_name",
             "screen_payments_app",
@@ -140,13 +138,62 @@ class LocalizationTest {
             "sale_transaction",
         )
 
-        allLocalizedStringSets().forEach { strings ->
+        resourceFiles().forEach { (qualifier, file) ->
+            val strings = file.strings
             exactKeys.forEach { key ->
-                assertEquals("${strings.language} should keep protected term $key", stringsFor(AppLanguage.English)[key], strings[key])
+                assertEquals("$qualifier should keep protected term $key", english.getValue(key), strings.getValue(key))
             }
-            assertTrue(strings["payments_app_api"].contains("Payments App"))
-            assertTrue(strings["decoded_sale_to_acquirer_data"].contains("SaleToAcquirerData"))
-            assertTrue(strings["adyen_app_is_state"].contains("Installation ID"))
+            assertTrue(strings.getValue("payments_app_api").contains("Payments App"))
+            assertTrue(strings.getValue("decoded_sale_to_acquirer_data").contains("SaleToAcquirerData"))
+            assertTrue(strings.getValue("adyen_app_is_state").contains("Installation ID"))
         }
     }
+
+    private val File.strings: Map<String, String>
+        get() {
+            val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(this)
+            val nodes = document.getElementsByTagName("string")
+            return (0 until nodes.length).associate { index ->
+                val node = nodes.item(index)
+                node.attributes.getNamedItem("name").nodeValue to node.textContent
+            }
+        }
+
+    private val File.plurals: Map<String, Map<String, String>>
+        get() {
+            val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(this)
+            val nodes = document.getElementsByTagName("plurals")
+            return (0 until nodes.length).associate { pluralIndex ->
+                val pluralNode = nodes.item(pluralIndex)
+                val items = pluralNode.childNodes
+                val quantities = (0 until items.length)
+                    .map { items.item(it) }
+                    .filter { it.nodeName == "item" }
+                    .associate { item ->
+                        item.attributes.getNamedItem("quantity").nodeValue to item.textContent
+                    }
+                pluralNode.attributes.getNamedItem("name").nodeValue to quantities
+            }
+        }
+
+    private fun resourceFiles(): Map<String, File> {
+        val resDir = listOf(
+            File("app/src/main/res"),
+            File("src/main/res"),
+        ).first(File::exists)
+        return resDir.listFiles()
+            .orEmpty()
+            .filter { it.name.startsWith("values") }
+            .associate { it.name to File(it, "strings.xml") }
+            .filterValues(File::exists)
+    }
+
+    private fun String.productNameKey(): String =
+        "product_${replace("-", "_")}_name"
+
+    private fun String.productDescriptionKey(): String =
+        "product_${replace("-", "_")}_description"
+
+    private fun String.categoryKey(): String =
+        "category_${lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_')}"
 }

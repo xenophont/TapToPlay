@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,7 +35,7 @@ import com.xenophont.taptoplay.R
 internal fun AboutPanel(
     modifier: Modifier = Modifier,
 ) {
-    val strings = LocalTapToPlayStrings.current
+    val aboutMessage = stringResource(R.string.about_message)
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -53,13 +54,13 @@ internal fun AboutPanel(
         ) {
             Image(
                 painter = painterResource(R.drawable.javier_portrait_3_4),
-                contentDescription = strings["about_message"],
+                contentDescription = aboutMessage,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
         }
         Text(
-            strings["about_message"],
+            aboutMessage,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -72,18 +73,18 @@ internal fun AboutPanel(
 internal fun PrivacyPolicyStickyButton(
     modifier: Modifier = Modifier,
 ) {
-    val strings = LocalTapToPlayStrings.current
     val context = LocalContext.current
+    val noBrowserMessage = stringResource(R.string.status_no_browser_privacy_policy)
     OutlinedButton(
         onClick = {
             try {
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyPolicy.URL)))
             } catch (_: ActivityNotFoundException) {
-                Toast.makeText(context, strings["status_no_browser_privacy_policy"], Toast.LENGTH_LONG).show()
+                Toast.makeText(context, noBrowserMessage, Toast.LENGTH_LONG).show()
             }
         },
         modifier = modifier.fillMaxWidth(),
     ) {
-        Text(strings["privacy_policy"])
+        Text(stringResource(R.string.privacy_policy))
     }
 }

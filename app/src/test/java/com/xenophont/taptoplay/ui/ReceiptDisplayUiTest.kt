@@ -2,6 +2,8 @@ package com.xenophont.taptoplay.ui
 
 import com.xenophont.taptoplay.adyen.PaymentReceipt
 import com.xenophont.taptoplay.adyen.ReceiptLine
+import java.io.File
+import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -36,7 +38,7 @@ class ReceiptDisplayUiTest {
             ),
         )
 
-        val display = receipt.toReceiptDisplay(stringsFor(AppLanguage.English))
+        val display = receipt.toReceiptDisplay(testStrings(AppLanguage.English))
         val textLines = display.items.filterIsInstance<ReceiptDisplayItem.TextLine>()
         val rows = display.items.filterIsInstance<ReceiptDisplayItem.Row>()
         val notes = display.items.filterIsInstance<ReceiptDisplayItem.Note>()
@@ -62,7 +64,7 @@ class ReceiptDisplayUiTest {
             lines = listOf(line("header1=TapToPlay Boutique")),
         )
 
-        val display = receipt.toReceiptDisplay(stringsFor(AppLanguage.English))
+        val display = receipt.toReceiptDisplay(testStrings(AppLanguage.English))
 
         assertEquals("Merchant receipt", display.title)
         assertTrue(display.items.any { it == ReceiptDisplayItem.SignatureLine("Signature") })
@@ -79,7 +81,7 @@ class ReceiptDisplayUiTest {
             ),
         )
 
-        val display = receipt.toReceiptDisplay(stringsFor(AppLanguage.English))
+        val display = receipt.toReceiptDisplay(testStrings(AppLanguage.English))
 
         assertTrue(display.items.any { it == ReceiptDisplayItem.TextLine("TapToPlay Boutique", ReceiptTextAlignment.Center, true) })
     }
@@ -104,7 +106,7 @@ class ReceiptDisplayUiTest {
             ),
         )
 
-        val display = receipt.toReceiptDisplay(stringsFor(AppLanguage.Spanish))
+        val display = receipt.toReceiptDisplay(testStrings(AppLanguage.Spanish))
         val rows = display.items.filterIsInstance<ReceiptDisplayItem.Row>()
 
         assertTrue(display.items.any { it == ReceiptDisplayItem.TextLine("COPIA P/ COMERCIANTE", ReceiptTextAlignment.Center, true) })
@@ -127,4 +129,32 @@ class ReceiptDisplayUiTest {
         characterStyle = characterStyle,
         endOfLine = endOfLine,
     )
+
+    private fun testStrings(language: AppLanguage): TapToPlayStrings =
+        TapToPlayStrings(language, stringResources(language))
+
+    private fun stringResources(language: AppLanguage): Map<String, String> {
+        val qualifier = when (language) {
+            AppLanguage.English -> "values"
+            AppLanguage.Spanish -> "values-es"
+            AppLanguage.Dutch -> "values-nl"
+            AppLanguage.French -> "values-fr"
+            AppLanguage.German -> "values-de"
+            AppLanguage.Italian -> "values-it"
+            AppLanguage.Swedish -> "values-sv"
+            AppLanguage.Japanese -> "values-ja"
+            AppLanguage.Chinese -> "values-b+zh+Hans"
+            AppLanguage.Korean -> "values-ko"
+            AppLanguage.Basque -> "values-eu"
+            AppLanguage.Quenya -> "values-b+qya"
+        }
+        val resDir = listOf(File("app/src/main/res"), File("src/main/res")).first(File::exists)
+        val file = File(File(resDir, qualifier), "strings.xml")
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val nodes = document.getElementsByTagName("string")
+        return (0 until nodes.length).associate { index ->
+            val node = nodes.item(index)
+            node.attributes.getNamedItem("name").nodeValue to node.textContent
+        }
+    }
 }
