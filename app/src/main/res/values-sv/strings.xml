@@ -1,4 +1,8 @@
 <resources>
+    <string name="about_build_info">Sluten betaversion %1$s (%2$d)</string>
+    <string name="about_game_eyebrow">Foer nyfikna</string>
+    <string name="about_game_action">Testa mitt transaktionsbaserade incremental game</string>
+    <string name="status_no_browser_transaction_game">Ingen webblaesare finns tillgaenglig foer att oeppna incremental-spelet.</string>
     <string name="about_message">Gjord av Javier de No, med hjälp av Codex och GPT-5.5, för teamet 💚🚀</string>
     <string name="add_to_cart">Lagg till</string>
     <string name="added">Tillagd</string>

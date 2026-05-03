@@ -1,4 +1,8 @@
 <resources>
+    <string name="about_build_info">비공개 베타 빌드 %1$s (%2$d)</string>
+    <string name="about_game_eyebrow">호기심 있는 분께</string>
+    <string name="about_game_action">거래 기반 방치형 게임을 체험해 보세요</string>
+    <string name="status_no_browser_transaction_game">방치형 게임을 열 수 있는 브라우저가 없습니다.</string>
     <string name="about_message">Javier de No가 Codex와 GPT-5.5의 도움을 받아 팀을 위해 만들었습니다 💚🚀</string>
     <string name="add_to_cart">장바구니에 추가</string>
     <string name="added">추가됨</string>

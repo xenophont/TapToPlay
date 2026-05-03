@@ -1,9 +1,12 @@
 package com.xenophont.taptoplay.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,13 +29,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.xenophont.taptoplay.BuildConfig
 import com.xenophont.taptoplay.R
 
 @Composable
 internal fun AboutPanel(
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val aboutMessage = stringResource(R.string.about_message)
+    val noBrowserMessage = stringResource(R.string.status_no_browser_transaction_game)
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -63,6 +69,40 @@ internal fun AboutPanel(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )
+        Text(
+            text = stringResource(R.string.about_build_info, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    try {
+                        context.startActivity(TransactionGame.viewIntent())
+                    } catch (_: RuntimeException) {
+                        Toast.makeText(context, noBrowserMessage, Toast.LENGTH_LONG).show()
+                    }
+                }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(R.string.about_game_eyebrow),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.about_game_action),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 
@@ -84,4 +124,18 @@ internal fun PrivacyPolicyStickyButton(
     ) {
         Text(stringResource(R.string.privacy_policy))
     }
+}
+
+private object TransactionGame {
+    private const val URL = "https://xenophont.github.io/authorisation-engine/" +
+        "?utm_source=taptoplay" +
+        "&utm_medium=android_app" +
+        "&utm_campaign=about_easter_egg" +
+        "&ref=taptoplay_app"
+
+    fun viewIntent(): Intent =
+        Intent(Intent.ACTION_VIEW, Uri.parse(URL)).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
 }

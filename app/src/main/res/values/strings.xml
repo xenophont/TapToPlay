@@ -1,4 +1,7 @@
 <resources>
+    <string name="about_build_info">Closed beta build %1$s (%2$d)</string>
+    <string name="about_game_eyebrow">For the curious</string>
+    <string name="about_game_action">Try my transaction-based incremental game</string>
     <string name="about_message">Made by Javier de No, with help from Codex and GPT-5.5, for the team 💚🚀</string>
     <string name="add_to_cart">Add to cart</string>
     <string name="added">Added</string>
@@ -243,6 +246,7 @@
     <string name="status_no_browser_google_play">No browser or Play Store app is available to open the %1$s download link.</string>
     <string name="status_no_browser_privacy_policy">No browser is available to open the privacy policy.</string>
     <string name="status_no_browser_qr_docs">No browser is available to open the QR documentation.</string>
+    <string name="status_no_browser_transaction_game">No browser is available to open the incremental game.</string>
     <string name="status_no_payments_instances">No Payments App instances returned for this profile.</string>
     <string name="status_opening_finish_boarding">Opening Adyen to finish boarding...</string>
     <string name="status_opening_google_play">Opening Google Play for the %1$s Adyen Payments app.</string>

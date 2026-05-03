@@ -4,6 +4,9 @@ import com.xenophont.taptoplay.R
 
 internal val TapToPlayTextResources: Map<String, Int> = mapOf(
         "about_message" to R.string.about_message,
+        "about_build_info" to R.string.about_build_info,
+        "about_game_eyebrow" to R.string.about_game_eyebrow,
+        "about_game_action" to R.string.about_game_action,
         "add_to_cart" to R.string.add_to_cart,
         "added" to R.string.added,
         "additional_response_raw" to R.string.additional_response_raw,
@@ -247,6 +250,7 @@ internal val TapToPlayTextResources: Map<String, Int> = mapOf(
         "status_no_browser_google_play" to R.string.status_no_browser_google_play,
         "status_no_browser_privacy_policy" to R.string.status_no_browser_privacy_policy,
         "status_no_browser_qr_docs" to R.string.status_no_browser_qr_docs,
+        "status_no_browser_transaction_game" to R.string.status_no_browser_transaction_game,
         "status_no_payments_instances" to R.string.status_no_payments_instances,
         "status_opening_finish_boarding" to R.string.status_opening_finish_boarding,
         "status_opening_google_play" to R.string.status_opening_google_play,

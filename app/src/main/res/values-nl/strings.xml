@@ -1,4 +1,8 @@
 <resources>
+    <string name="about_build_info">Gesloten betabuild %1$s (%2$d)</string>
+    <string name="about_game_eyebrow">Voor nieuwsgierigen</string>
+    <string name="about_game_action">Probeer mijn transaction-based incremental game</string>
+    <string name="status_no_browser_transaction_game">Er is geen browser beschikbaar om de incremental game te openen.</string>
     <string name="about_message">Gemaakt door Javier de No, met hulp van Codex en GPT-5.5, voor het team 💚🚀</string>
     <string name="add_to_cart">Toevoegen</string>
     <string name="added">Toegevoegd</string>
