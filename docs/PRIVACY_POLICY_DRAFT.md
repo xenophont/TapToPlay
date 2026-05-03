@@ -9,7 +9,7 @@ at a public, non-editable URL before using it in Play Console.
 
 Developer: Javier de No
 
-Contact: javier.deno@gmail.com
+Contact: xenophont.dev@gmail.com
 
 App package: `com.xenophont.taptoplay`
 
