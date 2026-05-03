@@ -1,6 +1,6 @@
 # TapToPlay
 
-TapToPlay is a Kotlin/Compose premium retail POS demo for Adyen Tap to Pay on Android. It presents a boutique clothing catalog first, then adds an Adyen operations console for checkout, Payments App boarding, app-instance management, transaction inspection, diagnostics, SaleToAcquirerData testing, and referenced refunds.
+TapToPlay is a Kotlin/Compose premium retail POS demo for Adyen Tap to Pay on Android. It presents a boutique clothing catalog first, then adds an Adyen operations console for checkout, Payments App boarding, app-instance management, transaction inspection, diagnostics, SaleToAcquirerData testing, and referenced refunds.Personal project. Not affiliated with or endorsed by my employer.
 
 ## Demo Security Notice
 
@@ -207,7 +207,7 @@ This is still a demo security model because credentials live on-device. For prod
 
 ## Español
 
-TapToPlay es una demo de TPV retail premium en Kotlin/Compose para Adyen Tap to Pay en Android. Presenta primero un catálogo de ropa boutique y después añade una consola operativa de Adyen para checkout, boarding de Payments App, gestión de instancias de la app, inspección de transacciones, diagnósticos, pruebas de SaleToAcquirerData y reembolsos referenciados.
+TapToPlay es una demo de TPV retail premium en Kotlin/Compose para Adyen Tap to Pay en Android. Presenta primero un catálogo de ropa boutique y después añade una consola operativa de Adyen para checkout, boarding de Payments App, gestión de instancias de la app, inspección de transacciones, diagnósticos, pruebas de SaleToAcquirerData y reembolsos referenciados.Proyecto personal. No afiliado ni respaldado por mi empleador.
 
 ## Aviso de seguridad de la demo
 
