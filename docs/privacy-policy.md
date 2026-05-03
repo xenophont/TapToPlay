@@ -11,7 +11,7 @@ Last updated: May 1, 2026
 
 Developer: Javier de No
 
-Contact: javier.deno@gmail.com
+Contact: xenophont.dev@gmail.com
 
 App package: `com.xenophont.taptoplay`
 
