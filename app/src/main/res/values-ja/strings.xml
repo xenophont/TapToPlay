@@ -1,5 +1,5 @@
 <resources>
-    <string name="about_build_info">クローズドベータビルド %1$s (%2$d)</string>
+    <string name="about_build_info">クローズドベータビルド %1$s</string>
     <string name="about_game_eyebrow">気になる方へ</string>
     <string name="about_game_action">取引ベースのインクリメンタルゲームを試す</string>
     <string name="status_no_browser_transaction_game">インクリメンタルゲームを開けるブラウザがありません。</string>

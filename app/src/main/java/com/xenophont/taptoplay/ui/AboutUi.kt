@@ -70,7 +70,7 @@ internal fun AboutPanel(
             color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
-            text = stringResource(R.string.about_build_info, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+            text = stringResource(R.string.about_build_info, BuildConfig.VERSION_NAME),
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

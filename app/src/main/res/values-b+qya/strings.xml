@@ -1,5 +1,5 @@
 <resources>
-    <string name="about_build_info">Closed beta build %1$s (%2$d)</string>
+    <string name="about_build_info">Closed beta build %1$s</string>
     <string name="about_game_eyebrow">For the curious</string>
     <string name="about_game_action">Try my transaction-based incremental game</string>
     <string name="status_no_browser_transaction_game">No browser is available to open the incremental game.</string>

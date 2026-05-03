@@ -1,5 +1,5 @@
 <resources>
-    <string name="about_build_info">Closed beta build %1$s (%2$d)</string>
+    <string name="about_build_info">Closed beta build %1$s</string>
     <string name="about_game_eyebrow">For the curious</string>
     <string name="about_game_action">Try my transaction-based incremental game</string>
     <string name="about_message">Made by Javier de No, with help from Codex and GPT-5.5, for the team 💚🚀</string>
