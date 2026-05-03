@@ -69,7 +69,7 @@ runtime behavior.
 TapToPlay keeps local demo data until the tester removes profiles or records in
 the app, clears app storage, or uninstalls the app. For questions or deletion
 requests related to any developer-held support records, contact
-javier.deno@gmail.com.
+xenophont.dev@gmail.com.
 
 ## Security
 
