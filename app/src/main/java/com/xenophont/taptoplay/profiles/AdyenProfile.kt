@@ -32,9 +32,7 @@ data class AdyenProfile(
         get() = "${environment.name.lowercase()}:$merchantId:${storeId.orEmpty()}:$displayName"
 
     val profileName: String
-        get() = storeName?.takeIf { it.isNotBlank() }
-            ?: merchantId.takeIf { storeId.isNullOrBlank() && it.isNotBlank() }
-            ?: displayName
+        get() = displayName
 
     fun maskedApiKey(): String = apiKey.mask()
     fun maskedPassphrase(): String = terminalPassphrase.maskPresence()

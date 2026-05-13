@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">비공개 베타 빌드 %1$s</string>
     <string name="about_game_eyebrow">호기심 있는 분께</string>
-    <string name="about_game_action">거래 기반 방치형 게임을 체험해 보세요</string>
+    <string name="about_game_action">Authorisation Engine 베타 액세스</string>
+    <string name="add">추가</string>
+    <string name="add_field">필드 추가</string>
+    <string name="add_json_field">JSON 필드 추가</string>
+    <string name="add_json_field_hint">중첩 필드는 점 경로를 사용하세요. true, 42, null, 객체, 배열은 JSON으로 저장됩니다.</string>
     <string name="status_no_browser_transaction_game">방치형 게임을 열 수 있는 브라우저가 없습니다.</string>
+    <string name="status_no_email_beta_access">베타 액세스를 요청할 이메일 앱이 없습니다.</string>
     <string name="about_message">Javier de No가 Codex와 GPT-5.5의 도움을 받아 팀을 위해 만들었습니다 💚🚀</string>
     <string name="add_to_cart">장바구니에 추가</string>
     <string name="added">추가됨</string>
@@ -60,7 +65,9 @@
     <string name="decode">디코딩</string>
     <string name="decoded">디코딩됨</string>
     <string name="decoded_sale_to_acquirer_data">디코딩된 SaleToAcquirerData</string>
+    <string name="defaults">기본값</string>
     <string name="diagnostics_body">선택한 프로필의 마스킹된 운영 상태입니다.</string>
+    <string name="display_name">표시 이름</string>
     <string name="done">완료</string>
     <string name="edit">편집</string>
     <string name="environment">환경</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">오류 조건</string>
     <string name="failure_refused_without_reason">Adyen이 사유 없이 결제를 거절했습니다.</string>
     <string name="favorites">즐겨찾기</string>
+    <string name="field_path">필드 경로</string>
     <string name="field_count_many">필드 %1$d개</string>
     <string name="field_count_one">필드 1개</string>
+    <string name="game_beta_body">Authorisation Engine은 결제, 승인, 그리고 거래 흐름을 하나의 기계처럼 만들어 가는 작은 운영 선택을 다루는 방치형 게임입니다. 베타는 현재 비공개입니다. 액세스를 요청하면 Google Play 계정을 추가하겠습니다.</string>
+    <string name="game_beta_coming_soon">Play Store에 곧 출시</string>
+    <string name="game_beta_title">Authorisation Engine 비공개 베타</string>
     <string name="go_to_checkout">결제로 이동</string>
     <string name="hide">숨기기</string>
     <string name="hide_raw_json">원시 JSON 숨기기</string>
     <string name="hide_revoked">폐기됨 숨기기</string>
     <string name="important_response_fields">중요 응답 필드</string>
+    <string name="import_json">JSON 가져오기</string>
     <string name="inspect">검사</string>
     <string name="installation">설치</string>
     <string name="installation_not_returned_yet">아직 반환되지 않음</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">가맹점 영수증</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">메시지 카테고리</string>
+    <string name="modify">수정</string>
     <string name="no_credential_profile_loaded">자격 증명 프로필이 로드되지 않음</string>
     <string name="no_merchant_store_returned">merchant/매장이 반환되지 않음</string>
     <string name="no_payment_profile_selected">선택된 결제 프로필 없음</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">메뉴 열기</string>
     <string name="open_payments_app_status">Payments App 상태 열기</string>
     <string name="open_qr_documentation">QR 문서 열기</string>
+    <string name="ocr_image">이미지 OCR</string>
     <string name="passphrase">암호 문구</string>
     <string name="payment_approved">결제 승인됨</string>
     <string name="payment_profile">결제 프로필</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">%1$s를 로컬 암호화 저장소에서 삭제하고 저장된 설정 상태를 지웁니다. 인스턴스를 별도로 폐기하지 않으면 Adyen 앱 인증은 폐기되지 않습니다.</string>
     <string name="remove_payment_profile_title">결제 프로필을 삭제할까요?</string>
     <string name="request">요청</string>
+    <string name="request_beta_access">액세스 요청</string>
+    <string name="request_beta_access_here">여기서 요청</string>
     <string name="request_summary">요청 요약</string>
     <string name="reset">초기화</string>
     <string name="response">응답</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">Adyen을 통해 설치 %1$s을(를) 해지합니다. 해당 앱 또는 기기에서 결제하려면 이후 다시 설정해야 합니다.</string>
     <string name="revoke_instance_title">Payments App 인스턴스를 해지할까요?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">다음 결제에 사용할 SaleToAcquirerData payload 업데이트 방식을 선택하세요.</string>
+    <string name="sale_to_acquirer_modify_title">SaleToAcquirerData 수정</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">저장</string>
     <string name="saved_attempt_many">저장된 결제 시도 %1$d개</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">SaleToAcquirerData 즐겨찾기 적용됨: %1$s.</string>
     <string name="status_favorite_removed">SaleToAcquirerData 즐겨찾기 제거됨: %1$s.</string>
     <string name="status_favorite_saved">%1$s이(가) SaleToAcquirerData 즐겨찾기로 저장됨.</string>
+    <string name="status_default_applied">SaleToAcquirerData 기본값 적용됨: %1$s.</string>
+    <string name="status_json_import_failed">JSON 가져오기 실패: %1$s</string>
     <string name="status_language_changed">언어가 %1$s(으)로 변경되었습니다.</string>
     <string name="status_need_installation_id">먼저 Check로 설정을 확인하세요. 결제에는 POIID로 사용할 installation ID가 필요합니다.</string>
     <string name="status_no_browser_google_play">%1$s 다운로드 링크를 열 수 있는 브라우저 또는 Play Store 앱이 없습니다.</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">%1$s Adyen Payments app용 Google Play를 여는 중입니다.</string>
     <string name="status_opening_payment_app">암호화된 Terminal API 요청으로 Adyen Payments App을 여는 중...</string>
     <string name="status_opening_refund">참조 환불 요청으로 Adyen을 여는 중...</string>
+    <string name="status_ocr_failed">로컬 OCR 실패: %1$s</string>
+    <string name="status_ocr_no_json">로컬 OCR에서 JSON 객체를 찾지 못했습니다.</string>
+    <string name="status_ocr_reading">이미지를 로컬에서 QR 또는 OCR로 읽는 중...</string>
     <string name="status_payments_app_missing">%1$s용 Adyen Payments App이 설치되어 있지 않습니다. 설정 블록에서 Google Play를 여세요.</string>
     <string name="status_payments_instances_not_loaded">Payments App 인스턴스가 로드되지 않았습니다</string>
     <string name="status_payments_lookup_failed">Payments App 조회 실패: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">니트웨어</string>
     <string name="category_accessories">액세서리</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">1개 상품 준비됨</item>
-        <item quantity="other">%1$d개 상품 준비됨</item>
+    <item quantity="one">1개 상품 준비됨</item>
+    <item quantity="other">%1$d개 상품 준비됨</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">상품 1개</item>
-        <item quantity="other">상품 %1$d개</item>
+    <item quantity="one">상품 1개</item>
+    <item quantity="other">상품 %1$d개</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">JSON 필드 1개</item>
-        <item quantity="other">JSON 필드 %1$d개</item>
+    <item quantity="one">JSON 필드 1개</item>
+    <item quantity="other">JSON 필드 %1$d개</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">저장된 결제 시도 1개</item>
-        <item quantity="other">저장된 결제 시도 %1$d개</item>
+    <item quantity="one">저장된 결제 시도 1개</item>
+    <item quantity="other">저장된 결제 시도 %1$d개</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">Payments App 인스턴스 1개를 로드했습니다.</item>
-        <item quantity="other">Payments App 인스턴스 %1$d개를 로드했습니다.</item>
+    <item quantity="one">Payments App 인스턴스 1개를 로드했습니다.</item>
+    <item quantity="other">Payments App 인스턴스 %1$d개를 로드했습니다.</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">필드 1개</item>
-        <item quantity="other">필드 %1$d개</item>
+    <item quantity="one">필드 1개</item>
+    <item quantity="other">필드 %1$d개</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">항목 1개</item>
-        <item quantity="other">항목 %1$d개</item>
+    <item quantity="one">항목 1개</item>
+    <item quantity="other">항목 %1$d개</item>
     </plurals>
 </resources>

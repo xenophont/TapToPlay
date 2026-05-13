@@ -29,7 +29,7 @@ class ProfileQrParserTest {
         val profile = parser.parse(payload).getOrThrow()
 
         assertEquals("Boutique Centro", profile.storeName)
-        assertEquals("Boutique Centro", profile.profileName)
+        assertEquals("Demo Store TEST", profile.profileName)
     }
 
     @Test
@@ -39,7 +39,7 @@ class ProfileQrParserTest {
         val profile = parser.parse(payload).getOrThrow()
 
         assertEquals(null, profile.storeId)
-        assertEquals("YourMerchantAccount", profile.profileName)
+        assertEquals("Demo Store TEST", profile.profileName)
     }
 
     @Test

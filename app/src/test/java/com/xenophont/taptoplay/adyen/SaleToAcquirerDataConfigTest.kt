@@ -211,4 +211,61 @@ class SaleToAcquirerDataConfigTest {
 
         assertEquals(null, edited.data["metadata"])
     }
+
+    @Test
+    fun addsNestedFieldFromDotPath() {
+        val config = SaleToAcquirerDataConfig(
+            displayName = "Editable",
+            data = buildJsonObject {
+                put("metadata", buildJsonObject {
+                    put("existing", "value")
+                })
+            },
+        )
+
+        val edited = SaleToAcquirerDataEditor.add(config, "additionalData.authorisationType", "PreAuth")
+
+        assertEquals(
+            "PreAuth",
+            edited.data["additionalData"]?.jsonObject?.get("authorisationType")?.jsonPrimitive?.content,
+        )
+        assertEquals("Editable (edited)", edited.displayName)
+    }
+
+    @Test
+    fun parsesWrappedDefaultPreset() {
+        val config = SaleToAcquirerDataDefaultParser().parse(
+            "preauth.json",
+            """
+                {
+                  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+                  "displayName": "PreAuth",
+                  "mergeWithDefaults": true,
+                  "data": {
+                    "authorisationType": "PreAuth"
+                  }
+                }
+            """.trimIndent(),
+        )
+
+        assertEquals("PreAuth", config.displayName)
+        assertEquals(true, config.mergeWithDefaults)
+        assertEquals("PreAuth", config.data["authorisationType"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun parsesPlainDefaultPresetUsingFileName() {
+        val config = SaleToAcquirerDataDefaultParser().parse(
+            "shopper_statement.json",
+            """
+                {
+                  "shopperStatement": "TapToPlay Boutique"
+                }
+            """.trimIndent(),
+        )
+
+        assertEquals("Shopper Statement", config.displayName)
+        assertEquals(false, config.mergeWithDefaults)
+        assertEquals("TapToPlay Boutique", config.data["shopperStatement"]?.jsonPrimitive?.content)
+    }
 }

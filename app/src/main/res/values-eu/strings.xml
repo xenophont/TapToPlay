@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">Beta itxiko builda %1$s</string>
     <string name="about_game_eyebrow">Jakin-minentzat</string>
-    <string name="about_game_action">Probatu nire transakzioetan oinarritutako incremental game-a</string>
+    <string name="about_game_action">Authorisation Engine betarako sarbidea</string>
+    <string name="add">Gehitu</string>
+    <string name="add_field">Gehitu eremua</string>
+    <string name="add_json_field">Gehitu JSON eremua</string>
+    <string name="add_json_field_hint">Erabili puntuz bereizitako bideak habiaratutako eremuetarako. true, 42, null, objektuak eta arrayak JSON gisa gordetzen dira.</string>
     <string name="status_no_browser_transaction_game">Ez dago incremental game-a irekitzeko nabigatzailerik.</string>
+    <string name="status_no_email_beta_access">Ez dago email aplikaziorik beta sarbidea eskatzeko.</string>
     <string name="about_message">Javier de Nok egina, Codex eta GPT-5.5en laguntzarekin, taldearentzat 💚🚀</string>
     <string name="add_to_cart">Gehitu saskira</string>
     <string name="added">Gehituta</string>
@@ -60,7 +65,9 @@
     <string name="decode">Deskodetu</string>
     <string name="decoded">Deskodetuta</string>
     <string name="decoded_sale_to_acquirer_data">Deskodetua SaleToAcquirerData</string>
+    <string name="defaults">Lehenetsiak</string>
     <string name="diagnostics_body">Hautatutako profilaren egoera operatibo maskaratua.</string>
+    <string name="display_name">Bistaratzeko izena</string>
     <string name="done">Eginda</string>
     <string name="edit">Editatu</string>
     <string name="environment">Ingurunea</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">Errore-baldintza</string>
     <string name="failure_refused_without_reason">Adyenek ordainketa arrazoirik gabe ukatu du.</string>
     <string name="favorites">Gogokoak</string>
+    <string name="field_path">Eremuaren bidea</string>
     <string name="field_count_many">%1$d eremu</string>
     <string name="field_count_one">Eremu 1</string>
+    <string name="game_beta_body">Authorisation Engine ordainketei, baimenei eta transakzio-fluxua makina bihurtzen duten erabaki operatibo txikiei buruzko joko inkrementala da. Beta pribatua da oraingoz; eskatu sarbidea eta zure Google Play kontua gehituko dut.</string>
+    <string name="game_beta_coming_soon">Laster Play Store-n</string>
+    <string name="game_beta_title">Authorisation Engine beta itxia</string>
     <string name="go_to_checkout">Joan kutxara</string>
     <string name="hide">Ezkutatu</string>
     <string name="hide_raw_json">Ezkutatu JSON gordina</string>
     <string name="hide_revoked">Ezkutatu baliogabetuak</string>
     <string name="important_response_fields">Erantzun eremu garrantzitsuak</string>
+    <string name="import_json">Inportatu JSON</string>
     <string name="inspect">Ikuskatu</string>
     <string name="installation">Instalazioa</string>
     <string name="installation_not_returned_yet">oraindik itzuli gabe</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">Saltzaile ordainagiria</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">Mezu-kategoria</string>
+    <string name="modify">Aldatu</string>
     <string name="no_credential_profile_loaded">Ez dago kredentzial profilik kargatuta</string>
     <string name="no_merchant_store_returned">Ez da merchant/dendarik itzuli</string>
     <string name="no_payment_profile_selected">Ez dago ordainketa profilik hautatuta</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">Ireki menua</string>
     <string name="open_payments_app_status">Ireki Payments App egoera</string>
     <string name="open_qr_documentation">Ireki QR dokumentazioa</string>
+    <string name="ocr_image">Irudi OCR</string>
     <string name="passphrase">Pasaesaldia</string>
     <string name="payment_approved">Ordainketa onartuta</string>
     <string name="payment_profile">Ordainketa profila</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">Honek %1$s tokiko kutxa zifratutik kentzen du eta gordetako boarding egoera garbitzen du. Adyen app autentifikazioa ez da baliogabetzen instantzia aparte baliogabetu ezean.</string>
     <string name="remove_payment_profile_title">Ordainketa profila kendu?</string>
     <string name="request">Eskaera</string>
+    <string name="request_beta_access">Eskatu sarbidea</string>
+    <string name="request_beta_access_here">Eskatu hemen</string>
     <string name="request_summary">Eskaera summary</string>
     <string name="reset">Berrezarri</string>
     <string name="response">Erantzuna</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">This revokes installation %1$s through Adyen. Payments on that app/device need rekonfigurazioa afterward.</string>
     <string name="revoke_instance_title">Payments App instantzia ezeztatu?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">Aukeratu hurrengo ordainketarako SaleToAcquirerData payload-a nola eguneratu.</string>
+    <string name="sale_to_acquirer_modify_title">Aldatu SaleToAcquirerData</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">Gorde</string>
     <string name="saved_attempt_many">Gordetako %1$d ordainketa saiakera</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">SaleToAcquirerData gogokoa aplikatu da: %1$s.</string>
     <string name="status_favorite_removed">SaleToAcquirerData gogokoa kendu da: %1$s.</string>
     <string name="status_favorite_saved">%1$s SaleToAcquirerData gogoko gisa gorde da.</string>
+    <string name="status_default_applied">SaleToAcquirerData lehenetsia aplikatu da: %1$s.</string>
+    <string name="status_json_import_failed">JSON inportatzeak huts egin du: %1$s</string>
     <string name="status_language_changed">Hizkuntza %1$s(e)ra aldatu da.</string>
     <string name="status_need_installation_id">Check konfigurazioa first. Payments require an installation ID as POIID.</string>
     <string name="status_no_browser_google_play">Ez dago nabigatzailerik edo Play Store aplikaziorik %1$s deskarga-esteka irekitzeko.</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">Irekitzen Google Play for the %1$s Adyen Payments app.</string>
     <string name="status_opening_payment_app">Adyen Payments App irekitzen Terminal API eskaera zifratuarekin...</string>
     <string name="status_opening_refund">Irekitzen Adyen with a referenced refund request...</string>
+    <string name="status_ocr_failed">OCR lokalak huts egin du: %1$s</string>
+    <string name="status_ocr_no_json">OCR lokalak ez du JSON objekturik aurkitu.</string>
+    <string name="status_ocr_reading">Irudia lokalean QR edo OCR gisa irakurtzen...</string>
     <string name="status_payments_app_missing">%1$s-rako Adyen Payments App ez dago instalatuta. Ireki Google Play konfigurazio bloketik.</string>
     <string name="status_payments_instances_not_loaded">Payments App instances not kargatua</string>
     <string name="status_payments_lookup_failed">Payments App bilaketa huts egin du: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">Puntua</string>
     <string name="category_accessories">Osagarriak</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">Elementu 1 prest</item>
-        <item quantity="other">%1$d elementu prest</item>
+    <item quantity="one">Elementu 1 prest</item>
+    <item quantity="other">%1$d elementu prest</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">Elementu 1</item>
-        <item quantity="other">%1$d elementu</item>
+    <item quantity="one">Elementu 1</item>
+    <item quantity="other">%1$d elementu</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">JSON eremu 1</item>
-        <item quantity="other">%1$d JSON eremu</item>
+    <item quantity="one">JSON eremu 1</item>
+    <item quantity="other">%1$d JSON eremu</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">Gordetako ordainketa saiakera 1</item>
-        <item quantity="other">Gordetako %1$d ordainketa saiakera</item>
+    <item quantity="one">Gordetako ordainketa saiakera 1</item>
+    <item quantity="other">Gordetako %1$d ordainketa saiakera</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">Payments App instantzia 1 kargatuta.</item>
-        <item quantity="other">%1$d Payments App instantzia kargatuta.</item>
+    <item quantity="one">Payments App instantzia 1 kargatuta.</item>
+    <item quantity="other">%1$d Payments App instantzia kargatuta.</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">Eremu 1</item>
-        <item quantity="other">%1$d eremu</item>
+    <item quantity="one">Eremu 1</item>
+    <item quantity="other">%1$d eremu</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">Elementu 1</item>
-        <item quantity="other">%1$d elementu</item>
+    <item quantity="one">Elementu 1</item>
+    <item quantity="other">%1$d elementu</item>
     </plurals>
 </resources>

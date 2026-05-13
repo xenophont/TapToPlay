@@ -3,8 +3,11 @@ package com.xenophont.taptoplay
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,6 +29,7 @@ import com.xenophont.taptoplay.adyen.PaymentsAppApiClient
 import com.xenophont.taptoplay.adyen.PaymentsAppInstance
 import com.xenophont.taptoplay.adyen.PaymentsAppStatus
 import com.xenophont.taptoplay.adyen.SaleToAcquirerDataConfig
+import com.xenophont.taptoplay.adyen.SaleToAcquirerDataDefaultStore
 import com.xenophont.taptoplay.adyen.SaleToAcquirerDataFavoriteStore
 import com.xenophont.taptoplay.adyen.SaleToAcquirerDataQrParser
 import com.xenophont.taptoplay.adyen.TerminalApiResponseInspector
@@ -54,9 +58,19 @@ import com.xenophont.taptoplay.ui.stringsFor
 import com.xenophont.taptoplay.ui.theme.TapToPlayTheme
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.time.Instant
 import java.util.Locale
 import java.util.UUID
@@ -66,6 +80,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var transactionStore: AndroidTransactionStore
     private lateinit var boardingStateStore: AndroidBoardingStateStore
     private lateinit var saleToAcquirerDataFavoriteStore: SaleToAcquirerDataFavoriteStore
+    private lateinit var saleToAcquirerDataDefaultStore: SaleToAcquirerDataDefaultStore
     private lateinit var languageStore: AppLanguageStore
     private val qrParser = ProfileQrParser()
     private val saleToAcquirerDataQrParser = SaleToAcquirerDataQrParser()
@@ -88,6 +103,7 @@ class MainActivity : ComponentActivity() {
     private var showPaymentsAppDownloadPromptState by mutableStateOf(false)
     private var saleToAcquirerDataConfigState by mutableStateOf(SaleToAcquirerDataConfig.default())
     private var saleToAcquirerDataFavoritesState by mutableStateOf(emptyList<SaleToAcquirerDataConfig>())
+    private var saleToAcquirerDataDefaultsState by mutableStateOf(emptyList<SaleToAcquirerDataConfig>())
     private var transactionHistoryState by mutableStateOf(emptyList<TransactionRecord>())
     private var pendingTransactionIdState by mutableStateOf<String?>(null)
     private var paymentsAppInstancesState by mutableStateOf(emptyList<PaymentsAppInstance>())
@@ -115,6 +131,26 @@ class MainActivity : ComponentActivity() {
             .onFailure { statusState = strings.format("status_sale_to_acquirer_rejected", it.message.orEmpty()) }
     }
 
+    private val profileJsonLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectScreen(AppScreen.PaymentsApp)
+        uri?.let { importProfileTextUri(it) }
+    }
+
+    private val profileImageOcrLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectScreen(AppScreen.PaymentsApp)
+        uri?.let { importProfileImageOcr(it) }
+    }
+
+    private val saleToAcquirerDataJsonLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectScreen(AppScreen.Checkout)
+        uri?.let { importSaleToAcquirerTextUri(it) }
+    }
+
+    private val saleToAcquirerDataImageOcrLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectScreen(AppScreen.Checkout)
+        uri?.let { importSaleToAcquirerImageOcr(it) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -125,6 +161,7 @@ class MainActivity : ComponentActivity() {
         transactionStore = AndroidTransactionStore(this)
         boardingStateStore = AndroidBoardingStateStore(this)
         saleToAcquirerDataFavoriteStore = SaleToAcquirerDataFavoriteStore(this)
+        saleToAcquirerDataDefaultStore = SaleToAcquirerDataDefaultStore(this)
         languageStore = AppLanguageStore(this)
         selectedLanguageState = languageStore.selected()
         statusState = strings["status_ready"]
@@ -136,6 +173,7 @@ class MainActivity : ComponentActivity() {
         reloadProfiles()
         reloadBoardingState()
         reloadSaleToAcquirerDataFavorites()
+        reloadSaleToAcquirerDataDefaults()
         reloadTransactions()
         if (selectedScreenState == AppScreen.PaymentsApp) {
             handlePaymentsAppEntered()
@@ -183,6 +221,14 @@ class MainActivity : ComponentActivity() {
                             selectScreen(AppScreen.PaymentsApp)
                             scanQr()
                         },
+                        onImportProfileJson = {
+                            selectScreen(AppScreen.PaymentsApp)
+                            profileJsonLauncher.launch("*/*")
+                        },
+                        onImportProfileImage = {
+                            selectScreen(AppScreen.PaymentsApp)
+                            profileImageOcrLauncher.launch("image/*")
+                        },
                         onOpenCredentialQrDocs = {
                             selectScreen(AppScreen.PaymentsApp)
                             openCredentialQrDocs()
@@ -194,6 +240,14 @@ class MainActivity : ComponentActivity() {
                         onScanSaleToAcquirerData = {
                             selectScreen(AppScreen.Checkout)
                             scanSaleToAcquirerDataQr()
+                        },
+                        onImportSaleToAcquirerDataJson = {
+                            selectScreen(AppScreen.Checkout)
+                            saleToAcquirerDataJsonLauncher.launch("*/*")
+                        },
+                        onImportSaleToAcquirerDataImage = {
+                            selectScreen(AppScreen.Checkout)
+                            saleToAcquirerDataImageOcrLauncher.launch("image/*")
                         },
                         onUpdateSaleToAcquirerData = { config ->
                             selectScreen(AppScreen.Checkout)
@@ -210,6 +264,12 @@ class MainActivity : ComponentActivity() {
                             selectScreen(AppScreen.Checkout)
                             saleToAcquirerDataConfigState = config
                             statusState = strings.format("status_favorite_applied", config.displayName)
+                        },
+                        saleToAcquirerDataDefaults = saleToAcquirerDataDefaultsState,
+                        onApplySaleToAcquirerDataDefault = { config ->
+                            selectScreen(AppScreen.Checkout)
+                            saleToAcquirerDataConfigState = config
+                            statusState = strings.format("status_default_applied", config.displayName)
                         },
                         onRemoveSaleToAcquirerDataFavorite = { config ->
                             selectScreen(AppScreen.Checkout)
@@ -309,6 +369,10 @@ class MainActivity : ComponentActivity() {
         saleToAcquirerDataFavoritesState = saleToAcquirerDataFavoriteStore.favorites()
     }
 
+    private fun reloadSaleToAcquirerDataDefaults() {
+        saleToAcquirerDataDefaultsState = saleToAcquirerDataDefaultStore.defaults()
+    }
+
     private fun selectScreen(screen: AppScreen) {
         val previousScreen = selectedScreenState
         selectedScreenState = screen
@@ -346,6 +410,110 @@ class MainActivity : ComponentActivity() {
                 .setBeepEnabled(false),
         )
     }
+
+    private fun importProfileTextUri(uri: Uri) {
+        val payload = readTextUri(uri)
+            .getOrElse {
+                statusState = strings.format("status_json_import_failed", it.message.orEmpty())
+                return
+            }
+        parseImportedProfile(payload, fromOcr = false)
+    }
+
+    private fun importProfileImageOcr(uri: Uri) {
+        statusState = strings["status_ocr_reading"]
+        decodeQrText(uri)?.let {
+            parseImportedProfile(it, fromOcr = false)
+            return
+        }
+        recognizeText(uri) { result ->
+            result
+                .onSuccess { text -> parseImportedProfile(text, fromOcr = true) }
+                .onFailure { statusState = strings.format("status_ocr_failed", it.message.orEmpty()) }
+        }
+    }
+
+    private fun importSaleToAcquirerTextUri(uri: Uri) {
+        val payload = readTextUri(uri)
+            .getOrElse {
+                statusState = strings.format("status_json_import_failed", it.message.orEmpty())
+                return
+            }
+        parseImportedSaleToAcquirerData(payload, fromOcr = false)
+    }
+
+    private fun importSaleToAcquirerImageOcr(uri: Uri) {
+        statusState = strings["status_ocr_reading"]
+        decodeQrText(uri)?.let {
+            parseImportedSaleToAcquirerData(it, fromOcr = false)
+            return
+        }
+        recognizeText(uri) { result ->
+            result
+                .onSuccess { text -> parseImportedSaleToAcquirerData(text, fromOcr = true) }
+                .onFailure { statusState = strings.format("status_ocr_failed", it.message.orEmpty()) }
+        }
+    }
+
+    private fun parseImportedProfile(rawPayload: String, fromOcr: Boolean) {
+        val payload = if (fromOcr) rawPayload.extractJsonObject() else rawPayload
+        if (payload.isNullOrBlank()) {
+            statusState = strings["status_ocr_no_json"]
+            return
+        }
+        qrParser.parse(payload)
+            .onSuccess { profile -> importScannedProfile(profile) }
+            .onFailure { statusState = strings.format("status_qr_rejected", it.message.orEmpty()) }
+    }
+
+    private fun parseImportedSaleToAcquirerData(rawPayload: String, fromOcr: Boolean) {
+        val payload = if (fromOcr) rawPayload.extractJsonObject() else rawPayload
+        if (payload.isNullOrBlank()) {
+            statusState = strings["status_ocr_no_json"]
+            return
+        }
+        saleToAcquirerDataQrParser.parse(payload)
+            .onSuccess { config ->
+                saleToAcquirerDataConfigState = config
+                statusState = strings.format("status_sale_to_acquirer_loaded", config.displayName)
+            }
+            .onFailure { statusState = strings.format("status_sale_to_acquirer_rejected", it.message.orEmpty()) }
+    }
+
+    private fun readTextUri(uri: Uri): Result<String> = runCatching {
+        contentResolver.openInputStream(uri)
+            ?.bufferedReader()
+            ?.use { it.readText() }
+            ?: throw IOException("Could not open selected file")
+    }
+
+    private fun recognizeText(uri: Uri, onComplete: (Result<String>) -> Unit) {
+        val image = runCatching { InputImage.fromFilePath(this, uri) }
+            .getOrElse {
+                onComplete(Result.failure(it))
+                return
+            }
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            .process(image)
+            .addOnSuccessListener { text -> onComplete(Result.success(text.text)) }
+            .addOnFailureListener { error -> onComplete(Result.failure(error)) }
+    }
+
+    private fun decodeQrText(uri: Uri): String? = runCatching {
+        val source = ImageDecoder.createSource(contentResolver, uri)
+        val bitmap = ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        }.let { decoded ->
+            if (decoded.config == Bitmap.Config.ARGB_8888) decoded else decoded.copy(Bitmap.Config.ARGB_8888, false)
+        }
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        val luminanceSource = RGBLuminanceSource(bitmap.width, bitmap.height, pixels)
+        val binaryBitmap = BinaryBitmap(HybridBinarizer(luminanceSource))
+        MultiFormatReader().apply {
+            setHints(mapOf(DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE)))
+        }.decode(binaryBitmap).text
+    }.getOrNull()
 
     private fun importScannedProfile(profile: AdyenProfile) {
         if (profile.storeId.isNullOrBlank()) {
@@ -721,3 +889,25 @@ private fun Bundle.screen(key: String): AppScreen? =
     getString(key)?.let { name ->
         AppScreen.entries.firstOrNull { it.name == name }
     }
+
+private fun String.extractJsonObject(): String? {
+    val start = indexOf('{')
+    if (start < 0) return null
+    var depth = 0
+    var inString = false
+    var escaped = false
+    for (index in start until length) {
+        val char = this[index]
+        when {
+            escaped -> escaped = false
+            char == '\\' && inString -> escaped = true
+            char == '"' -> inString = !inString
+            !inString && char == '{' -> depth++
+            !inString && char == '}' -> {
+                depth--
+                if (depth == 0) return substring(start, index + 1)
+            }
+        }
+    }
+    return null
+}

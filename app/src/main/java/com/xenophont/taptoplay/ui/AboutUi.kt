@@ -16,9 +16,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +45,8 @@ internal fun AboutPanel(
 ) {
     val context = LocalContext.current
     val aboutMessage = stringResource(R.string.about_message)
-    val noBrowserMessage = stringResource(R.string.status_no_browser_transaction_game)
+    val noEmailMessage = stringResource(R.string.status_no_email_beta_access)
+    var showGameBetaDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -79,13 +87,7 @@ internal fun AboutPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .clickable {
-                    try {
-                        context.startActivity(TransactionGame.viewIntent())
-                    } catch (_: RuntimeException) {
-                        Toast.makeText(context, noBrowserMessage, Toast.LENGTH_LONG).show()
-                    }
-                }
+                .clickable { showGameBetaDialog = true }
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -104,6 +106,49 @@ internal fun AboutPanel(
             )
         }
     }
+    if (showGameBetaDialog) {
+        ClosedBetaAccessDialog(
+            onRequestAccess = {
+                try {
+                    context.startActivity(TransactionGame.betaEmailIntent())
+                } catch (_: RuntimeException) {
+                    Toast.makeText(context, noEmailMessage, Toast.LENGTH_LONG).show()
+                }
+                showGameBetaDialog = false
+            },
+            onDismiss = { showGameBetaDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun ClosedBetaAccessDialog(
+    onRequestAccess: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(onClick = onRequestAccess) {
+                Text(stringResource(R.string.request_beta_access_here))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+        title = { Text(stringResource(R.string.game_beta_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.game_beta_body))
+                Text(
+                    stringResource(R.string.game_beta_coming_soon),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        },
+    )
 }
 
 @Composable
@@ -127,15 +172,12 @@ internal fun PrivacyPolicyStickyButton(
 }
 
 private object TransactionGame {
-    private const val URL = "https://xenophont.github.io/authorisation-engine/" +
-        "?utm_source=taptoplay" +
-        "&utm_medium=android_app" +
-        "&utm_campaign=about_easter_egg" +
-        "&ref=taptoplay_app"
+    private const val EMAIL = "xenophont.dev@gmail.com"
 
-    fun viewIntent(): Intent =
-        Intent(Intent.ACTION_VIEW, Uri.parse(URL)).apply {
-            addCategory(Intent.CATEGORY_BROWSABLE)
+    fun betaEmailIntent(): Intent =
+        Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$EMAIL")).apply {
+            putExtra(Intent.EXTRA_SUBJECT, "Authorisation Engine closed beta access request")
+            putExtra(Intent.EXTRA_TEXT, "Hi Javier,\n\nI would like access to the closed beta of Authorisation Engine on Google Play.\n\nThanks!")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 }

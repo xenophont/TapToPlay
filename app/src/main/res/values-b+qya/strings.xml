@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">Closed beta build %1$s</string>
     <string name="about_game_eyebrow">For the curious</string>
-    <string name="about_game_action">Try my transaction-based incremental game</string>
+    <string name="about_game_action">Authorisation Engine beta access</string>
+    <string name="add">Add</string>
+    <string name="add_field">Add field</string>
+    <string name="add_json_field">Add JSON field</string>
+    <string name="add_json_field_hint">Use dot paths for nested fields. Values like true, 42, null, objects, and arrays are saved as JSON.</string>
     <string name="status_no_browser_transaction_game">No browser is available to open the incremental game.</string>
+    <string name="status_no_email_beta_access">No email app is available to request beta access.</string>
     <string name="about_message">Carna Javier de No, ar Codex ar GPT-5.5 ve meldo, an i lië 💚🚀</string>
     <string name="add_to_cart">Yanta sapsanna</string>
     <string name="added">Yantaina</string>
@@ -60,7 +65,9 @@
     <string name="decode">Dëcódë</string>
     <string name="decoded">Dëcódëd</string>
     <string name="decoded_sale_to_acquirer_data">Dëcódëd SaleToAcquirerData</string>
+    <string name="defaults">Defaults</string>
     <string name="diagnostics_body">Rëdáctëd ópërátíónál státë fór thë sëlëctëd prófílë.</string>
+    <string name="display_name">Display name</string>
     <string name="done">Carna</string>
     <string name="edit">Ëdít</string>
     <string name="environment">Ambar</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">Ërrór cóndítíón</string>
     <string name="failure_refused_without_reason">Ádyën rëfúsëd thë páymënt wíthóút á rëásón.</string>
     <string name="favorites">Melmer</string>
+    <string name="field_path">Field path</string>
     <string name="field_count_many">%1$d fíëlds</string>
     <string name="field_count_one">1 fíëld</string>
+    <string name="game_beta_body">Authorisation Engine is an incremental game about payments, approvals, and the small operational choices that turn a transaction flow into a machine. The beta is private for now; request access and I will add your Google Play account.</string>
+    <string name="game_beta_coming_soon">Coming soon on Play Store</string>
+    <string name="game_beta_title">Authorisation Engine closed beta</string>
     <string name="go_to_checkout">Mancalë</string>
     <string name="hide">Nurta</string>
     <string name="hide_raw_json">Hídë ráw JSÓN</string>
     <string name="hide_revoked">Hídë rëvókëd</string>
     <string name="important_response_fields">Ímpórtánt rëspónsë fíëlds</string>
+    <string name="import_json">Import JSON</string>
     <string name="inspect">Cenda</string>
     <string name="installation">Ínstállátíón</string>
     <string name="installation_not_returned_yet">nót rëtúrnëd yët</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">Mërchánt rëcëípt</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">Mësságë cátëgóry</string>
+    <string name="modify">Modify</string>
     <string name="no_credential_profile_loaded">Nó crëdëntíál prófílë lóádëd</string>
     <string name="no_merchant_store_returned">Nó mërchánt/stórë rëtúrnëd</string>
     <string name="no_payment_profile_selected">Úva profile cílinwa</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">Á latya valmë</string>
     <string name="open_payments_app_status">Ópën Páymënts Ápp státús</string>
     <string name="open_qr_documentation">Ópën QR dócúmëntátíón</string>
+    <string name="ocr_image">OCR image</string>
     <string name="passphrase">Pássphrásë</string>
     <string name="payment_approved">Páymënt áppróvëd</string>
     <string name="payment_profile">Mancalë profile</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">Thís rëmóvës %1$s fróm thë lócál ëncryptëd váúlt ánd clëárs íts sávëd bóárdíng státë. Ádyën ápp áúthëntícátíón ís nót rëvókëd únlëss yóú rëvókë thë ínstáncë sëpárátëly.</string>
     <string name="remove_payment_profile_title">Rëmóvë páymënt prófílë?</string>
     <string name="request">Áciensë</string>
+    <string name="request_beta_access">Request access</string>
+    <string name="request_beta_access_here">Request here</string>
     <string name="request_summary">Rëqúëst súmmáry</string>
     <string name="reset">Envinyata</string>
     <string name="response">Nangwa</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">Thís rëvókës ínstállátíón %1$s thróúgh Ádyën. Páymënts ón thát ápp/dëvícë nëëd rëbóárdíng áftërwárd.</string>
     <string name="revoke_instance_title">Rëvókë Páymënts Ápp ínstáncë?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">Choose how to update the SaleToAcquirerData payload for the next payment.</string>
+    <string name="sale_to_acquirer_modify_title">Modify SaleToAcquirerData</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">Rehta</string>
     <string name="saved_attempt_many">%1$d sávëd páymënt áttëmpts</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">SálëTóÁcqúírërDátá fávórítë ápplíëd: %1$s.</string>
     <string name="status_favorite_removed">Rëmóvëd SálëTóÁcqúírërDátá fávórítë: %1$s.</string>
     <string name="status_favorite_saved">Sávëd %1$s ás á SálëTóÁcqúírërDátá fávórítë.</string>
+    <string name="status_default_applied">SaleToAcquirerData default applied: %1$s.</string>
+    <string name="status_json_import_failed">JSON import failed: %1$s</string>
     <string name="status_language_changed">Lambe ahyanë na %1$s.</string>
     <string name="status_need_installation_id">Chëck bóárdíng fírst. Páymënts rëqúírë án ínstállátíón ÍD ás PÓÍÍD.</string>
     <string name="status_no_browser_google_play">Nó brówsër ór Pláy Stórë ápp ís áváíláblë tó ópën thë %1$s dównlóád línk.</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">Ópëníng Góóglë Pláy fór thë %1$s Ádyën Páymënts ápp.</string>
     <string name="status_opening_payment_app">Ópëníng Ádyën páymënt ápp wíth ëncryptëd Tërmínál ÁPÍ rëqúëst...</string>
     <string name="status_opening_refund">Ópëníng Ádyën wíth á rëfërëncëd rëfúnd rëqúëst...</string>
+    <string name="status_ocr_failed">Local OCR failed: %1$s</string>
+    <string name="status_ocr_no_json">Local OCR did not find a JSON object.</string>
+    <string name="status_ocr_reading">Reading image locally for QR or OCR...</string>
     <string name="status_payments_app_missing">Ádyën Páymënts ápp fór %1$s ís nót ínstállëd. Ópën Góóglë Pláy fróm thë sëtúp blóck.</string>
     <string name="status_payments_instances_not_loaded">Páymënts Ápp ínstáncës nót lóádëd</string>
     <string name="status_payments_lookup_failed">Páymënts Ápp lóókúp fáílëd: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">Collo</string>
     <string name="category_accessories">Yantar</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">1 nat réva</item>
-        <item quantity="other">%1$d nati révar</item>
+    <item quantity="one">1 nat réva</item>
+    <item quantity="other">%1$d nati révar</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">1 nat</item>
-        <item quantity="other">%1$d nati</item>
+    <item quantity="one">1 nat</item>
+    <item quantity="other">%1$d nati</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">1 JSON field</item>
-        <item quantity="other">%1$d JSON fields</item>
+    <item quantity="one">1 JSON field</item>
+    <item quantity="other">%1$d JSON fields</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">1 saved payment attempt</item>
-        <item quantity="other">%1$d saved payment attempts</item>
+    <item quantity="one">1 saved payment attempt</item>
+    <item quantity="other">%1$d saved payment attempts</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">Loaded 1 Payments App instance.</item>
-        <item quantity="other">Loaded %1$d Payments App instances.</item>
+    <item quantity="one">Loaded 1 Payments App instance.</item>
+    <item quantity="other">Loaded %1$d Payments App instances.</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">1 field</item>
-        <item quantity="other">%1$d fields</item>
+    <item quantity="one">1 field</item>
+    <item quantity="other">%1$d fields</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">1 item</item>
-        <item quantity="other">%1$d items</item>
+    <item quantity="one">1 item</item>
+    <item quantity="other">%1$d items</item>
     </plurals>
 </resources>

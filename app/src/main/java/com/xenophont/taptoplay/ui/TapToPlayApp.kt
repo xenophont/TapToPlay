@@ -91,6 +91,7 @@ internal fun TapToPlayApp(
     showPaymentsAppDownloadPrompt: Boolean,
     saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
     saleToAcquirerDataFavorites: List<SaleToAcquirerDataConfig>,
+    saleToAcquirerDataDefaults: List<SaleToAcquirerDataConfig>,
     transactionHistory: List<TransactionRecord>,
     paymentsAppInstances: List<PaymentsAppInstance>,
     paymentsAppStatus: String,
@@ -105,12 +106,17 @@ internal fun TapToPlayApp(
     onDrawerHintShown: () -> Unit,
     onDismissResult: () -> Unit,
     onScanProfile: () -> Unit,
+    onImportProfileJson: () -> Unit,
+    onImportProfileImage: () -> Unit,
     onOpenCredentialQrDocs: () -> Unit,
     onDownloadPaymentsApp: (AdyenProfile) -> Unit,
     onScanSaleToAcquirerData: () -> Unit,
+    onImportSaleToAcquirerDataJson: () -> Unit,
+    onImportSaleToAcquirerDataImage: () -> Unit,
     onUpdateSaleToAcquirerData: (SaleToAcquirerDataConfig) -> Unit,
     onSaveSaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
     onApplySaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
+    onApplySaleToAcquirerDataDefault: (SaleToAcquirerDataConfig) -> Unit,
     onRemoveSaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
     onClearSaleToAcquirerData: () -> Unit,
     onClearTransactions: () -> Unit,
@@ -279,6 +285,7 @@ internal fun TapToPlayApp(
                                     installationId = installationId,
                                     saleToAcquirerDataConfig = saleToAcquirerDataConfig,
                                     saleToAcquirerDataFavorites = saleToAcquirerDataFavorites,
+                                    saleToAcquirerDataDefaults = saleToAcquirerDataDefaults,
                                     onRemove = {
                                         cart.removeOne(it)
                                         cartVersion++
@@ -292,6 +299,9 @@ internal fun TapToPlayApp(
                                     onApplySaleToAcquirerDataFavorite = onApplySaleToAcquirerDataFavorite,
                                     onRemoveSaleToAcquirerDataFavorite = onRemoveSaleToAcquirerDataFavorite,
                                     onClearSaleToAcquirerData = onClearSaleToAcquirerData,
+                                    onImportSaleToAcquirerDataJson = onImportSaleToAcquirerDataJson,
+                                    onImportSaleToAcquirerDataImage = onImportSaleToAcquirerDataImage,
+                                    onApplySaleToAcquirerDataDefault = onApplySaleToAcquirerDataDefault,
                                     onInspectSaleToAcquirerData = { showSaleToAcquirerData = true },
                                     onPay = { profile ->
                                         if (profile.requiresLivePaymentConfirmation()) {
@@ -314,6 +324,8 @@ internal fun TapToPlayApp(
                                     boardingTokenIssued = boardingTokenIssued,
                                     showPaymentsAppDownloadPrompt = showPaymentsAppDownloadPrompt,
                                     onScanProfile = onScanProfile,
+                                    onImportProfileJson = onImportProfileJson,
+                                    onImportProfileImage = onImportProfileImage,
                                     onOpenCredentialQrDocs = onOpenCredentialQrDocs,
                                     onDownloadPaymentsApp = onDownloadPaymentsApp,
                                     onSelectProfile = onSelectProfile,
@@ -464,6 +476,9 @@ internal fun TapToPlayApp(
             config = editableSaleToAcquirerData,
             onEdit = { path, value ->
                 editableSaleToAcquirerData = SaleToAcquirerDataEditor.update(editableSaleToAcquirerData, path, value)
+            },
+            onAdd = { path, value ->
+                editableSaleToAcquirerData = SaleToAcquirerDataEditor.add(editableSaleToAcquirerData, path, value)
             },
             onRemove = { path ->
                 editableSaleToAcquirerData = SaleToAcquirerDataEditor.remove(editableSaleToAcquirerData, path)

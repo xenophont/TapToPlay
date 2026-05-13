@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">封闭测试版本 %1$s</string>
     <string name="about_game_eyebrow">给好奇的人</string>
-    <string name="about_game_action">试试我的交易驱动增量游戏</string>
+    <string name="about_game_action">获取 Authorisation Engine 测试版</string>
+    <string name="add">添加</string>
+    <string name="add_field">添加字段</string>
+    <string name="add_json_field">添加 JSON 字段</string>
+    <string name="add_json_field_hint">嵌套字段请使用点路径。true、42、null、对象和数组会按 JSON 保存。</string>
     <string name="status_no_browser_transaction_game">没有可用于打开增量游戏的浏览器。</string>
+    <string name="status_no_email_beta_access">没有可用于申请测试版访问权限的邮件应用。</string>
     <string name="about_message">由 Javier de No 制作，在 Codex 和 GPT-5.5 的帮助下，献给团队 💚🚀</string>
     <string name="add_to_cart">加入购物车</string>
     <string name="added">已添加</string>
@@ -60,7 +65,9 @@
     <string name="decode">解码</string>
     <string name="decoded">已解码</string>
     <string name="decoded_sale_to_acquirer_data">已解码 SaleToAcquirerData</string>
+    <string name="defaults">默认值</string>
     <string name="diagnostics_body">所选配置的脱敏运行状态。</string>
+    <string name="display_name">显示名称</string>
     <string name="done">完成</string>
     <string name="edit">编辑</string>
     <string name="environment">环境</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">错误条件</string>
     <string name="failure_refused_without_reason">Adyen 未提供原因即拒绝了支付。</string>
     <string name="favorites">收藏</string>
+    <string name="field_path">字段路径</string>
     <string name="field_count_many">%1$d 个字段</string>
     <string name="field_count_one">1 个字段</string>
+    <string name="game_beta_body">Authorisation Engine 是一款关于支付、授权以及运营选择的增量游戏，这些选择会把交易流程变成一台机器。测试版目前为私密测试；申请访问后，我会添加你的 Google Play 账号。</string>
+    <string name="game_beta_coming_soon">即将在 Play Store 上线</string>
+    <string name="game_beta_title">Authorisation Engine 封闭测试版</string>
     <string name="go_to_checkout">去结账</string>
     <string name="hide">隐藏</string>
     <string name="hide_raw_json">隐藏原始 JSON</string>
     <string name="hide_revoked">隐藏已撤销</string>
     <string name="important_response_fields">重要响应字段</string>
+    <string name="import_json">导入 JSON</string>
     <string name="inspect">检查</string>
     <string name="installation">安装</string>
     <string name="installation_not_returned_yet">尚未返回</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">商户收据</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">消息类别</string>
+    <string name="modify">修改</string>
     <string name="no_credential_profile_loaded">未加载凭据配置</string>
     <string name="no_merchant_store_returned">未返回 merchant/门店</string>
     <string name="no_payment_profile_selected">未选择支付配置</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">打开菜单</string>
     <string name="open_payments_app_status">打开 Payments App 状态</string>
     <string name="open_qr_documentation">打开 QR 文档</string>
+    <string name="ocr_image">图片 OCR</string>
     <string name="passphrase">口令</string>
     <string name="payment_approved">支付已批准</string>
     <string name="payment_profile">支付配置</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">这会从本地加密保险库移除 %1$s，并清除保存的配置状态。除非单独撤销实例，否则不会撤销 Adyen app 身份验证。</string>
     <string name="remove_payment_profile_title">移除支付配置？</string>
     <string name="request">请求</string>
+    <string name="request_beta_access">申请访问</string>
+    <string name="request_beta_access_here">在此申请</string>
     <string name="request_summary">请求摘要</string>
     <string name="reset">重置</string>
     <string name="response">响应</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">这会通过 Adyen 撤销安装 %1$s。之后若要在该应用或设备上收款，需要重新配置。</string>
     <string name="revoke_instance_title">撤销 Payments App 实例？</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">选择如何更新下一笔支付使用的 SaleToAcquirerData payload。</string>
+    <string name="sale_to_acquirer_modify_title">修改 SaleToAcquirerData</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">保存</string>
     <string name="saved_attempt_many">%1$d 次已保存支付尝试</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">已应用 SaleToAcquirerData 收藏项：%1$s。</string>
     <string name="status_favorite_removed">已移除 SaleToAcquirerData 收藏项：%1$s。</string>
     <string name="status_favorite_saved">%1$s 已保存为 SaleToAcquirerData 收藏项。</string>
+    <string name="status_default_applied">已应用 SaleToAcquirerData 默认值：%1$s。</string>
+    <string name="status_json_import_failed">JSON 导入失败：%1$s</string>
     <string name="status_language_changed">语言已切换为%1$s。</string>
     <string name="status_need_installation_id">请先用 Check 检查配置。收款需要将 installation ID 用作 POIID。</string>
     <string name="status_no_browser_google_play">没有可用于打开 %1$s 下载链接的浏览器或 Play Store 应用。</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">正在打开 %1$s Adyen Payments app 的 Google Play 页面。</string>
     <string name="status_opening_payment_app">正在使用加密的 Terminal API 请求打开 Adyen Payments App...</string>
     <string name="status_opening_refund">正在用引用退款请求打开 Adyen...</string>
+    <string name="status_ocr_failed">本地 OCR 失败：%1$s</string>
+    <string name="status_ocr_no_json">本地 OCR 未找到 JSON 对象。</string>
+    <string name="status_ocr_reading">正在本地将图片作为 QR 或 OCR 读取...</string>
     <string name="status_payments_app_missing">未安装适用于 %1$s 的 Adyen Payments App。请从配置区块打开 Google Play。</string>
     <string name="status_payments_instances_not_loaded">Payments App 实例尚未加载</string>
     <string name="status_payments_lookup_failed">Payments App 查询 失败: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">针织</string>
     <string name="category_accessories">配饰</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">1 件商品已准备</item>
-        <item quantity="other">%1$d 件商品已准备</item>
+    <item quantity="one">1 件商品已准备</item>
+    <item quantity="other">%1$d 件商品已准备</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">1 件商品</item>
-        <item quantity="other">%1$d 件商品</item>
+    <item quantity="one">1 件商品</item>
+    <item quantity="other">%1$d 件商品</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">1 个 JSON 字段</item>
-        <item quantity="other">%1$d 个 JSON 字段</item>
+    <item quantity="one">1 个 JSON 字段</item>
+    <item quantity="other">%1$d 个 JSON 字段</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">1 次已保存支付尝试</item>
-        <item quantity="other">%1$d 次已保存支付尝试</item>
+    <item quantity="one">1 次已保存支付尝试</item>
+    <item quantity="other">%1$d 次已保存支付尝试</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">已加载 1 个 Payments App 实例。</item>
-        <item quantity="other">已加载 %1$d 个 Payments App 实例。</item>
+    <item quantity="one">已加载 1 个 Payments App 实例。</item>
+    <item quantity="other">已加载 %1$d 个 Payments App 实例。</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">1 个字段</item>
-        <item quantity="other">%1$d 个字段</item>
+    <item quantity="one">1 个字段</item>
+    <item quantity="other">%1$d 个字段</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">1 项</item>
-        <item quantity="other">%1$d 项</item>
+    <item quantity="one">1 项</item>
+    <item quantity="other">%1$d 项</item>
     </plurals>
 </resources>

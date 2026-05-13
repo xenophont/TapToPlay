@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">Closed-Beta-Build %1$s</string>
     <string name="about_game_eyebrow">Fuer Neugierige</string>
-    <string name="about_game_action">Probiere mein transaktionsbasiertes Incremental Game</string>
+    <string name="about_game_action">Zugang zur Authorisation Engine Beta</string>
+    <string name="add">Hinzufügen</string>
+    <string name="add_field">Feld hinzufügen</string>
+    <string name="add_json_field">JSON-Feld hinzufügen</string>
+    <string name="add_json_field_hint">Nutze Punktpfade für verschachtelte Felder. Werte wie true, 42, null, Objekte und Arrays werden als JSON gespeichert.</string>
     <string name="status_no_browser_transaction_game">Kein Browser zum Oeffnen des Incremental Games verfuegbar.</string>
+    <string name="status_no_email_beta_access">Keine E-Mail-App verfügbar, um Beta-Zugang anzufordern.</string>
     <string name="about_message">Gemacht von Javier de No, mit Hilfe von Codex und GPT-5.5, für das Team 💚🚀</string>
     <string name="add_to_cart">In den Warenkorb</string>
     <string name="added">Hinzugefügt</string>
@@ -60,7 +65,9 @@
     <string name="decode">Dekodieren</string>
     <string name="decoded">Dekodiert</string>
     <string name="decoded_sale_to_acquirer_data">Dekodierte SaleToAcquirerData</string>
+    <string name="defaults">Standards</string>
     <string name="diagnostics_body">Maskierter Betriebszustand für das ausgewählte Profil.</string>
+    <string name="display_name">Anzeigename</string>
     <string name="done">Fertig</string>
     <string name="edit">Bearbeiten</string>
     <string name="environment">Umgebung</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">Fehlerbedingung</string>
     <string name="failure_refused_without_reason">Adyen hat die Zahlung ohne Grund abgelehnt.</string>
     <string name="favorites">Favoriten</string>
+    <string name="field_path">Feldpfad</string>
     <string name="field_count_many">%1$d Felder</string>
     <string name="field_count_one">1 Feld</string>
+    <string name="game_beta_body">Authorisation Engine ist ein Incremental Game über Zahlungen, Freigaben und die kleinen operativen Entscheidungen, die einen Transaktionsfluss in eine Maschine verwandeln. Die Beta ist derzeit privat; fordere Zugang an und ich füge dein Google Play Konto hinzu.</string>
+    <string name="game_beta_coming_soon">Demnächst im Play Store</string>
+    <string name="game_beta_title">Geschlossene Beta von Authorisation Engine</string>
     <string name="go_to_checkout">Zur Kasse</string>
     <string name="hide">Ausblenden</string>
     <string name="hide_raw_json">Rohes JSON ausblenden</string>
     <string name="hide_revoked">Widerrufene ausblenden</string>
     <string name="important_response_fields">Wichtige Antwortfelder</string>
+    <string name="import_json">JSON importieren</string>
     <string name="inspect">Prüfen</string>
     <string name="installation">Installation</string>
     <string name="installation_not_returned_yet">noch nicht zurückgegeben</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">Händlerbeleg</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">Nachrichtenkategorie</string>
+    <string name="modify">Ändern</string>
     <string name="no_credential_profile_loaded">Kein Zugangsdatenprofil geladen</string>
     <string name="no_merchant_store_returned">Kein Merchant/Store zurückgegeben</string>
     <string name="no_payment_profile_selected">Kein Zahlungsprofil ausgewählt</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">Menü öffnen</string>
     <string name="open_payments_app_status">Payments App Status öffnen</string>
     <string name="open_qr_documentation">QR-Dokumentation öffnen</string>
+    <string name="ocr_image">Bild-OCR</string>
     <string name="passphrase">Passphrase</string>
     <string name="payment_approved">Zahlung genehmigt</string>
     <string name="payment_profile">Zahlungsprofil</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">Dies entfernt %1$s aus dem lokal verschlüsselten Speicher und löscht den gespeicherten Boarding-Status. Die Adyen App Authentifizierung wird nur widerrufen, wenn du die Instanz separat widerrufst.</string>
     <string name="remove_payment_profile_title">Zahlungsprofil entfernen?</string>
     <string name="request">Anfrage</string>
+    <string name="request_beta_access">Zugang anfordern</string>
+    <string name="request_beta_access_here">Hier anfordern</string>
     <string name="request_summary">Anfrage summary</string>
     <string name="reset">Zurücksetzen</string>
     <string name="response">Antwort</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">Dies widerruft Installation %1$s über Adyen. Zahlungen auf dieser App oder diesem Gerät benötigen danach erneutes Boarding.</string>
     <string name="revoke_instance_title">Payments App Instanz widerrufen?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">Wähle, wie das SaleToAcquirerData-Payload für die nächste Zahlung aktualisiert werden soll.</string>
+    <string name="sale_to_acquirer_modify_title">SaleToAcquirerData ändern</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">Speichern</string>
     <string name="saved_attempt_many">%1$d gespeicherte Zahlungsversuche</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">SaleToAcquirerData Favorit angewendet: %1$s.</string>
     <string name="status_favorite_removed">SaleToAcquirerData Favorit entfernt: %1$s.</string>
     <string name="status_favorite_saved">%1$s als SaleToAcquirerData Favorit gespeichert.</string>
+    <string name="status_default_applied">SaleToAcquirerData-Standard angewendet: %1$s.</string>
+    <string name="status_json_import_failed">JSON-Import fehlgeschlagen: %1$s</string>
     <string name="status_language_changed">Sprache auf %1$s geändert.</string>
     <string name="status_need_installation_id">Check Einrichtung first. Payments require an installation ID as POIID.</string>
     <string name="status_no_browser_google_play">Kein Browser oder Play Store verfügbar, um den Downloadlink für %1$s zu öffnen.</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">Öffne Google Play for the %1$s Adyen Payments app.</string>
     <string name="status_opening_payment_app">Adyen Payments App wird mit verschlüsselter Terminal API Anfrage geöffnet...</string>
     <string name="status_opening_refund">Öffne Adyen with a referenced refund request...</string>
+    <string name="status_ocr_failed">Lokale OCR fehlgeschlagen: %1$s</string>
+    <string name="status_ocr_no_json">Lokale OCR hat kein JSON-Objekt gefunden.</string>
+    <string name="status_ocr_reading">Bild wird lokal als QR oder OCR gelesen...</string>
     <string name="status_payments_app_missing">Adyen Payments App für %1$s ist nicht installiert. Öffne Google Play im Einrichtungsblock.</string>
     <string name="status_payments_instances_not_loaded">Payments App instances not geladen</string>
     <string name="status_payments_lookup_failed">Payments App Suche fehlgeschlagen: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">Strick</string>
     <string name="category_accessories">Accessoires</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">1 Artikel bereit</item>
-        <item quantity="other">%1$d Artikel bereit</item>
+    <item quantity="one">1 Artikel bereit</item>
+    <item quantity="other">%1$d Artikel bereit</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">1 Artikel</item>
-        <item quantity="other">%1$d Artikel</item>
+    <item quantity="one">1 Artikel</item>
+    <item quantity="other">%1$d Artikel</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">1 JSON-Feld</item>
-        <item quantity="other">%1$d JSON-Felder</item>
+    <item quantity="one">1 JSON-Feld</item>
+    <item quantity="other">%1$d JSON-Felder</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">1 gespeicherter Zahlungsversuch</item>
-        <item quantity="other">%1$d gespeicherte Zahlungsversuche</item>
+    <item quantity="one">1 gespeicherter Zahlungsversuch</item>
+    <item quantity="other">%1$d gespeicherte Zahlungsversuche</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">1 Payments App Instanz geladen.</item>
-        <item quantity="other">%1$d Payments App Instanzen geladen.</item>
+    <item quantity="one">1 Payments App Instanz geladen.</item>
+    <item quantity="other">%1$d Payments App Instanzen geladen.</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">1 Feld</item>
-        <item quantity="other">%1$d Felder</item>
+    <item quantity="one">1 Feld</item>
+    <item quantity="other">%1$d Felder</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">1 Eintrag</item>
-        <item quantity="other">%1$d Einträge</item>
+    <item quantity="one">1 Eintrag</item>
+    <item quantity="other">%1$d Einträge</item>
     </plurals>
 </resources>

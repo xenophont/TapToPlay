@@ -1,5 +1,6 @@
 package com.xenophont.taptoplay.adyen
 
+import android.content.Context
 import java.util.Base64
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -88,6 +89,74 @@ class SaleToAcquirerDataQrParser(
     }
 }
 
+class SaleToAcquirerDataDefaultStore(
+    context: Context,
+    private val parser: SaleToAcquirerDataDefaultParser = SaleToAcquirerDataDefaultParser(),
+) {
+    private val assets = context.assets
+
+    fun defaults(): List<SaleToAcquirerDataConfig> =
+        assets.list(DEFAULTS_ASSET_PATH)
+            .orEmpty()
+            .filter { it.endsWith(".json", ignoreCase = true) }
+            .mapNotNull { fileName ->
+                runCatching {
+                    assets.open("$DEFAULTS_ASSET_PATH/$fileName").bufferedReader().use { reader ->
+                        parser.parse(fileName, reader.readText())
+                    }
+                }.getOrNull()
+            }
+            .sortedBy { it.displayName.lowercase() }
+
+    companion object {
+        const val DEFAULTS_ASSET_PATH = "sale_to_acquirer_defaults"
+    }
+}
+
+class SaleToAcquirerDataDefaultParser(
+    private val json: Json = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    },
+) {
+    fun parse(fileName: String, payload: String): SaleToAcquirerDataConfig {
+        require(payload.length <= MAX_PAYLOAD_CHARS) { "SaleToAcquirerData default is too large" }
+        val root = json.parseToJsonElement(payload).jsonObject
+        val config = if (root["data"] is JsonObject) {
+            json.decodeFromString(SaleToAcquirerDataConfig.serializer(), payload)
+        } else {
+            SaleToAcquirerDataConfig(
+                displayName = fileName.removeSuffix(".json").toDisplayName(),
+                data = root,
+                mergeWithDefaults = false,
+            )
+        }
+        validate(config)
+        return config
+    }
+
+    private fun validate(config: SaleToAcquirerDataConfig) {
+        require(config.schema == SaleToAcquirerDataConfig.SCHEMA) { "Unsupported schema: ${config.schema}" }
+        require(config.displayName.isNotBlank()) { "displayName is required" }
+        require(config.displayName.length <= MAX_DISPLAY_NAME_CHARS) { "displayName is too long" }
+        require(config.data.isNotEmpty()) { "saleToAcquirerData must contain at least one entry" }
+        require(config.fieldCount <= MAX_FIELD_COUNT) { "saleToAcquirerData contains too many fields" }
+    }
+
+    private fun String.toDisplayName(): String =
+        replace('_', ' ')
+            .replace('-', ' ')
+            .split(' ')
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { word -> word.replaceFirstChar { it.uppercase() } }
+
+    private companion object {
+        const val MAX_PAYLOAD_CHARS = 12_288
+        const val MAX_DISPLAY_NAME_CHARS = 80
+        const val MAX_FIELD_COUNT = 80
+    }
+}
+
 object SaleToAcquirerDataEncoder {
     private val json = Json {
         explicitNulls = false
@@ -137,6 +206,15 @@ object SaleToAcquirerDataEditor {
         )
     }
 
+    fun add(config: SaleToAcquirerDataConfig, rawPath: String, rawValue: String): SaleToAcquirerDataConfig {
+        val path = rawPath.toPath()
+        require(path.isNotEmpty()) { "Field path is required" }
+        return config.copy(
+            data = config.data.setAt(path, rawValue.toJsonElement()),
+            displayName = config.displayName.asEditedName(),
+        )
+    }
+
     private fun JsonObject.setAt(path: List<String>, value: JsonElement): JsonObject {
         val key = path.first()
         return JsonObject(
@@ -167,16 +245,30 @@ object SaleToAcquirerDataEditor {
         )
     }
 
+    private fun String.toJsonElement(): JsonElement {
+        val trimmed = trim()
+        if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+            runCatching { return Json.parseToJsonElement(trimmed) }
+        }
+        return toJsonPrimitive()
+    }
+
     private fun String.toJsonPrimitive(): JsonPrimitive {
         val trimmed = trim()
         return when {
             trimmed.equals("true", ignoreCase = true) -> JsonPrimitive(true)
             trimmed.equals("false", ignoreCase = true) -> JsonPrimitive(false)
+            trimmed.equals("null", ignoreCase = true) -> JsonPrimitive(null as String?)
             trimmed.toLongOrNull() != null -> JsonPrimitive(trimmed.toLong())
             trimmed.toDoubleOrNull() != null -> JsonPrimitive(trimmed.toDouble())
             else -> JsonPrimitive(this)
         }
     }
+
+    private fun String.toPath(): List<String> =
+        split('.')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
 
     private fun String.asEditedName(): String =
         if (endsWith(" (edited)")) this else "$this (edited)"

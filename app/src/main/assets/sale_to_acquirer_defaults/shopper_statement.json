@@ -1,0 +1,11 @@
+{
+  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+  "displayName": "Shopper statement",
+  "mergeWithDefaults": true,
+  "data": {
+    "shopperStatement": "TapToPlay Boutique",
+    "metadata": {
+      "useCase": "shopper-statement-demo"
+    }
+  }
+}

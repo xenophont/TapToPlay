@@ -47,6 +47,8 @@ internal fun ProfilePanel(
     boardingTokenIssued: Boolean,
     showPaymentsAppDownloadPrompt: Boolean,
     onScanProfile: () -> Unit,
+    onImportProfileJson: () -> Unit,
+    onImportProfileImage: () -> Unit,
     onOpenCredentialQrDocs: () -> Unit,
     onDownloadPaymentsApp: (AdyenProfile) -> Unit,
     onSelectProfile: (String) -> Unit,
@@ -90,7 +92,11 @@ internal fun ProfilePanel(
                 }
             }
             if (expanded) {
-                Button(onClick = onScanProfile, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.scan_qr)) }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onScanProfile) { Text(stringResource(R.string.scan_qr)) }
+                    OutlinedButton(onClick = onImportProfileJson) { Text(stringResource(R.string.import_json)) }
+                    OutlinedButton(onClick = onImportProfileImage) { Text(stringResource(R.string.ocr_image)) }
+                }
             }
             if (expanded && profiles.isEmpty()) {
                 OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -114,6 +120,7 @@ internal fun ProfilePanel(
                             stringResource(R.string.secure_device_vault_body),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        KeyValueLine(stringResource(R.string.display_name), activeProfile.displayName)
                         KeyValueLine(stringResource(R.string.merchant), activeProfile.merchantId)
                         activeProfile.storeName?.let { KeyValueLine(stringResource(R.string.store_name), it) }
                         activeProfile.storeId?.let { KeyValueLine(stringResource(R.string.store_id), it) }

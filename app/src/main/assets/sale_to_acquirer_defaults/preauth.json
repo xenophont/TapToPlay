@@ -1,0 +1,11 @@
+{
+  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+  "displayName": "PreAuth",
+  "mergeWithDefaults": true,
+  "data": {
+    "authorisationType": "PreAuth",
+    "metadata": {
+      "useCase": "preauth-demo"
+    }
+  }
+}

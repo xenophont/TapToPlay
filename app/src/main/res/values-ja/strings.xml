@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">クローズドベータビルド %1$s</string>
     <string name="about_game_eyebrow">気になる方へ</string>
-    <string name="about_game_action">取引ベースのインクリメンタルゲームを試す</string>
+    <string name="about_game_action">Authorisation Engine ベータへのアクセス</string>
+    <string name="add">追加</string>
+    <string name="add_field">フィールドを追加</string>
+    <string name="add_json_field">JSON フィールドを追加</string>
+    <string name="add_json_field_hint">ネストしたフィールドにはドット区切りのパスを使います。true、42、null、オブジェクト、配列は JSON として保存されます。</string>
     <string name="status_no_browser_transaction_game">インクリメンタルゲームを開けるブラウザがありません。</string>
+    <string name="status_no_email_beta_access">ベータアクセス申請に使えるメールアプリがありません。</string>
     <string name="about_message">Javier de NoがCodexとGPT-5.5の助けを借りて、チームのために作りました 💚🚀</string>
     <string name="add_to_cart">カートに追加</string>
     <string name="added">追加しました</string>
@@ -60,7 +65,9 @@
     <string name="decode">デコード</string>
     <string name="decoded">デコード済み</string>
     <string name="decoded_sale_to_acquirer_data">デコード済み SaleToAcquirerData</string>
+    <string name="defaults">デフォルト</string>
     <string name="diagnostics_body">選択中プロファイルのマスク済み運用状態です。</string>
+    <string name="display_name">表示名</string>
     <string name="done">完了</string>
     <string name="edit">編集</string>
     <string name="environment">環境</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">エラー条件</string>
     <string name="failure_refused_without_reason">Adyenは理由なしで決済を拒否しました。</string>
     <string name="favorites">お気に入り</string>
+    <string name="field_path">フィールドパス</string>
     <string name="field_count_many">%1$dフィールド</string>
     <string name="field_count_one">1フィールド</string>
+    <string name="game_beta_body">Authorisation Engine は、決済、承認、そして取引フローをひとつの仕組みに育てる小さな運用判断をテーマにしたインクリメンタルゲームです。現在ベータは非公開です。アクセスを申請すると、Google Play アカウントを追加します。</string>
+    <string name="game_beta_coming_soon">Play Store で近日公開</string>
+    <string name="game_beta_title">Authorisation Engine クローズドベータ</string>
     <string name="go_to_checkout">会計へ</string>
     <string name="hide">隠す</string>
     <string name="hide_raw_json">生JSONを隠す</string>
     <string name="hide_revoked">取り消し済みを隠す</string>
     <string name="important_response_fields">重要なレスポンス項目</string>
+    <string name="import_json">JSON をインポート</string>
     <string name="inspect">確認</string>
     <string name="installation">インストール</string>
     <string name="installation_not_returned_yet">未返却</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">店舗控え</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">メッセージカテゴリ</string>
+    <string name="modify">変更</string>
     <string name="no_credential_profile_loaded">認証プロファイル未読込</string>
     <string name="no_merchant_store_returned">merchant/店舗は返されていません</string>
     <string name="no_payment_profile_selected">支払いプロファイル未選択</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">メニューを開く</string>
     <string name="open_payments_app_status">Payments App状態を開く</string>
     <string name="open_qr_documentation">QRドキュメントを開く</string>
+    <string name="ocr_image">画像 OCR</string>
     <string name="passphrase">パスフレーズ</string>
     <string name="payment_approved">決済承認済み</string>
     <string name="payment_profile">支払いプロファイル</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">%1$sをローカル暗号化保管庫から削除し、保存された設定状態を消去します。インスタンスを別途取り消さない限り、Adyen アプリ認証は取り消されません。</string>
     <string name="remove_payment_profile_title">支払いプロファイルを削除しますか?</string>
     <string name="request">リクエスト</string>
+    <string name="request_beta_access">アクセスを申請</string>
+    <string name="request_beta_access_here">ここから申請</string>
     <string name="request_summary">リクエスト概要</string>
     <string name="reset">リセット</string>
     <string name="response">レスポンス</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">Adyen 経由でインストール %1$s を取り消します。そのアプリまたは端末で決済するには、あとで再設定が必要です。</string>
     <string name="revoke_instance_title">Payments App インスタンスを取り消しますか？</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">次回の支払いで使う SaleToAcquirerData payload の更新方法を選択します。</string>
+    <string name="sale_to_acquirer_modify_title">SaleToAcquirerData を変更</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">保存</string>
     <string name="saved_attempt_many">保存済み決済試行%1$d件</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">SaleToAcquirerData お気に入りを適用しました: %1$s。</string>
     <string name="status_favorite_removed">SaleToAcquirerData お気に入りを削除しました: %1$s。</string>
     <string name="status_favorite_saved">%1$s を SaleToAcquirerData お気に入りとして保存しました。</string>
+    <string name="status_default_applied">SaleToAcquirerData デフォルトを適用しました: %1$s。</string>
+    <string name="status_json_import_failed">JSON のインポートに失敗しました: %1$s</string>
     <string name="status_language_changed">言語を%1$sに変更しました。</string>
     <string name="status_need_installation_id">先に Check で設定を確認してください。決済には POIID として installation ID が必要です。</string>
     <string name="status_no_browser_google_play">%1$s のダウンロードリンクを開けるブラウザまたは Play Store アプリがありません。</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">%1$s Adyen Payments app 用の Google Play を開いています。</string>
     <string name="status_opening_payment_app">暗号化された Terminal API リクエストで Adyen Payments App を開いています...</string>
     <string name="status_opening_refund">参照付き返金リクエストで Adyen を開いています...</string>
+    <string name="status_ocr_failed">ローカル OCR に失敗しました: %1$s</string>
+    <string name="status_ocr_no_json">ローカル OCR で JSON オブジェクトが見つかりませんでした。</string>
+    <string name="status_ocr_reading">画像をローカルで QR または OCR として読み取り中...</string>
     <string name="status_payments_app_missing">%1$s 用の Adyen Payments App がインストールされていません。設定ブロックから Google Play を開いてください。</string>
     <string name="status_payments_instances_not_loaded">Payments App インスタンスは未読込です</string>
     <string name="status_payments_lookup_failed">Payments App 検索 失敗: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">ニット</string>
     <string name="category_accessories">アクセサリー</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">1点準備完了</item>
-        <item quantity="other">%1$d点準備完了</item>
+    <item quantity="one">1点準備完了</item>
+    <item quantity="other">%1$d点準備完了</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">1点</item>
-        <item quantity="other">%1$d点</item>
+    <item quantity="one">1点</item>
+    <item quantity="other">%1$d点</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">JSONフィールド1件</item>
-        <item quantity="other">JSONフィールド%1$d件</item>
+    <item quantity="one">JSONフィールド1件</item>
+    <item quantity="other">JSONフィールド%1$d件</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">保存済み決済試行1件</item>
-        <item quantity="other">保存済み決済試行%1$d件</item>
+    <item quantity="one">保存済み決済試行1件</item>
+    <item quantity="other">保存済み決済試行%1$d件</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">Payments Appインスタンス1件を読み込みました。</item>
-        <item quantity="other">Payments Appインスタンス%1$d件を読み込みました。</item>
+    <item quantity="one">Payments Appインスタンス1件を読み込みました。</item>
+    <item quantity="other">Payments Appインスタンス%1$d件を読み込みました。</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">1フィールド</item>
-        <item quantity="other">%1$dフィールド</item>
+    <item quantity="one">1フィールド</item>
+    <item quantity="other">%1$dフィールド</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">1項目</item>
-        <item quantity="other">%1$d項目</item>
+    <item quantity="one">1項目</item>
+    <item quantity="other">%1$d項目</item>
     </plurals>
 </resources>

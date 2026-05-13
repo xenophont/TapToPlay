@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">Sluten betaversion %1$s</string>
     <string name="about_game_eyebrow">Foer nyfikna</string>
-    <string name="about_game_action">Testa mitt transaktionsbaserade incremental game</string>
+    <string name="about_game_action">Åtkomst till Authorisation Engine beta</string>
+    <string name="add">Lägg till</string>
+    <string name="add_field">Lägg till fält</string>
+    <string name="add_json_field">Lägg till JSON-fält</string>
+    <string name="add_json_field_hint">Använd punktvägar för nästlade fält. Värden som true, 42, null, objekt och arrayer sparas som JSON.</string>
     <string name="status_no_browser_transaction_game">Ingen webblaesare finns tillgaenglig foer att oeppna incremental-spelet.</string>
+    <string name="status_no_email_beta_access">Ingen e-postapp är tillgänglig för att begära betaåtkomst.</string>
     <string name="about_message">Gjord av Javier de No, med hjälp av Codex och GPT-5.5, för teamet 💚🚀</string>
     <string name="add_to_cart">Lagg till</string>
     <string name="added">Tillagd</string>
@@ -60,7 +65,9 @@
     <string name="decode">Avkoda</string>
     <string name="decoded">Avkodad</string>
     <string name="decoded_sale_to_acquirer_data">Avkodad SaleToAcquirerData</string>
+    <string name="defaults">Standardvärden</string>
     <string name="diagnostics_body">Maskerad driftstatus for vald profil.</string>
+    <string name="display_name">Visningsnamn</string>
     <string name="done">Klart</string>
     <string name="edit">Redigera</string>
     <string name="environment">Miljo</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">Felvillkor</string>
     <string name="failure_refused_without_reason">Adyen nekade betalningen utan anledning.</string>
     <string name="favorites">Favoriter</string>
+    <string name="field_path">Fältsökväg</string>
     <string name="field_count_many">%1$d falt</string>
     <string name="field_count_one">1 falt</string>
+    <string name="game_beta_body">Authorisation Engine är ett inkrementellt spel om betalningar, godkännanden och de små operativa val som gör ett transaktionsflöde till en maskin. Betan är privat tills vidare; begär åtkomst så lägger jag till ditt Google Play-konto.</string>
+    <string name="game_beta_coming_soon">Kommer snart på Play Store</string>
+    <string name="game_beta_title">Stängd beta för Authorisation Engine</string>
     <string name="go_to_checkout">Ga till kassan</string>
     <string name="hide">Dolj</string>
     <string name="hide_raw_json">Dolj raw JSON</string>
     <string name="hide_revoked">Dolj aterkallade</string>
     <string name="important_response_fields">Viktiga svarsfalt</string>
+    <string name="import_json">Importera JSON</string>
     <string name="inspect">Granska</string>
     <string name="installation">Installation</string>
     <string name="installation_not_returned_yet">inte returnerad an</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">Butikskvitto</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">Meddelandekategori</string>
+    <string name="modify">Ändra</string>
     <string name="no_credential_profile_loaded">Ingen credentialprofil laddad</string>
     <string name="no_merchant_store_returned">Ingen merchant/butik returnerad</string>
     <string name="no_payment_profile_selected">Ingen betalprofil vald</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">Oppna meny</string>
     <string name="open_payments_app_status">Oppna Payments App-status</string>
     <string name="open_qr_documentation">Oppna QR-dokumentation</string>
+    <string name="ocr_image">Bild-OCR</string>
     <string name="passphrase">Lösenfras</string>
     <string name="payment_approved">Betalning godkand</string>
     <string name="payment_profile">Betalprofil</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">Detta tar bort %1$s fran det lokala krypterade valvet och rensar sparad boardingstatus. Adyen-appens autentisering dras inte tillbaka om du inte aterkallar instansen separat.</string>
     <string name="remove_payment_profile_title">Ta bort betalprofil?</string>
     <string name="request">Begaran</string>
+    <string name="request_beta_access">Begär åtkomst</string>
+    <string name="request_beta_access_here">Begär här</string>
     <string name="request_summary">Begäran summary</string>
     <string name="reset">Aterstall</string>
     <string name="response">Svar</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">Detta aterkallar installation %1$s via Adyen. Betalningar pa den appen eller enheten kraver ny boarding efterat.</string>
     <string name="revoke_instance_title">Aterkalla Payments App-instans?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">Välj hur SaleToAcquirerData-payloaden ska uppdateras för nästa betalning.</string>
+    <string name="sale_to_acquirer_modify_title">Ändra SaleToAcquirerData</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">Spara</string>
     <string name="saved_attempt_many">%1$d sparade betalningsforsok</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">SaleToAcquirerData-favorit använd: %1$s.</string>
     <string name="status_favorite_removed">SaleToAcquirerData-favorit borttagen: %1$s.</string>
     <string name="status_favorite_saved">%1$s sparad som SaleToAcquirerData-favorit.</string>
+    <string name="status_default_applied">SaleToAcquirerData-standard tillämpad: %1$s.</string>
+    <string name="status_json_import_failed">JSON-import misslyckades: %1$s</string>
     <string name="status_language_changed">Språk ändrat till %1$s.</string>
     <string name="status_need_installation_id">Check konfiguration first. Payments require an installation ID as POIID.</string>
     <string name="status_no_browser_google_play">Ingen webbläsare eller Play Store-app kan öppna hämtningslänken för %1$s.</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">Öppnar Google Play for the %1$s Adyen Payments app.</string>
     <string name="status_opening_payment_app">Oppnar Adyen payment app med krypterad Terminal API-begaran...</string>
     <string name="status_opening_refund">Oppnar Adyen med refererad aterbetalningsbegaran...</string>
+    <string name="status_ocr_failed">Lokal OCR misslyckades: %1$s</string>
+    <string name="status_ocr_no_json">Lokal OCR hittade inget JSON-objekt.</string>
+    <string name="status_ocr_reading">Läser bilden lokalt som QR eller OCR...</string>
     <string name="status_payments_app_missing">Adyen Payments App för %1$s är inte installerad. Öppna Google Play från konfigurationsblocket.</string>
     <string name="status_payments_instances_not_loaded">Payments App instances not laddad</string>
     <string name="status_payments_lookup_failed">Payments App sökning misslyckades: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">Stickat</string>
     <string name="category_accessories">Accessoarer</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">1 vara klar</item>
-        <item quantity="other">%1$d varor klara</item>
+    <item quantity="one">1 vara klar</item>
+    <item quantity="other">%1$d varor klara</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">1 vara</item>
-        <item quantity="other">%1$d varor</item>
+    <item quantity="one">1 vara</item>
+    <item quantity="other">%1$d varor</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">1 JSON-falt</item>
-        <item quantity="other">%1$d JSON-falt</item>
+    <item quantity="one">1 JSON-falt</item>
+    <item quantity="other">%1$d JSON-falt</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">1 sparat betalningsforsok</item>
-        <item quantity="other">%1$d sparade betalningsforsok</item>
+    <item quantity="one">1 sparat betalningsforsok</item>
+    <item quantity="other">%1$d sparade betalningsforsok</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">Laddade 1 Payments App-instans.</item>
-        <item quantity="other">Laddade %1$d Payments App-instanser.</item>
+    <item quantity="one">Laddade 1 Payments App-instans.</item>
+    <item quantity="other">Laddade %1$d Payments App-instanser.</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">1 falt</item>
-        <item quantity="other">%1$d falt</item>
+    <item quantity="one">1 falt</item>
+    <item quantity="other">%1$d falt</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">1 post</item>
-        <item quantity="other">%1$d poster</item>
+    <item quantity="one">1 post</item>
+    <item quantity="other">%1$d poster</item>
     </plurals>
 </resources>

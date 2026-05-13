@@ -1,0 +1,13 @@
+{
+  "schema": "taptoplay.adyen.saleToAcquirerData.v1",
+  "displayName": "Tokenization",
+  "mergeWithDefaults": true,
+  "data": {
+    "shopperReference": "demo-shopper-001",
+    "shopperEmail": "shopper@example.com",
+    "recurringProcessingModel": "UnscheduledCardOnFile",
+    "metadata": {
+      "useCase": "tokenization-demo"
+    }
+  }
+}

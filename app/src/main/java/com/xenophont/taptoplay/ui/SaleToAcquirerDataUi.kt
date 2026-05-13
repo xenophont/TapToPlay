@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -48,11 +49,13 @@ import kotlinx.serialization.json.longOrNull
 internal fun SaleToAcquirerDataDialog(
     config: SaleToAcquirerDataConfig,
     onEdit: (List<String>, String) -> Unit,
+    onAdd: (String, String) -> Unit,
     onRemove: (List<String>) -> Unit,
     onApply: () -> Unit,
     onSaveFavorite: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var showAddField by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(8.dp),
@@ -84,6 +87,9 @@ internal fun SaleToAcquirerDataDialog(
                             OutlinedButton(onClick = onSaveFavorite) { Text(stringResource(R.string.save), maxLines = 1) }
                         }
                         item {
+                            OutlinedButton(onClick = { showAddField = true }) { Text(stringResource(R.string.add_field), maxLines = 1) }
+                        }
+                        item {
                             OutlinedButton(onClick = onApply) { Text(stringResource(R.string.apply), maxLines = 1) }
                         }
                         item {
@@ -107,6 +113,61 @@ internal fun SaleToAcquirerDataDialog(
             }
         }
     }
+    if (showAddField) {
+        AddJsonFieldDialog(
+            onAdd = { path, value ->
+                onAdd(path, value)
+                showAddField = false
+            },
+            onDismiss = { showAddField = false },
+        )
+    }
+}
+
+@Composable
+private fun AddJsonFieldDialog(
+    onAdd: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var path by remember { mutableStateOf("") }
+    var value by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(onClick = { onAdd(path, value) }, enabled = path.isNotBlank()) {
+                Text(stringResource(R.string.add))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+        title = { Text(stringResource(R.string.add_json_field)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = path,
+                    onValueChange = { path = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.field_path)) },
+                    placeholder = { Text("metadata.experiment") },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.value)) },
+                    placeholder = { Text("TapToPlay") },
+                    minLines = 3,
+                )
+                Text(
+                    stringResource(R.string.add_json_field_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        },
+    )
 }
 
 @Composable

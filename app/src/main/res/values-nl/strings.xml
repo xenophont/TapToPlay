@@ -1,8 +1,13 @@
 <resources>
     <string name="about_build_info">Gesloten betabuild %1$s</string>
     <string name="about_game_eyebrow">Voor nieuwsgierigen</string>
-    <string name="about_game_action">Probeer mijn transaction-based incremental game</string>
+    <string name="about_game_action">Toegang tot de Authorisation Engine beta</string>
+    <string name="add">Toevoegen</string>
+    <string name="add_field">Veld toevoegen</string>
+    <string name="add_json_field">JSON-veld toevoegen</string>
+    <string name="add_json_field_hint">Gebruik puntpaden voor geneste velden. Waarden zoals true, 42, null, objecten en arrays worden als JSON opgeslagen.</string>
     <string name="status_no_browser_transaction_game">Er is geen browser beschikbaar om de incremental game te openen.</string>
+    <string name="status_no_email_beta_access">Geen e-mailapp beschikbaar om beta-toegang aan te vragen.</string>
     <string name="about_message">Gemaakt door Javier de No, met hulp van Codex en GPT-5.5, voor het team 💚🚀</string>
     <string name="add_to_cart">Toevoegen</string>
     <string name="added">Toegevoegd</string>
@@ -60,7 +65,9 @@
     <string name="decode">Decoderen</string>
     <string name="decoded">Gedecodeerd</string>
     <string name="decoded_sale_to_acquirer_data">Gedecodeerde SaleToAcquirerData</string>
+    <string name="defaults">Standaarden</string>
     <string name="diagnostics_body">Geredigeerde operationele status voor het geselecteerde profiel.</string>
+    <string name="display_name">Weergavenaam</string>
     <string name="done">Klaar</string>
     <string name="edit">Bewerken</string>
     <string name="environment">Omgeving</string>
@@ -69,13 +76,18 @@
     <string name="error_condition">Foutvoorwaarde</string>
     <string name="failure_refused_without_reason">Adyen heeft de betaling geweigerd zonder reden.</string>
     <string name="favorites">Favorieten</string>
+    <string name="field_path">Veldpad</string>
     <string name="field_count_many">%1$d velden</string>
     <string name="field_count_one">1 veld</string>
+    <string name="game_beta_body">Authorisation Engine is een incremental game over betalingen, goedkeuringen en de kleine operationele keuzes die een transactiestroom in een machine veranderen. De beta is voorlopig privé; vraag toegang aan en ik voeg je Google Play-account toe.</string>
+    <string name="game_beta_coming_soon">Binnenkort op Play Store</string>
+    <string name="game_beta_title">Gesloten beta van Authorisation Engine</string>
     <string name="go_to_checkout">Naar afrekenen</string>
     <string name="hide">Verbergen</string>
     <string name="hide_raw_json">Ruwe JSON verbergen</string>
     <string name="hide_revoked">Ingetrokken verbergen</string>
     <string name="important_response_fields">Belangrijke responsevelden</string>
+    <string name="import_json">JSON importeren</string>
     <string name="inspect">Inspecteren</string>
     <string name="installation">Installatie</string>
     <string name="installation_not_returned_yet">nog niet ontvangen</string>
@@ -103,6 +115,7 @@
     <string name="merchant_receipt">Merchantbon</string>
     <string name="merchant_reference" translatable="false">Merchant Reference</string>
     <string name="message_category">Berichtcategorie</string>
+    <string name="modify">Wijzigen</string>
     <string name="no_credential_profile_loaded">Geen credentialprofiel geladen</string>
     <string name="no_merchant_store_returned">Geen merchant/winkel ontvangen</string>
     <string name="no_payment_profile_selected">Geen betaalprofiel geselecteerd</string>
@@ -118,6 +131,7 @@
     <string name="open_menu">Menu openen</string>
     <string name="open_payments_app_status">Payments App-status openen</string>
     <string name="open_qr_documentation">QR-documentatie openen</string>
+    <string name="ocr_image">Afbeelding OCR</string>
     <string name="passphrase">Wachtzin</string>
     <string name="payment_approved">Betaling goedgekeurd</string>
     <string name="payment_profile">Betaalprofiel</string>
@@ -198,6 +212,8 @@
     <string name="remove_payment_profile_body">Dit verwijdert %1$s uit de lokale versleutelde kluis en wist de opgeslagen boardingstatus. Authenticatie in de Adyen-app wordt pas ingetrokken als je de instantie apart revoke\'t.</string>
     <string name="remove_payment_profile_title">Betaalprofiel verwijderen?</string>
     <string name="request">Verzoek</string>
+    <string name="request_beta_access">Toegang aanvragen</string>
+    <string name="request_beta_access_here">Hier aanvragen</string>
     <string name="request_summary">Requestsamenvatting</string>
     <string name="reset">Resetten</string>
     <string name="response">Antwoord</string>
@@ -207,6 +223,8 @@
     <string name="revoke_instance_body">Dit trekt installatie %1$s in via Adyen. Betalingen op die app of dat apparaat hebben daarna reboarding nodig.</string>
     <string name="revoke_instance_title">Payments App-instantie intrekken?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_modify_body">Kies hoe je de SaleToAcquirerData-payload voor de volgende betaling wilt bijwerken.</string>
+    <string name="sale_to_acquirer_modify_title">SaleToAcquirerData wijzigen</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>
     <string name="save">Opslaan</string>
     <string name="saved_attempt_many">%1$d opgeslagen betaalpogingen</string>
@@ -242,6 +260,8 @@
     <string name="status_favorite_applied">SaleToAcquirerData-favoriet toegepast: %1$s.</string>
     <string name="status_favorite_removed">SaleToAcquirerData-favoriet verwijderd: %1$s.</string>
     <string name="status_favorite_saved">%1$s opgeslagen als SaleToAcquirerData-favoriet.</string>
+    <string name="status_default_applied">SaleToAcquirerData-standaard toegepast: %1$s.</string>
+    <string name="status_json_import_failed">JSON-import mislukt: %1$s</string>
     <string name="status_language_changed">Taal gewijzigd naar %1$s.</string>
     <string name="status_need_installation_id">Voer eerst Check uit. Betalingen vereisen een installation ID als POIID.</string>
     <string name="status_no_browser_google_play">Geen browser of Play Store-app beschikbaar om de %1$s-downloadlink te openen.</string>
@@ -252,6 +272,9 @@
     <string name="status_opening_google_play">Google Play openen voor de %1$s Adyen Payments app.</string>
     <string name="status_opening_payment_app">Adyen payment app openen met versleutelde Terminal API-request...</string>
     <string name="status_opening_refund">Adyen openen met een referenced refund-request...</string>
+    <string name="status_ocr_failed">Lokale OCR mislukt: %1$s</string>
+    <string name="status_ocr_no_json">Lokale OCR heeft geen JSON-object gevonden.</string>
+    <string name="status_ocr_reading">Afbeelding lokaal lezen als QR of OCR...</string>
     <string name="status_payments_app_missing">De Adyen Payments app voor %1$s is niet geinstalleerd. Open Google Play vanuit het setupblok.</string>
     <string name="status_payments_instances_not_loaded">Payments App-instanties niet geladen</string>
     <string name="status_payments_lookup_failed">Payments App-opzoekactie mislukt: %1$s</string>
@@ -321,31 +344,31 @@
     <string name="category_knitwear">Breisels</string>
     <string name="category_accessories">Accessoires</string>
     <plurals name="cart_item_ready">
-        <item quantity="one">1 item klaar</item>
-        <item quantity="other">%1$d items klaar</item>
+    <item quantity="one">1 item klaar</item>
+    <item quantity="other">%1$d items klaar</item>
     </plurals>
     <plurals name="item_count">
-        <item quantity="one">1 item</item>
-        <item quantity="other">%1$d items</item>
+    <item quantity="one">1 item</item>
+    <item quantity="other">%1$d items</item>
     </plurals>
     <plurals name="json_field_count">
-        <item quantity="one">1 JSON-veld</item>
-        <item quantity="other">%1$d JSON-velden</item>
+    <item quantity="one">1 JSON-veld</item>
+    <item quantity="other">%1$d JSON-velden</item>
     </plurals>
     <plurals name="saved_attempt">
-        <item quantity="one">1 opgeslagen betaalpoging</item>
-        <item quantity="other">%1$d opgeslagen betaalpogingen</item>
+    <item quantity="one">1 opgeslagen betaalpoging</item>
+    <item quantity="other">%1$d opgeslagen betaalpogingen</item>
     </plurals>
     <plurals name="loaded_instance">
-        <item quantity="one">1 Payments App-instantie geladen.</item>
-        <item quantity="other">%1$d Payments App-instanties geladen.</item>
+    <item quantity="one">1 Payments App-instantie geladen.</item>
+    <item quantity="other">%1$d Payments App-instanties geladen.</item>
     </plurals>
     <plurals name="field_count">
-        <item quantity="one">1 veld</item>
-        <item quantity="other">%1$d velden</item>
+    <item quantity="one">1 veld</item>
+    <item quantity="other">%1$d velden</item>
     </plurals>
     <plurals name="array_item_count">
-        <item quantity="one">1 item</item>
-        <item quantity="other">%1$d items</item>
+    <item quantity="one">1 item</item>
+    <item quantity="other">%1$d items</item>
     </plurals>
 </resources>

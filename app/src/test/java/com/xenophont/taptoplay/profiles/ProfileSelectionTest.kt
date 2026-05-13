@@ -40,21 +40,21 @@ class ProfileSelectionTest {
     }
 
     @Test
-    fun storeNameBecomesPrimaryProfileNameWithoutChangingProfileId() {
+    fun displayNameStaysPrimaryProfileNameWithoutChangingProfileId() {
         val profile = profile("Demo Store TEST", PaymentEnvironment.TEST).copy(
             storeId = "ST322LJ223223K5F",
             storeName = "Boutique Centro",
         )
 
-        assertEquals("Boutique Centro", profile.profileName)
+        assertEquals("Demo Store TEST", profile.profileName)
         assertEquals("test:merchant:ST322LJ223223K5F:Demo Store TEST", profile.id)
     }
 
     @Test
-    fun merchantScopedProfileUsesMerchantIdAsProfileName() {
+    fun merchantScopedProfileUsesDisplayNameAsProfileName() {
         val profile = profile("Demo Store TEST", PaymentEnvironment.TEST)
 
-        assertEquals("merchant", profile.profileName)
+        assertEquals("Demo Store TEST", profile.profileName)
         assertEquals("test:merchant::Demo Store TEST", profile.id)
     }
 
