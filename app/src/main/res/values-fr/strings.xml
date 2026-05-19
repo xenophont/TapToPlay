@@ -324,6 +324,10 @@
     <string name="use">Utiliser</string>
     <string name="value">Valeur</string>
     <string name="view">Voir</string>
+    <string name="product_live_test_garment_name">Article test live</string>
+    <string name="product_live_test_garment_description">Article à faible montant pour vérifier les paiements live.</string>
+    <string name="product_custom_test_garment_name">Article test à montant libre</string>
+    <string name="product_custom_test_garment_description">Définis le montant avant de l’ajouter au checkout.</string>
     <string name="product_linen_blazer_name">Blazer atelier en lin</string>
     <string name="product_linen_blazer_description">Tailoring souple en lin lavé à la pierre avec boutons en corozo.</string>
     <string name="product_silk_shirt_name">Chemise en soie lavée</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Mérinos fin avec boutons corne et finition côtelée ajustée.</string>
     <string name="product_leather_tote_name">Cabas market en cuir souple</string>
     <string name="product_leather_tote_description">Cabas en cuir grainé non doublé, pensé pour les essentiels de boutique.</string>
+    <string name="category_testing">Tests</string>
     <string name="category_all">Tout</string>
     <string name="category_outerwear">Manteaux</string>
     <string name="category_shirts">Chemises</string>

@@ -42,4 +42,19 @@ class CartTest {
         assertEquals(emptyList<CartLine>(), cart.lines())
         assertEquals(0, cart.totalMinor())
     }
+
+    @Test
+    fun customAmountProductsCanUseDistinctLineIds() {
+        val cart = Cart()
+        val customOneEuro = shirt.copy(id = "custom-test-garment-100", priceMinor = 100)
+        val customTwoEuros = shirt.copy(id = "custom-test-garment-200", priceMinor = 200)
+
+        cart.add(customOneEuro)
+        cart.add(customTwoEuros)
+        cart.add(customTwoEuros)
+
+        assertEquals(3, cart.itemCount())
+        assertEquals(500, cart.totalMinor())
+        assertEquals(listOf(100L, 400L), cart.lines().map { it.lineTotalMinor })
+    }
 }

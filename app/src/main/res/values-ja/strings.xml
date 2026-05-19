@@ -1,4 +1,9 @@
 <resources>
+    <string name="product_live_test_garment_name">ライブテスト用ウェア</string>
+    <string name="product_live_test_garment_description">ライブ決済確認用の低額ウェア。</string>
+    <string name="product_custom_test_garment_name">金額指定テストウェア</string>
+    <string name="product_custom_test_garment_description">チェックアウトに追加する前に任意の金額を設定できます。</string>
+    <string name="category_testing">テスト</string>
     <string name="about_build_info">クローズドベータビルド %1$s</string>
     <string name="about_game_eyebrow">気になる方へ</string>
     <string name="about_game_action">Authorisation Engine ベータへのアクセス</string>

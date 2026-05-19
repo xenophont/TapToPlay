@@ -324,6 +324,10 @@
     <string name="use">Erabili</string>
     <string name="value">Balioa</string>
     <string name="view">Ikusi</string>
+    <string name="product_live_test_garment_name">Live probako jantzia</string>
+    <string name="product_live_test_garment_description">Zenbateko txikiko jantzia, live ordainketak egiaztatzeko.</string>
+    <string name="product_custom_test_garment_name">Zenbateko libreko probako jantzia</string>
+    <string name="product_custom_test_garment_description">Ezarri nahi duzun zenbatekoa checkoutera gehitu aurretik.</string>
     <string name="product_linen_blazer_name">Lihozko atelier blazerra</string>
     <string name="product_linen_blazer_description">Liho stone-washed erlaxatuan egindako sastreria, corozo botoiekin.</string>
     <string name="product_silk_shirt_name">Garbitutako zetazko alkandora</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Merino fina, adar botoiekin eta rib akabera estuarekin.</string>
     <string name="product_leather_tote_name">Larruzko market poltsa leuna</string>
     <string name="product_leather_tote_description">Forrurik gabeko larru pikordun totea, dendako oinarrizkoetarako egokia.</string>
+    <string name="category_testing">Probak</string>
     <string name="category_all">Dena</string>
     <string name="category_outerwear">Kanpoko jantziak</string>
     <string name="category_shirts">Alkandorak</string>

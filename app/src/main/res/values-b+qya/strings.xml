@@ -1,4 +1,9 @@
 <resources>
+    <string name="product_live_test_garment_name">Cuita tyalië vaima</string>
+    <string name="product_live_test_garment_description">Pitya valta vaima an cuita tyalier.</string>
+    <string name="product_custom_test_garment_name">Valta tyalië vaima</string>
+    <string name="product_custom_test_garment_description">Áva valta ilya nó cesta.</string>
+    <string name="category_testing">Tyalier</string>
     <string name="about_build_info">Closed beta build %1$s</string>
     <string name="about_game_eyebrow">For the curious</string>
     <string name="about_game_action">Authorisation Engine beta access</string>

@@ -324,6 +324,10 @@
     <string name="use">Use</string>
     <string name="value">Value</string>
     <string name="view">View</string>
+    <string name="product_live_test_garment_name">Live Test Garment</string>
+    <string name="product_live_test_garment_description">Low-value garment for live payment checks.</string>
+    <string name="product_custom_test_garment_name">Custom Test Garment</string>
+    <string name="product_custom_test_garment_description">Set any amount before adding it to checkout.</string>
     <string name="product_linen_blazer_name">Linen Atelier Blazer</string>
     <string name="product_linen_blazer_description">Relaxed tailoring in stone-washed linen with corozo buttons.</string>
     <string name="product_silk_shirt_name">Washed Silk Shirt</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Fine-gauge merino with horn buttons and a close rib finish.</string>
     <string name="product_leather_tote_name">Soft Market Tote</string>
     <string name="product_leather_tote_description">Unlined grained leather tote sized for shop floor essentials.</string>
+    <string name="category_testing">Testing</string>
     <string name="category_all">All</string>
     <string name="category_outerwear">Outerwear</string>
     <string name="category_shirts">Shirts</string>

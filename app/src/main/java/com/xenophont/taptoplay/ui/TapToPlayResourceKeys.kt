@@ -331,6 +331,8 @@ internal val TapToPlayTextResources: Map<String, Int> = mapOf(
 )
 
 internal val TapToPlayProductNameResources: Map<String, Int> = mapOf(
+        "live-test-garment" to R.string.product_live_test_garment_name,
+        "custom-test-garment" to R.string.product_custom_test_garment_name,
         "linen-blazer" to R.string.product_linen_blazer_name,
         "silk-shirt" to R.string.product_silk_shirt_name,
         "tailored-trouser" to R.string.product_tailored_trouser_name,
@@ -340,6 +342,8 @@ internal val TapToPlayProductNameResources: Map<String, Int> = mapOf(
 )
 
 internal val TapToPlayProductDescriptionResources: Map<String, Int> = mapOf(
+        "live-test-garment" to R.string.product_live_test_garment_description,
+        "custom-test-garment" to R.string.product_custom_test_garment_description,
         "linen-blazer" to R.string.product_linen_blazer_description,
         "silk-shirt" to R.string.product_silk_shirt_description,
         "tailored-trouser" to R.string.product_tailored_trouser_description,
@@ -350,6 +354,7 @@ internal val TapToPlayProductDescriptionResources: Map<String, Int> = mapOf(
 
 internal val TapToPlayCategoryResources: Map<String, Int> = mapOf(
         "All" to R.string.category_all,
+        "Testing" to R.string.category_testing,
         "Outerwear" to R.string.category_outerwear,
         "Shirts" to R.string.category_shirts,
         "Trousers" to R.string.category_trousers,

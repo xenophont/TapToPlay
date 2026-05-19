@@ -324,6 +324,10 @@
     <string name="use">Usar</string>
     <string name="value">Valor</string>
     <string name="view">Ver</string>
+    <string name="product_live_test_garment_name">Prenda test live</string>
+    <string name="product_live_test_garment_description">Prenda de bajo importe para comprobar cobros live.</string>
+    <string name="product_custom_test_garment_name">Prenda test a medida</string>
+    <string name="product_custom_test_garment_description">Define cualquier importe antes de añadirla al checkout.</string>
     <string name="product_linen_blazer_name">Blazer Atelier de lino</string>
     <string name="product_linen_blazer_description">Sastrería relajada en lino lavado a la piedra con botones de corozo.</string>
     <string name="product_silk_shirt_name">Camisa de seda lavada</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Merino fino con botones de asta y acabado acanalado ajustado.</string>
     <string name="product_leather_tote_name">Bolso market de piel suave</string>
     <string name="product_leather_tote_description">Tote de piel granulada sin forro, pensado para esenciales de tienda.</string>
+    <string name="category_testing">Pruebas</string>
     <string name="category_all">Todo</string>
     <string name="category_outerwear">Abrigos</string>
     <string name="category_shirts">Camisas</string>

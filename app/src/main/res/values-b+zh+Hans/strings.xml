@@ -1,4 +1,9 @@
 <resources>
+    <string name="product_live_test_garment_name">实时测试服装</string>
+    <string name="product_live_test_garment_description">用于实时付款检查的低金额服装。</string>
+    <string name="product_custom_test_garment_name">自定义金额测试服装</string>
+    <string name="product_custom_test_garment_description">加入结账前可设置任意金额。</string>
+    <string name="category_testing">测试</string>
     <string name="about_build_info">封闭测试版本 %1$s</string>
     <string name="about_game_eyebrow">给好奇的人</string>
     <string name="about_game_action">获取 Authorisation Engine 测试版</string>

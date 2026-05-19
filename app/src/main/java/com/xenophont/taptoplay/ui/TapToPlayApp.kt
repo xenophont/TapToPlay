@@ -75,6 +75,7 @@ import com.xenophont.taptoplay.adyen.SaleToAcquirerDataEditor
 import com.xenophont.taptoplay.adyen.TransactionRecord
 import com.xenophont.taptoplay.cart.Cart
 import com.xenophont.taptoplay.cart.CartLine
+import com.xenophont.taptoplay.catalog.Product
 import com.xenophont.taptoplay.catalog.ProductCatalog
 import com.xenophont.taptoplay.profiles.AdyenProfile
 import com.xenophont.taptoplay.profiles.requiresLivePaymentConfirmation
@@ -136,6 +137,7 @@ internal fun TapToPlayApp(
     var showSaleToAcquirerData by remember { mutableStateOf(false) }
     var editableSaleToAcquirerData by remember(saleToAcquirerDataConfig) { mutableStateOf(saleToAcquirerDataConfig) }
     var inspectedTransaction by remember { mutableStateOf<TransactionRecord?>(null) }
+    var inspectedProduct by remember { mutableStateOf<Product?>(null) }
     var liveChargeConfirmation by remember { mutableStateOf<LiveChargeConfirmation?>(null) }
     val activeProfile = profiles.firstOrNull { it.id == activeProfileId }
     val lines = remember(cartVersion) { cart.lines() }
@@ -254,8 +256,11 @@ internal fun TapToPlayApp(
                                         ) {
                                             rowProducts.forEach { product ->
                                                 Box(Modifier.weight(1f)) {
-                                                    ProductCard(product = product) {
-                                                        cart.add(product)
+                                                    ProductCard(
+                                                        product = product,
+                                                        onInspect = { inspectedProduct = it },
+                                                    ) { productToAdd ->
+                                                        cart.add(productToAdd)
                                                         cartVersion++
                                                     }
                                                 }
@@ -499,6 +504,18 @@ internal fun TapToPlayApp(
             record = record,
             onRefund = { onRefund(record) },
             onDismiss = { inspectedTransaction = null },
+        )
+    }
+
+    inspectedProduct?.let { product ->
+        ProductDetailDialog(
+            product = product,
+            onAdd = {
+                cart.add(it)
+                cartVersion++
+                inspectedProduct = null
+            },
+            onDismiss = { inspectedProduct = null },
         )
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +17,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,12 +46,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.cart.CartLine
 import com.xenophont.taptoplay.catalog.Product
 import com.xenophont.taptoplay.profiles.AdyenProfile
+import java.math.BigDecimal
 import kotlinx.coroutines.delay
 
 @Composable
@@ -89,11 +96,29 @@ internal fun CartSummaryCard(
 }
 
 @Composable
-internal fun ProductCard(product: Product, onAdd: () -> Unit) {
+internal fun ProductCard(
+    product: Product,
+    onInspect: (Product) -> Unit,
+    onAdd: (Product) -> Unit,
+) {
     val productName = product.localizedName()
     val productDescription = product.localizedDescription()
     val productCategory = categoryLabel(product.category)
     val locale = LocalConfiguration.current.locales[0]
+    var customAmountInput by remember(product.id) { mutableStateOf(formatEditableMoney(product.priceMinor)) }
+    val customAmountMinor = remember(customAmountInput) { parseEuroAmountMinor(customAmountInput) }
+    val productToAdd = if (product.allowsCustomAmount && customAmountMinor != null) {
+        product.copy(
+            id = customAmountProductId(product.id, customAmountMinor),
+            name = "$productName ${formatMoney(customAmountMinor)}",
+            description = productDescription,
+            priceMinor = customAmountMinor,
+            allowsCustomAmount = false,
+        )
+    } else {
+        product
+    }
+    val addEnabled = !product.allowsCustomAmount || customAmountMinor != null
     var feedbackTick by remember { mutableStateOf(0) }
     var addedFeedback by remember { mutableStateOf(false) }
     LaunchedEffect(feedbackTick) {
@@ -125,7 +150,9 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
     )
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = addEnabled) { onInspect(productToAdd) },
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -193,18 +220,39 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    formatMoney(product.priceMinor),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (product.allowsCustomAmount) {
+                    OutlinedTextField(
+                        value = customAmountInput,
+                        onValueChange = { customAmountInput = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(68.dp),
+                        label = { Text(stringResource(R.string.amount)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(68.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            formatMoney(product.priceMinor),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
                 Button(
                     onClick = {
-                        onAdd()
+                        onAdd(productToAdd)
                         feedbackTick++
                     },
+                    enabled = addEnabled,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(44.dp)
@@ -232,3 +280,72 @@ internal fun ProductCard(product: Product, onAdd: () -> Unit) {
         }
     }
 }
+
+@Composable
+internal fun ProductDetailDialog(
+    product: Product,
+    onAdd: (Product) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val productName = product.localizedName()
+    val productDescription = product.localizedDescription()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(onClick = { onAdd(product) }) {
+                Text(stringResource(R.string.add_to_cart))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.close))
+            }
+        },
+        title = {
+            Text(productName)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (product.imageResId != 0) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Brush.linearGradient(listOf(product.color, product.accentColor))),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(product.imageResId),
+                            contentDescription = productName,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit,
+                        )
+                    }
+                }
+                KeyValueLine(stringResource(R.string.category), categoryLabel(product.category))
+                KeyValueLine(stringResource(R.string.amount), formatMoney(product.priceMinor))
+                Text(
+                    productDescription,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+        },
+    )
+}
+
+internal fun parseEuroAmountMinor(input: String): Long? {
+    val normalized = input.trim().replace(',', '.')
+    if (!normalized.matches(Regex("""\d+(\.\d{1,2})?"""))) return null
+    return runCatching {
+        val amount = BigDecimal(normalized)
+        if (amount <= BigDecimal.ZERO) return null
+        amount.movePointRight(2).longValueExact()
+    }.getOrNull()
+}
+
+private fun formatEditableMoney(minor: Long): String = "%.2f".format(minor / 100.0)
+
+private fun customAmountProductId(productId: String, amountMinor: Long): String =
+    "$productId-$amountMinor"

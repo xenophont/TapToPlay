@@ -324,6 +324,10 @@
     <string name="use">Gebruiken</string>
     <string name="value">Waarde</string>
     <string name="view">Bekijken</string>
+    <string name="product_live_test_garment_name">Live testkledingstuk</string>
+    <string name="product_live_test_garment_description">Kledingstuk met laag bedrag voor live betaalchecks.</string>
+    <string name="product_custom_test_garment_name">Testkledingstuk met eigen bedrag</string>
+    <string name="product_custom_test_garment_description">Stel een bedrag in voordat je het aan de checkout toevoegt.</string>
     <string name="product_linen_blazer_name">Linnen atelierblazer</string>
     <string name="product_linen_blazer_description">Ontspannen tailoring in stone-washed linnen met corozo-knopen.</string>
     <string name="product_silk_shirt_name">Gewassen zijden overhemd</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Fijngebreide merino met hoornknopen en een aansluitende ribafwerking.</string>
     <string name="product_leather_tote_name">Zachte market tote</string>
     <string name="product_leather_tote_description">Ongevoerde tote van generfd leer, formaat voor winkelvloerbenodigdheden.</string>
+    <string name="category_testing">Tests</string>
     <string name="category_all">Alles</string>
     <string name="category_outerwear">Bovenkleding</string>
     <string name="category_shirts">Overhemden</string>

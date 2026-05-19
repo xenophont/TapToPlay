@@ -324,6 +324,10 @@
     <string name="use">Anvand</string>
     <string name="value">Varde</string>
     <string name="view">Visa</string>
+    <string name="product_live_test_garment_name">Live-testplagg</string>
+    <string name="product_live_test_garment_description">Plagg med lågt belopp för livebetalningstester.</string>
+    <string name="product_custom_test_garment_name">Testplagg med valfritt belopp</string>
+    <string name="product_custom_test_garment_description">Ange valfritt belopp innan du lägger till det i checkout.</string>
     <string name="product_linen_blazer_name">Ateljékavaj i linne</string>
     <string name="product_linen_blazer_description">Avslappnad skräddarkänsla i stentvättat linne med corozo-knappar.</string>
     <string name="product_silk_shirt_name">Tvättad sidenskjorta</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Fin merinostickning med hornknappar och nära ribbad finish.</string>
     <string name="product_leather_tote_name">Mjuk marketväska i läder</string>
     <string name="product_leather_tote_description">Ofodrad tote i narvat läder, storlek för butikens vardagsessentials.</string>
+    <string name="category_testing">Tester</string>
     <string name="category_all">Alla</string>
     <string name="category_outerwear">Ytterplagg</string>
     <string name="category_shirts">Skjortor</string>

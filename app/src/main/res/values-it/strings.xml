@@ -324,6 +324,10 @@
     <string name="use">Usa</string>
     <string name="value">Valore</string>
     <string name="view">Vedi</string>
+    <string name="product_live_test_garment_name">Capo test live</string>
+    <string name="product_live_test_garment_description">Capo a basso importo per verifiche di pagamento live.</string>
+    <string name="product_custom_test_garment_name">Capo test a importo libero</string>
+    <string name="product_custom_test_garment_description">Imposta qualsiasi importo prima di aggiungerlo al checkout.</string>
     <string name="product_linen_blazer_name">Blazer atelier in lino</string>
     <string name="product_linen_blazer_description">Sartoria rilassata in lino stone-washed con bottoni in corozo.</string>
     <string name="product_silk_shirt_name">Camicia in seta lavata</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Merino fine con bottoni in corno e bordo a coste aderente.</string>
     <string name="product_leather_tote_name">Tote market in pelle morbida</string>
     <string name="product_leather_tote_description">Tote in pelle martellata sfoderata, pensata per gli essenziali di negozio.</string>
+    <string name="category_testing">Test</string>
     <string name="category_all">Tutto</string>
     <string name="category_outerwear">Capispalla</string>
     <string name="category_shirts">Camicie</string>

@@ -12,11 +12,11 @@ import com.xenophont.taptoplay.profiles.PaymentEnvironment
 
 @Composable
 internal fun Product.localizedName(): String =
-    stringResource(TapToPlayProductNameResources[id] ?: R.string.app_name)
+    TapToPlayProductNameResources[id]?.let { stringResource(it) } ?: name
 
 @Composable
 internal fun Product.localizedDescription(): String =
-    stringResource(TapToPlayProductDescriptionResources[id] ?: R.string.app_name)
+    TapToPlayProductDescriptionResources[id]?.let { stringResource(it) } ?: description
 
 @Composable
 internal fun categoryLabel(category: String): String =

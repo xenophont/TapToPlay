@@ -13,10 +13,32 @@ data class Product(
     val color: Color,
     val accentColor: Color,
     @param:DrawableRes val imageResId: Int = 0,
+    val allowsCustomAmount: Boolean = false,
 )
 
 object ProductCatalog {
     val products = listOf(
+        Product(
+            id = "live-test-garment",
+            name = "Live Test Garment",
+            category = "Testing",
+            description = "Low-value garment for live payment checks.",
+            priceMinor = 100,
+            color = Color(0xFFEAF1EE),
+            accentColor = Color(0xFF2D675F),
+            imageResId = R.drawable.product_live_test_garment,
+        ),
+        Product(
+            id = "custom-test-garment",
+            name = "Custom Test Garment",
+            category = "Testing",
+            description = "Set any amount before adding it to checkout.",
+            priceMinor = 100,
+            color = Color(0xFFEDE8F0),
+            accentColor = Color(0xFF5B4B63),
+            imageResId = R.drawable.product_custom_test_garment,
+            allowsCustomAmount = true,
+        ),
         Product(
             id = "linen-blazer",
             name = "Linen Atelier Blazer",

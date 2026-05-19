@@ -1,4 +1,9 @@
 <resources>
+    <string name="product_live_test_garment_name">라이브 테스트 의류</string>
+    <string name="product_live_test_garment_description">라이브 결제 확인을 위한 낮은 금액의 의류.</string>
+    <string name="product_custom_test_garment_name">금액 지정 테스트 의류</string>
+    <string name="product_custom_test_garment_description">체크아웃에 추가하기 전에 원하는 금액을 설정하세요.</string>
+    <string name="category_testing">테스트</string>
     <string name="about_build_info">비공개 베타 빌드 %1$s</string>
     <string name="about_game_eyebrow">호기심 있는 분께</string>
     <string name="about_game_action">Authorisation Engine 베타 액세스</string>

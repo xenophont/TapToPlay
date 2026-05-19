@@ -324,6 +324,10 @@
     <string name="use">Verwenden</string>
     <string name="value">Wert</string>
     <string name="view">Ansehen</string>
+    <string name="product_live_test_garment_name">Live-Testkleidungsstück</string>
+    <string name="product_live_test_garment_description">Kleidungsstück mit niedrigem Betrag für Live-Zahlungsprüfungen.</string>
+    <string name="product_custom_test_garment_name">Testkleidungsstück mit Wunschbetrag</string>
+    <string name="product_custom_test_garment_description">Lege vor dem Hinzufügen zum Checkout einen beliebigen Betrag fest.</string>
     <string name="product_linen_blazer_name">Atelier-Blazer aus Leinen</string>
     <string name="product_linen_blazer_description">Entspannte Schneiderlinie aus stone-washed Leinen mit Corozo-Knöpfen.</string>
     <string name="product_silk_shirt_name">Gewaschenes Seidenhemd</string>
@@ -336,6 +340,7 @@
     <string name="product_knit_cardigan_description">Feiner Merino-Strick mit Hornknöpfen und enger Rippenkante.</string>
     <string name="product_leather_tote_name">Weiche Market-Tote</string>
     <string name="product_leather_tote_description">Ungefütterte Tote aus genarbtem Leder für Boutique-Essentials.</string>
+    <string name="category_testing">Tests</string>
     <string name="category_all">Alle</string>
     <string name="category_outerwear">Jacken</string>
     <string name="category_shirts">Hemden</string>
