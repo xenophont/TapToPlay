@@ -11,6 +11,7 @@
     <string name="about_message">Realizzato da Javier de No, con l\'aiuto di Codex e GPT-5.5, per il team 💚🚀</string>
     <string name="add_to_cart">Aggiungi</string>
     <string name="added">Aggiunto</string>
+    <string name="additional_response">AdditionalResponse</string>
     <string name="additional_response_raw">AdditionalResponse grezzo</string>
     <string name="adyen_app_is_state">L’app Adyen è %1$s. Installation ID: %2$s</string>
     <string name="adyen_failure_detail">Dettaglio errore Adyen</string>
@@ -148,6 +149,7 @@
     <string name="payments_app_status_unknown">sconosciuta</string>
     <string name="previous_merchant">Merchant precedente: %1$s</string>
     <string name="previous_store">Negozio precedente: %1$s</string>
+    <string name="psp_reference">Riferimento PSP</string>
     <string name="privacy_policy">Leggi l\'informativa sulla privacy</string>
     <string name="profile">Profilo</string>
     <string name="raw_return_uri">URI di ritorno grezzo</string>
@@ -204,6 +206,7 @@
     <string name="receipt_wallet_reference">Riferimento wallet</string>
     <string name="reference">Riferimento: %1$s</string>
     <string name="refresh">Aggiorna</string>
+    <string name="reason">Motivo</string>
     <string name="refund">Rimborso</string>
     <string name="refund_approved">Rimborso approvato</string>
     <string name="refund_of">Rimborso di</string>
@@ -313,6 +316,7 @@
     <string name="transaction">Transazione</string>
     <string name="transaction_history">Cronologia transazioni</string>
     <string name="transaction_id">ID transazione</string>
+    <string name="transaction_type">Tipo di transazione</string>
     <string name="transaction_status_approved">Approvato</string>
     <string name="transaction_status_failed">Fallito</string>
     <string name="transaction_status_pending">In sospeso</string>

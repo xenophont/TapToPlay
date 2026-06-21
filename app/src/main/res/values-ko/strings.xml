@@ -16,6 +16,7 @@
     <string name="about_message">Javier de No가 Codex와 GPT-5.5의 도움을 받아 팀을 위해 만들었습니다 💚🚀</string>
     <string name="add_to_cart">장바구니에 추가</string>
     <string name="added">추가됨</string>
+    <string name="additional_response">AdditionalResponse</string>
     <string name="additional_response_raw">AdditionalResponse 원본</string>
     <string name="adyen_app_is_state">Adyen 앱 상태는 %1$s입니다. Installation ID: %2$s</string>
     <string name="adyen_failure_detail">Adyen 실패 상세</string>
@@ -153,6 +154,7 @@
     <string name="payments_app_status_unknown">알 수 없음</string>
     <string name="previous_merchant">이전 머천트: %1$s</string>
     <string name="previous_store">이전 매장: %1$s</string>
+    <string name="psp_reference">PSP 참조</string>
     <string name="privacy_policy">개인정보 처리방침 읽기</string>
     <string name="profile">프로필</string>
     <string name="raw_return_uri">원시 반환 URI</string>
@@ -209,6 +211,7 @@
     <string name="receipt_wallet_reference">월렛 참조</string>
     <string name="reference">참조: %1$s</string>
     <string name="refresh">새로고침</string>
+    <string name="reason">사유</string>
     <string name="refund">환불</string>
     <string name="refund_approved">환불 승인됨</string>
     <string name="refund_of">환불 대상</string>
@@ -318,6 +321,7 @@
     <string name="transaction">거래</string>
     <string name="transaction_history">거래 내역</string>
     <string name="transaction_id">거래 ID</string>
+    <string name="transaction_type">거래 유형</string>
     <string name="transaction_status_approved">승인됨</string>
     <string name="transaction_status_failed">실패</string>
     <string name="transaction_status_pending">대기 중</string>

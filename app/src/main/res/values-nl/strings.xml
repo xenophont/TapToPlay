@@ -11,6 +11,7 @@
     <string name="about_message">Gemaakt door Javier de No, met hulp van Codex en GPT-5.5, voor het team 💚🚀</string>
     <string name="add_to_cart">Toevoegen</string>
     <string name="added">Toegevoegd</string>
+    <string name="additional_response">AdditionalResponse</string>
     <string name="additional_response_raw">AdditionalResponse ruw</string>
     <string name="adyen_app_is_state">De Adyen-app is %1$s. Installation ID: %2$s</string>
     <string name="adyen_failure_detail">Adyen-foutdetail</string>
@@ -148,6 +149,7 @@
     <string name="payments_app_status_unknown">onbekend</string>
     <string name="previous_merchant">Vorige merchant: %1$s</string>
     <string name="previous_store">Vorige winkel: %1$s</string>
+    <string name="psp_reference">PSP-referentie</string>
     <string name="privacy_policy">Privacybeleid openen</string>
     <string name="profile">Profiel</string>
     <string name="raw_return_uri">Ruwe return-URI</string>
@@ -204,6 +206,7 @@
     <string name="receipt_wallet_reference">Walletreferentie</string>
     <string name="reference">Referentie: %1$s</string>
     <string name="refresh">Vernieuwen</string>
+    <string name="reason">Reden</string>
     <string name="refund">Terugbetalen</string>
     <string name="refund_approved">Terugbetaling goedgekeurd</string>
     <string name="refund_of">Terugbetaling van</string>
@@ -313,6 +316,7 @@
     <string name="transaction">Transactie</string>
     <string name="transaction_history">Transactiegeschiedenis</string>
     <string name="transaction_id">Transactie-ID</string>
+    <string name="transaction_type">Transactietype</string>
     <string name="transaction_status_approved">Goedgekeurd</string>
     <string name="transaction_status_failed">Mislukt</string>
     <string name="transaction_status_pending">In afwachting</string>

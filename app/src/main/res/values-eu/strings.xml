@@ -11,6 +11,7 @@
     <string name="about_message">Javier de Nok egina, Codex eta GPT-5.5en laguntzarekin, taldearentzat 💚🚀</string>
     <string name="add_to_cart">Gehitu saskira</string>
     <string name="added">Gehituta</string>
+    <string name="additional_response">AdditionalResponse</string>
     <string name="additional_response_raw">AdditionalResponse gordina</string>
     <string name="adyen_app_is_state">Adyen aplikazioa %1$s dago. Installation ID: %2$s</string>
     <string name="adyen_failure_detail">Adyen errorearen xehetasuna</string>
@@ -148,6 +149,7 @@
     <string name="payments_app_status_unknown">ezezaguna</string>
     <string name="previous_merchant">Aurreko merchant-a: %1$s</string>
     <string name="previous_store">Aurreko denda: %1$s</string>
+    <string name="psp_reference">PSP erreferentzia</string>
     <string name="privacy_policy">Irakurri pribatutasun politika</string>
     <string name="profile">Profila</string>
     <string name="raw_return_uri">Itzulera URI gordina</string>
@@ -204,6 +206,7 @@
     <string name="receipt_wallet_reference">Wallet erreferentzia</string>
     <string name="reference">Erreferentzia: %1$s</string>
     <string name="refresh">Freskatu</string>
+    <string name="reason">Arrazoia</string>
     <string name="refund">Itzulketa</string>
     <string name="refund_approved">Itzulketa onartuta</string>
     <string name="refund_of">Honen itzulketa</string>
@@ -313,6 +316,7 @@
     <string name="transaction">Transakzioa</string>
     <string name="transaction_history">Transakzio historia</string>
     <string name="transaction_id">Transakzio ID</string>
+    <string name="transaction_type">Transakzio mota</string>
     <string name="transaction_status_approved">Onartuta</string>
     <string name="transaction_status_failed">Huts eginda</string>
     <string name="transaction_status_pending">Zain</string>

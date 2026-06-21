@@ -133,7 +133,7 @@ internal fun DiagnosticsPanel(
             )
             transactionHistory.firstOrNull()?.let { latest ->
                 KeyValueLine(stringResource(R.string.latest_service_id), latest.serviceId ?: stringResource(R.string.not_set))
-                KeyValueLine(stringResource(R.string.latest_summary), latest.responseSummary ?: transactionStatusLabels.getValue(latest.status))
+                KeyValueLine(stringResource(R.string.latest_summary), latest.localizedSummary())
             }
         }
     }

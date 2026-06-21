@@ -6,7 +6,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.adyen.PaymentsAppStatus
+import com.xenophont.taptoplay.adyen.TransactionRecord
 import com.xenophont.taptoplay.adyen.TransactionStatus
+import com.xenophont.taptoplay.adyen.pspReferenceOrNull
 import com.xenophont.taptoplay.catalog.Product
 import com.xenophont.taptoplay.profiles.PaymentEnvironment
 
@@ -65,6 +67,26 @@ internal fun TransactionStatus.localizedLabel(): String = stringResource(
         TransactionStatus.REFUNDED -> R.string.transaction_status_refunded
     },
 )
+
+@Composable
+internal fun TransactionRecord.localizedSummary(): String {
+    val pspSuffix = pspReferenceOrNull()?.let { " | PSP $it" }.orEmpty()
+    return when (status) {
+        TransactionStatus.LAUNCHED -> stringResource(R.string.transaction_status_pending)
+        TransactionStatus.APPROVED -> {
+            if (refundOfTransactionId == null) {
+                stringResource(R.string.summary_approved, pspSuffix)
+            } else {
+                stringResource(R.string.refund_approved) + pspSuffix
+            }
+        }
+        TransactionStatus.REFUSED -> stringResource(R.string.summary_refused, failureReason?.let { " | $it" }.orEmpty())
+        TransactionStatus.FAILED -> failureReason?.let { stringResource(R.string.summary_failed, it) }
+            ?: stringResource(R.string.transaction_status_failed)
+        TransactionStatus.REFUND_LAUNCHED -> stringResource(R.string.transaction_status_refunding)
+        TransactionStatus.REFUNDED -> stringResource(R.string.refund_approved) + pspSuffix
+    }
+}
 
 @Composable
 internal fun itemCountLabel(count: Int): String =

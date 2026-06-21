@@ -16,6 +16,7 @@
     <string name="about_message">Carna Javier de No, ar Codex ar GPT-5.5 ve meldo, an i lië 💚🚀</string>
     <string name="add_to_cart">Yanta sapsanna</string>
     <string name="added">Yantaina</string>
+    <string name="additional_response">ÁddítíónálRëspónsë</string>
     <string name="additional_response_raw">ÁddítíónálRëspónsë ráw</string>
     <string name="adyen_app_is_state">Ádyën ápp ís %1$s. Installation ID: %2$s</string>
     <string name="adyen_failure_detail">Ádyën fáílúrë dëtáíl</string>
@@ -153,6 +154,7 @@
     <string name="payments_app_status_unknown">únknówn</string>
     <string name="previous_merchant">Prëvíóús mërchánt: %1$s</string>
     <string name="previous_store">Prëvíóús stórë: %1$s</string>
+    <string name="psp_reference">PSP rëfërëncë</string>
     <string name="privacy_policy">Á henta i privacy parma</string>
     <string name="profile">Prófílë</string>
     <string name="raw_return_uri">Nanwesta URI hrava</string>
@@ -209,6 +211,7 @@
     <string name="receipt_wallet_reference">Wállët rëfërëncë</string>
     <string name="reference">Rëfërëncë: %1$s</string>
     <string name="refresh">Rëfrësh</string>
+    <string name="reason">Rëásón</string>
     <string name="refund">Nanwesta</string>
     <string name="refund_approved">Rëfúnd áppróvëd</string>
     <string name="refund_of">Rëfúnd óf</string>
@@ -318,6 +321,7 @@
     <string name="transaction">Vantië</string>
     <string name="transaction_history">Tránsáctíón hístóry</string>
     <string name="transaction_id">Tránsáctíón ÍD</string>
+    <string name="transaction_type">Tránsáctíón týpë</string>
     <string name="transaction_status_approved">Mára</string>
     <string name="transaction_status_failed">Úmarta</string>
     <string name="transaction_status_pending">Várë</string>

@@ -9,6 +9,7 @@
     <string name="about_message">Made by Javier de No, with help from Codex and GPT-5.5, for the team 💚🚀</string>
     <string name="add_to_cart">Add to cart</string>
     <string name="added">Added</string>
+    <string name="additional_response">AdditionalResponse</string>
     <string name="additional_response_raw">AdditionalResponse raw</string>
     <string name="adyen_app_is_state">Adyen app is %1$s. Installation ID: %2$s</string>
     <string name="adyen_failure_detail">Adyen failure detail</string>
@@ -146,6 +147,7 @@
     <string name="payments_app_status_unknown">unknown</string>
     <string name="previous_merchant">Previous merchant: %1$s</string>
     <string name="previous_store">Previous store: %1$s</string>
+    <string name="psp_reference">PSP reference</string>
     <string name="privacy_policy">Read privacy policy</string>
     <string name="profile">Profile</string>
     <string name="raw_return_uri">Raw return URI</string>
@@ -202,6 +204,7 @@
     <string name="receipt_wallet_reference">Wallet reference</string>
     <string name="reference">Reference: %1$s</string>
     <string name="refresh">Refresh</string>
+    <string name="reason">Reason</string>
     <string name="refund">Refund</string>
     <string name="refund_approved">Refund approved</string>
     <string name="refund_of">Refund of</string>
@@ -313,6 +316,7 @@
     <string name="transaction">Transaction</string>
     <string name="transaction_history">Transaction history</string>
     <string name="transaction_id">Transaction ID</string>
+    <string name="transaction_type">Transaction type</string>
     <string name="transaction_status_approved">Approved</string>
     <string name="transaction_status_failed">Failed</string>
     <string name="transaction_status_pending">Pending</string>

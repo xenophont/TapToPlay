@@ -212,7 +212,7 @@ internal fun TransactionDialog(
     var selectedSection by remember { mutableStateOf(TransactionSection.Request) }
     val requestInsight = remember(record.requestJson) { TerminalApiRequestInspector.inspect(record.requestJson) }
     val responseInsight = remember(record.responseBody) { TerminalApiResponseInspector.inspect(record.responseBody) }
-    val highlights = remember(record.responseBody) { TerminalApiResponseInspector.compactSummary(record.responseBody) }
+    val highlights = responseInsight?.localizedCompactSummary().orEmpty()
     val receipts = responseInsight?.receipts.orEmpty()
     val pspReference = remember(record.pspReference, record.responseBody) { record.pspReferenceOrNull() }
     val createdAtLabel = remember(record.createdAt) { formatTransactionTimestamp(record.createdAt) }
@@ -327,7 +327,11 @@ internal fun TransactionDialog(
                             }
                             item {
                                 Text(
-                                    record.responseSummary ?: stringResource(R.string.no_response_received),
+                                    if (record.responseBody == null) {
+                                        stringResource(R.string.no_response_received)
+                                    } else {
+                                        record.localizedSummary()
+                                    },
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
@@ -700,7 +704,7 @@ private fun ResponseFieldList(insight: TerminalApiResponseInsight) {
             }
         }
         if (insight.additionalResponseFields.isNotEmpty()) {
-            Text("AdditionalResponse", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.additional_response), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             insight.additionalResponseFields.forEach { field ->
                 AdditionalResponseFieldCard(field)
             }
@@ -711,6 +715,23 @@ private fun ResponseFieldList(insight: TerminalApiResponseInsight) {
             )
         }
     }
+}
+
+@Composable
+private fun TerminalApiResponseInsight.localizedCompactSummary(): List<Pair<String, String>> {
+    val fields = mutableListOf<Pair<String, String>>()
+    result?.let { fields += stringResource(R.string.result) to it }
+    transactionId?.let { fields += stringResource(R.string.transaction_id) to it }
+    errorCondition?.let { fields += stringResource(R.string.error_condition) to it }
+    TerminalApiResponseInspector.importantAdditional("pspReference", this)
+        ?.let { fields += stringResource(R.string.psp_reference) to it }
+    val reason = TerminalApiResponseInspector.importantAdditional("refusalReason", this)
+        ?: TerminalApiResponseInspector.importantAdditional("refusalReasonRaw", this)
+        ?: TerminalApiResponseInspector.importantAdditional("message", this)
+    reason?.let { fields += stringResource(R.string.reason) to it }
+    TerminalApiResponseInspector.importantAdditional("transactionType", this)
+        ?.let { fields += stringResource(R.string.transaction_type) to it }
+    return fields
 }
 
 @Composable

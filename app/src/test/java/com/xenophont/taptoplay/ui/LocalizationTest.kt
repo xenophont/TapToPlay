@@ -113,6 +113,9 @@ class LocalizationTest {
             "status_qr_rejected",
             "terminal_api_request",
             "raw_return_uri",
+            "psp_reference",
+            "reason",
+            "transaction_type",
         )
 
         resourceFiles()
@@ -123,6 +126,20 @@ class LocalizationTest {
                     assertNotEquals("$qualifier should not fall back to English for $key", english.getValue(key), localized.getValue(key))
                 }
             }
+    }
+
+    @Test
+    fun playBundleKeepsAllLanguageResourcesInstallable() {
+        val buildFile = listOf(
+            File("app/build.gradle.kts"),
+            File("build.gradle.kts"),
+        ).first(File::exists)
+        val buildScript = buildFile.readText()
+
+        assertTrue(
+            "App bundle language splits must stay disabled so in-app language switching works after Play install.",
+            Regex("""bundle\s*\{[\s\S]*language\s*\{[\s\S]*enableSplit\s*=\s*false""").containsMatchIn(buildScript),
+        )
     }
 
     @Test

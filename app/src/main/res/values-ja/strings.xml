@@ -16,6 +16,7 @@
     <string name="about_message">Javier de NoがCodexとGPT-5.5の助けを借りて、チームのために作りました 💚🚀</string>
     <string name="add_to_cart">カートに追加</string>
     <string name="added">追加しました</string>
+    <string name="additional_response">AdditionalResponse</string>
     <string name="additional_response_raw">AdditionalResponse の生データ</string>
     <string name="adyen_app_is_state">Adyen アプリは %1$s です。Installation ID: %2$s</string>
     <string name="adyen_failure_detail">Adyen 失敗の詳細</string>
@@ -153,6 +154,7 @@
     <string name="payments_app_status_unknown">不明</string>
     <string name="previous_merchant">前回のマーチャント: %1$s</string>
     <string name="previous_store">前回の店舗: %1$s</string>
+    <string name="psp_reference">PSP参照</string>
     <string name="privacy_policy">プライバシーポリシーを読む</string>
     <string name="profile">プロファイル</string>
     <string name="raw_return_uri">生の戻り URI</string>
@@ -209,6 +211,7 @@
     <string name="receipt_wallet_reference">ウォレット参照</string>
     <string name="reference">参照: %1$s</string>
     <string name="refresh">更新</string>
+    <string name="reason">理由</string>
     <string name="refund">返金</string>
     <string name="refund_approved">返金承認済み</string>
     <string name="refund_of">返金元</string>
@@ -318,6 +321,7 @@
     <string name="transaction">取引</string>
     <string name="transaction_history">取引履歴</string>
     <string name="transaction_id">取引ID</string>
+    <string name="transaction_type">取引タイプ</string>
     <string name="transaction_status_approved">承認済み</string>
     <string name="transaction_status_failed">失敗</string>
     <string name="transaction_status_pending">保留中</string>
