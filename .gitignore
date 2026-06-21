@@ -24,3 +24,4 @@ play-service-account.json
 app/release/
 docs/PLAY_DISTRIBUTION.md
 /play-store-assets/
+outputs/
