@@ -76,6 +76,7 @@
     <string name="environment_test" translatable="false">test</string>
     <string name="error_condition">Condizione di errore</string>
     <string name="failure_refused_without_reason">Adyen ha rifiutato il pagamento senza motivo.</string>
+    <string name="favorite_name">Nome preferito</string>
     <string name="favorites">Preferiti</string>
     <string name="field_path">Percorso campo</string>
     <string name="field_count_many">%1$d campi</string>
@@ -227,6 +228,8 @@
     <string name="revoke_instance_body">Questo revoca l\'installazione %1$s tramite Adyen. I pagamenti su quell\'app o dispositivo richiederanno un nuovo boarding.</string>
     <string name="revoke_instance_title">Revocare l\'istanza Payments App?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_favorite_name_body">Scegli l\'etichetta mostrata nella riga dei preferiti SaleToAcquirerData.</string>
+    <string name="sale_to_acquirer_favorite_name_title">Nomina preferito</string>
     <string name="sale_to_acquirer_modify_body">Scegli come aggiornare il payload SaleToAcquirerData per il prossimo pagamento.</string>
     <string name="sale_to_acquirer_modify_title">Modifica SaleToAcquirerData</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>

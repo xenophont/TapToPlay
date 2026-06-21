@@ -31,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,8 +45,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.xenophont.taptoplay.R
 import com.xenophont.taptoplay.adyen.SaleToAcquirerDataConfig
 import com.xenophont.taptoplay.cart.CartLine
@@ -73,7 +76,7 @@ internal fun CartPanel(
     onScanSaleToAcquirerData: () -> Unit,
     onImportSaleToAcquirerDataJson: () -> Unit,
     onImportSaleToAcquirerDataImage: () -> Unit,
-    onSaveSaleToAcquirerDataFavorite: () -> Unit,
+    onSaveSaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
     onApplySaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
     onApplySaleToAcquirerDataDefault: (SaleToAcquirerDataConfig) -> Unit,
     onRemoveSaleToAcquirerDataFavorite: (SaleToAcquirerDataConfig) -> Unit,
@@ -85,6 +88,7 @@ internal fun CartPanel(
     val needsPaymentsAppSetup = installationId.isNullOrBlank()
     var showModifyOptions by remember { mutableStateOf(false) }
     var showDefaults by remember { mutableStateOf(false) }
+    var showSaveFavoriteName by remember { mutableStateOf(false) }
     OutlinedCard(shape = RoundedCornerShape(8.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -136,8 +140,9 @@ internal fun CartPanel(
                             modifier = Modifier
                                 .width(96.dp)
                                 .height(40.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp),
                         ) {
-                            Text(stringResource(R.string.reset), maxLines = 1)
+                            FixedButtonLabel(stringResource(R.string.reset))
                         }
                     }
                     Text(
@@ -221,9 +226,20 @@ internal fun CartPanel(
             },
             onSave = {
                 showModifyOptions = false
-                onSaveSaleToAcquirerDataFavorite()
+                showSaveFavoriteName = true
             },
             onDismiss = { showModifyOptions = false },
+        )
+    }
+    if (showSaveFavoriteName) {
+        SaleToAcquirerDataFavoriteNameDialog(
+            config = saleToAcquirerDataConfig,
+            selectedLanguage = selectedLanguage,
+            onSave = {
+                onSaveSaleToAcquirerDataFavorite(it)
+                showSaveFavoriteName = false
+            },
+            onDismiss = { showSaveFavoriteName = false },
         )
     }
     if (showDefaults) {
@@ -237,6 +253,76 @@ internal fun CartPanel(
             onDismiss = { showDefaults = false },
         )
     }
+}
+
+@Composable
+private fun FixedButtonLabel(label: String) {
+    val fontSize = when {
+        label.length > 14 -> 9.sp
+        label.length > 10 -> 11.sp
+        else -> 14.sp
+    }
+    Text(
+        label,
+        modifier = Modifier.fillMaxWidth(),
+        maxLines = 1,
+        softWrap = false,
+        textAlign = TextAlign.Center,
+        fontSize = fontSize,
+        lineHeight = fontSize,
+    )
+}
+
+@Composable
+internal fun SaleToAcquirerDataFavoriteNameDialog(
+    config: SaleToAcquirerDataConfig,
+    selectedLanguage: AppLanguage,
+    onSave: (SaleToAcquirerDataConfig) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember(config.displayName) { mutableStateOf(config.displayName) }
+    val trimmedName = name.trim()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            ProvideLocalizedResources(selectedLanguage) {
+                Button(
+                    onClick = { onSave(config.copy(displayName = trimmedName)) },
+                    enabled = trimmedName.isNotBlank(),
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            }
+        },
+        dismissButton = {
+            ProvideLocalizedResources(selectedLanguage) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            }
+        },
+        title = {
+            ProvideLocalizedResources(selectedLanguage) {
+                Text(stringResource(R.string.sale_to_acquirer_favorite_name_title))
+            }
+        },
+        text = {
+            ProvideLocalizedResources(selectedLanguage) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it.take(80) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.favorite_name)) },
+                        singleLine = true,
+                    )
+                    Text(
+                        stringResource(R.string.sale_to_acquirer_favorite_name_body),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable

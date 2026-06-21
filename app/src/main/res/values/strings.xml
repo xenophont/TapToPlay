@@ -74,6 +74,7 @@
     <string name="environment_test" translatable="false">test</string>
     <string name="error_condition">Error condition</string>
     <string name="failure_refused_without_reason">Adyen refused the payment without a reason.</string>
+    <string name="favorite_name">Favorite name</string>
     <string name="favorites">Favorites</string>
     <string name="field_path">Field path</string>
     <string name="field_count_many">%1$d fields</string>
@@ -225,6 +226,8 @@
     <string name="revoke_instance_body">This revokes installation %1$s through Adyen. Payments on that app/device need reboarding afterward.</string>
     <string name="revoke_instance_title">Revoke Payments App instance?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_favorite_name_body">Choose the label that will appear in the SaleToAcquirerData favorites row.</string>
+    <string name="sale_to_acquirer_favorite_name_title">Name favorite</string>
     <string name="sale_to_acquirer_modify_body">Choose how to update the SaleToAcquirerData payload for the next payment.</string>
     <string name="sale_to_acquirer_modify_title">Modify SaleToAcquirerData</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>

@@ -81,6 +81,7 @@
     <string name="environment_test" translatable="false">test</string>
     <string name="error_condition">오류 조건</string>
     <string name="failure_refused_without_reason">Adyen이 사유 없이 결제를 거절했습니다.</string>
+    <string name="favorite_name">즐겨찾기 이름</string>
     <string name="favorites">즐겨찾기</string>
     <string name="field_path">필드 경로</string>
     <string name="field_count_many">필드 %1$d개</string>
@@ -232,6 +233,8 @@
     <string name="revoke_instance_body">Adyen을 통해 설치 %1$s을(를) 해지합니다. 해당 앱 또는 기기에서 결제하려면 이후 다시 설정해야 합니다.</string>
     <string name="revoke_instance_title">Payments App 인스턴스를 해지할까요?</string>
     <string name="sale_to_acquirer_data_summary">%1$s | %2$s</string>
+    <string name="sale_to_acquirer_favorite_name_body">SaleToAcquirerData 즐겨찾기 행에 표시할 라벨을 선택합니다.</string>
+    <string name="sale_to_acquirer_favorite_name_title">즐겨찾기 이름 지정</string>
     <string name="sale_to_acquirer_modify_body">다음 결제에 사용할 SaleToAcquirerData payload 업데이트 방식을 선택하세요.</string>
     <string name="sale_to_acquirer_modify_title">SaleToAcquirerData 수정</string>
     <string name="sale_transaction" translatable="false">Merchant Reference</string>

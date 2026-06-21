@@ -301,7 +301,7 @@ internal fun TapToPlayApp(
                                         cartVersion++
                                     },
                                     onScanSaleToAcquirerData = onScanSaleToAcquirerData,
-                                    onSaveSaleToAcquirerDataFavorite = { onSaveSaleToAcquirerDataFavorite(saleToAcquirerDataConfig) },
+                                    onSaveSaleToAcquirerDataFavorite = onSaveSaleToAcquirerDataFavorite,
                                     onApplySaleToAcquirerDataFavorite = onApplySaleToAcquirerDataFavorite,
                                     onRemoveSaleToAcquirerDataFavorite = onRemoveSaleToAcquirerDataFavorite,
                                     onClearSaleToAcquirerData = onClearSaleToAcquirerData,
@@ -494,9 +494,7 @@ internal fun TapToPlayApp(
                 onUpdateSaleToAcquirerData(editableSaleToAcquirerData)
                 showSaleToAcquirerData = false
             },
-            onSaveFavorite = {
-                onSaveSaleToAcquirerDataFavorite(editableSaleToAcquirerData)
-            },
+            onSaveFavorite = onSaveSaleToAcquirerDataFavorite,
             onDismiss = { showSaleToAcquirerData = false },
         )
     }

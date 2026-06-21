@@ -53,10 +53,11 @@ internal fun SaleToAcquirerDataDialog(
     onAdd: (String, String) -> Unit,
     onRemove: (List<String>) -> Unit,
     onApply: () -> Unit,
-    onSaveFavorite: () -> Unit,
+    onSaveFavorite: (SaleToAcquirerDataConfig) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var showAddField by remember { mutableStateOf(false) }
+    var showSaveFavoriteName by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onDismiss) {
         ProvideLocalizedResources(selectedLanguage) {
             Card(
@@ -86,7 +87,7 @@ internal fun SaleToAcquirerDataDialog(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             item {
-                                OutlinedButton(onClick = onSaveFavorite) { Text(stringResource(R.string.save), maxLines = 1) }
+                                OutlinedButton(onClick = { showSaveFavoriteName = true }) { Text(stringResource(R.string.save), maxLines = 1) }
                             }
                             item {
                                 OutlinedButton(onClick = { showAddField = true }) { Text(stringResource(R.string.add_field), maxLines = 1) }
@@ -124,6 +125,17 @@ internal fun SaleToAcquirerDataDialog(
                 showAddField = false
             },
             onDismiss = { showAddField = false },
+        )
+    }
+    if (showSaveFavoriteName) {
+        SaleToAcquirerDataFavoriteNameDialog(
+            config = config,
+            selectedLanguage = selectedLanguage,
+            onSave = {
+                onSaveFavorite(it)
+                showSaveFavoriteName = false
+            },
+            onDismiss = { showSaveFavoriteName = false },
         )
     }
 }
