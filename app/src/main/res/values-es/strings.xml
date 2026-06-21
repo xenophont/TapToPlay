@@ -137,6 +137,7 @@
     <string name="payment_approved">Pago aprobado</string>
     <string name="payment_profile">Perfil de pago</string>
     <string name="payment_refused">Pago rechazado</string>
+    <string name="play_on_steam">Jugar ahora en Steam</string>
     <string name="payments_app_api">API de Payments App</string>
     <string name="payments_app_instances">Instancias de Payments App</string>
     <string name="payments_app_not_boarded">Payments App sin configurar</string>

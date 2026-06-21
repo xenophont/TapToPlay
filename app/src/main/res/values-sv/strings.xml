@@ -137,6 +137,7 @@
     <string name="payment_approved">Betalning godkand</string>
     <string name="payment_profile">Betalprofil</string>
     <string name="payment_refused">Betalning nekad</string>
+    <string name="play_on_steam">Spela nu på Steam</string>
     <string name="payments_app_api">Payments App API</string>
     <string name="payments_app_instances">Payments App-instanser</string>
     <string name="payments_app_not_boarded">Payments App inte boardad</string>

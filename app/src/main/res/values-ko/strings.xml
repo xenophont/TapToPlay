@@ -142,6 +142,7 @@
     <string name="payment_approved">결제 승인됨</string>
     <string name="payment_profile">결제 프로필</string>
     <string name="payment_refused">결제 거절됨</string>
+    <string name="play_on_steam">Steam에서 지금 플레이</string>
     <string name="payments_app_api">Payments App API</string>
     <string name="payments_app_instances">Payments App 인스턴스</string>
     <string name="payments_app_not_boarded">Payments App이 설정되지 않음</string>

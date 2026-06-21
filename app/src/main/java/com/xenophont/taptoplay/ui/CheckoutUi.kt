@@ -64,6 +64,7 @@ internal fun CartPanel(
     totalMinor: Long,
     activeProfile: AdyenProfile?,
     installationId: String?,
+    selectedLanguage: AppLanguage,
     saleToAcquirerDataConfig: SaleToAcquirerDataConfig,
     saleToAcquirerDataFavorites: List<SaleToAcquirerDataConfig>,
     saleToAcquirerDataDefaults: List<SaleToAcquirerDataConfig>,
@@ -197,6 +198,7 @@ internal fun CartPanel(
     if (showModifyOptions) {
         SaleToAcquirerDataModifyDialog(
             hasDefaults = saleToAcquirerDataDefaults.isNotEmpty(),
+            selectedLanguage = selectedLanguage,
             onScanQr = {
                 showModifyOptions = false
                 onScanSaleToAcquirerData()
@@ -227,6 +229,7 @@ internal fun CartPanel(
     if (showDefaults) {
         SaleToAcquirerDataDefaultsDialog(
             defaults = saleToAcquirerDataDefaults,
+            selectedLanguage = selectedLanguage,
             onApply = {
                 onApplySaleToAcquirerDataDefault(it)
                 showDefaults = false
@@ -239,6 +242,7 @@ internal fun CartPanel(
 @Composable
 private fun SaleToAcquirerDataModifyDialog(
     hasDefaults: Boolean,
+    selectedLanguage: AppLanguage,
     onScanQr: () -> Unit,
     onImportJson: () -> Unit,
     onImportImage: () -> Unit,
@@ -250,32 +254,40 @@ private fun SaleToAcquirerDataModifyDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            ProvideLocalizedResources(selectedLanguage) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            }
         },
-        title = { Text(stringResource(R.string.sale_to_acquirer_modify_title)) },
+        title = {
+            ProvideLocalizedResources(selectedLanguage) {
+                Text(stringResource(R.string.sale_to_acquirer_modify_title))
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    stringResource(R.string.sale_to_acquirer_modify_body),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(onClick = onInspect, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.view))
-                }
-                OutlinedButton(onClick = onScanQr, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.scan_data_qr))
-                }
-                OutlinedButton(onClick = onImportJson, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.import_json))
-                }
-                OutlinedButton(onClick = onImportImage, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.ocr_image))
-                }
-                OutlinedButton(onClick = onDefaults, enabled = hasDefaults, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.defaults))
-                }
-                OutlinedButton(onClick = onSave, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.save))
+            ProvideLocalizedResources(selectedLanguage) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.sale_to_acquirer_modify_body),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(onClick = onInspect, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.view))
+                    }
+                    OutlinedButton(onClick = onScanQr, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.scan_data_qr))
+                    }
+                    OutlinedButton(onClick = onImportJson, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.import_json))
+                    }
+                    OutlinedButton(onClick = onImportImage, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.ocr_image))
+                    }
+                    OutlinedButton(onClick = onDefaults, enabled = hasDefaults, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.defaults))
+                    }
+                    OutlinedButton(onClick = onSave, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.save))
+                    }
                 }
             }
         },
@@ -285,32 +297,41 @@ private fun SaleToAcquirerDataModifyDialog(
 @Composable
 private fun SaleToAcquirerDataDefaultsDialog(
     defaults: List<SaleToAcquirerDataConfig>,
+    selectedLanguage: AppLanguage,
     onApply: (SaleToAcquirerDataConfig) -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            ProvideLocalizedResources(selectedLanguage) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            }
         },
-        title = { Text(stringResource(R.string.defaults)) },
+        title = {
+            ProvideLocalizedResources(selectedLanguage) {
+                Text(stringResource(R.string.defaults))
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                defaults.forEach { preset ->
-                    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(preset.displayName, fontWeight = FontWeight.SemiBold)
-                                Text(jsonFieldCountLabel(preset.fieldCount), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            TextButton(onClick = { onApply(preset) }) {
-                                Text(stringResource(R.string.use))
+            ProvideLocalizedResources(selectedLanguage) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    defaults.forEach { preset ->
+                        OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(preset.displayName, fontWeight = FontWeight.SemiBold)
+                                    Text(jsonFieldCountLabel(preset.fieldCount), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                TextButton(onClick = { onApply(preset) }) {
+                                    Text(stringResource(R.string.use))
+                                }
                             }
                         }
                     }

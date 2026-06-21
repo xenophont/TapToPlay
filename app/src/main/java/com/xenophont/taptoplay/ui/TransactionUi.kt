@@ -206,6 +206,7 @@ internal fun PaymentResultDialog(result: PaymentResult, isRefund: Boolean, onDis
 @Composable
 internal fun TransactionDialog(
     record: TransactionRecord,
+    selectedLanguage: AppLanguage,
     onRefund: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -220,147 +221,176 @@ internal fun TransactionDialog(
         record.refundOfTransactionId == null &&
         (record.adyenTransactionId != null || responseInsight?.transactionId != null)
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxSize()
-                .padding(vertical = 24.dp),
-        ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.transaction),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        pspReference ?: stringResource(R.string.not_supplied),
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        createdAtLabel,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        OutlinedButton(onClick = onRefund, enabled = canRefund) { Text(stringResource(R.string.refund), maxLines = 1) }
-                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
-                    }
-                }
+        ProvideLocalizedResources(selectedLanguage) {
+            TransactionDialogContent(
+                record = record,
+                selectedSection = selectedSection,
+                onSelectedSectionChange = { selectedSection = it },
+                requestInsight = requestInsight,
+                responseInsight = responseInsight,
+                highlights = highlights,
+                receipts = receipts,
+                pspReference = pspReference,
+                createdAtLabel = createdAtLabel,
+                canRefund = canRefund,
+                onRefund = onRefund,
+                onDismiss = onDismiss,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TransactionDialogContent(
+    record: TransactionRecord,
+    selectedSection: TransactionSection,
+    onSelectedSectionChange: (TransactionSection) -> Unit,
+    requestInsight: TerminalApiRequestInsight,
+    responseInsight: TerminalApiResponseInsight?,
+    highlights: List<Pair<String, String>>,
+    receipts: List<PaymentReceipt>,
+    pspReference: String?,
+    createdAtLabel: String,
+    canRefund: Boolean,
+    onRefund: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxSize()
+            .padding(vertical = 24.dp),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    stringResource(R.string.transaction),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    pspReference ?: stringResource(R.string.not_supplied),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    createdAtLabel,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    FilterChip(
-                        selected = selectedSection == TransactionSection.Request,
-                        onClick = { selectedSection = TransactionSection.Request },
-                        label = { Text(stringResource(R.string.request)) },
-                    )
-                    FilterChip(
-                        selected = selectedSection == TransactionSection.Response,
-                        onClick = { selectedSection = TransactionSection.Response },
-                        label = { Text(stringResource(R.string.response)) },
-                    )
-                    FilterChip(
-                        selected = selectedSection == TransactionSection.Receipt,
-                        onClick = { selectedSection = TransactionSection.Receipt },
-                        enabled = record.responseBody != null,
-                        label = { Text(stringResource(R.string.receipt)) },
-                    )
+                    OutlinedButton(onClick = onRefund, enabled = canRefund) { Text(stringResource(R.string.refund), maxLines = 1) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
                 }
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
-                    item { TransactionStatusChip(record.status) }
-                    when (selectedSection) {
-                        TransactionSection.Request -> {
+            }
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                FilterChip(
+                    selected = selectedSection == TransactionSection.Request,
+                    onClick = { onSelectedSectionChange(TransactionSection.Request) },
+                    label = { Text(stringResource(R.string.request)) },
+                )
+                FilterChip(
+                    selected = selectedSection == TransactionSection.Response,
+                    onClick = { onSelectedSectionChange(TransactionSection.Response) },
+                    label = { Text(stringResource(R.string.response)) },
+                )
+                FilterChip(
+                    selected = selectedSection == TransactionSection.Receipt,
+                    onClick = { onSelectedSectionChange(TransactionSection.Receipt) },
+                    enabled = record.responseBody != null,
+                    label = { Text(stringResource(R.string.receipt)) },
+                )
+            }
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                item { TransactionStatusChip(record.status) }
+                when (selectedSection) {
+                    TransactionSection.Request -> {
+                        item { RequestSummary(record) }
+                        item {
+                            StructuredJsonSection(
+                                title = stringResource(R.string.terminal_api_request),
+                                rawLabel = stringResource(R.string.raw_terminal_api_request),
+                                raw = record.requestJson,
+                                rootName = stringResource(R.string.request),
+                            )
+                        }
+                        item { DecodedSaleToAcquirerDataSection(requestInsight) }
+                    }
+                    TransactionSection.Response -> {
+                        if (highlights.isNotEmpty()) {
                             item {
-                                RequestSummary(record)
-                            }
-                            item {
-                                StructuredJsonSection(
-                                    title = stringResource(R.string.terminal_api_request),
-                                    rawLabel = stringResource(R.string.raw_terminal_api_request),
-                                    raw = record.requestJson,
-                                    rootName = stringResource(R.string.request),
-                                )
-                            }
-                            item {
-                                DecodedSaleToAcquirerDataSection(requestInsight)
+                                OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(stringResource(R.string.important_response_fields), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                        highlights.forEach { (label, value) ->
+                                            KeyValueLine(label = label, value = value)
+                                        }
+                                    }
+                                }
                             }
                         }
-                        TransactionSection.Response -> {
-                            if (highlights.isNotEmpty()) {
-                                item {
-                                    OutlinedCard(shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
-                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text(stringResource(R.string.important_response_fields), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                            highlights.forEach { (label, value) ->
-                                                KeyValueLine(label = label, value = value)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            record.failureReason?.let {
-                                item {
-                                    OutlinedCard(shape = RoundedCornerShape(8.dp)) {
-                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(stringResource(R.string.adyen_failure_detail), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
-                                            Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                    }
-                                }
-                            }
+                        record.failureReason?.let {
                             item {
-                                Text(stringResource(R.string.adyen_response), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                OutlinedCard(shape = RoundedCornerShape(8.dp)) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(stringResource(R.string.adyen_failure_detail), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
+                                        Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
                             }
+                        }
+                        item {
+                            Text(stringResource(R.string.adyen_response), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                        item {
+                            Text(
+                                if (record.responseBody == null) {
+                                    stringResource(R.string.no_response_received)
+                                } else {
+                                    record.localizedSummary()
+                                },
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        responseInsight?.let { insight -> item { ResponseFieldList(insight) } }
+                        record.responseBody?.let { body ->
+                            item {
+                                Text(stringResource(R.string.raw_terminal_api_response), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                            item { MonospaceBlock(body) }
+                        }
+                        record.responseUri?.let { response ->
+                            item {
+                                Text(stringResource(R.string.raw_return_uri), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                            item { MonospaceBlock(response) }
+                        }
+                    }
+                    TransactionSection.Receipt -> {
+                        if (receipts.isEmpty()) {
                             item {
                                 Text(
-                                    if (record.responseBody == null) {
-                                        stringResource(R.string.no_response_received)
-                                    } else {
-                                        record.localizedSummary()
-                                    },
+                                    stringResource(R.string.no_receipt_data),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            responseInsight?.let { insight -> item { ResponseFieldList(insight) } }
-                            record.responseBody?.let { body ->
-                                item {
-                                    Text(stringResource(R.string.raw_terminal_api_response), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                }
-                                item { MonospaceBlock(body) }
-                            }
-                            record.responseUri?.let { response ->
-                                item {
-                                    Text(stringResource(R.string.raw_return_uri), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                }
-                                item { MonospaceBlock(response) }
-                            }
-                        }
-                        TransactionSection.Receipt -> {
-                            if (receipts.isEmpty()) {
-                                item {
-                                    Text(
-                                        stringResource(R.string.no_receipt_data),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            } else {
-                                items(receipts) { receipt ->
-                                    DigitalReceiptCard(receipt)
-                                }
+                        } else {
+                            items(receipts) { receipt ->
+                                DigitalReceiptCard(receipt)
                             }
                         }
                     }

@@ -1,7 +1,12 @@
 package com.xenophont.taptoplay.ui
 
+import android.content.res.Configuration
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.xenophont.taptoplay.R
@@ -11,6 +16,29 @@ import com.xenophont.taptoplay.adyen.TransactionStatus
 import com.xenophont.taptoplay.adyen.pspReferenceOrNull
 import com.xenophont.taptoplay.catalog.Product
 import com.xenophont.taptoplay.profiles.PaymentEnvironment
+import java.util.Locale
+
+@Composable
+internal fun ProvideLocalizedResources(
+    language: AppLanguage,
+    content: @Composable () -> Unit,
+) {
+    val baseContext = LocalContext.current
+    val baseConfiguration = LocalConfiguration.current
+    val localizedConfiguration = remember(language, baseConfiguration) {
+        Configuration(baseConfiguration).apply {
+            setLocale(Locale.forLanguageTag(language.tag))
+        }
+    }
+    val localizedContext = remember(baseContext, language, localizedConfiguration) {
+        baseContext.createConfigurationContext(localizedConfiguration)
+    }
+    CompositionLocalProvider(
+        LocalConfiguration provides localizedConfiguration,
+        LocalContext provides localizedContext,
+        content = content,
+    )
+}
 
 @Composable
 internal fun Product.localizedName(): String =

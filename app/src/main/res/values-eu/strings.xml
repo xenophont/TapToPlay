@@ -137,6 +137,7 @@
     <string name="payment_approved">Ordainketa onartuta</string>
     <string name="payment_profile">Ordainketa profila</string>
     <string name="payment_refused">Ordainketa ukatuta</string>
+    <string name="play_on_steam">Jokatu orain Steam-en</string>
     <string name="payments_app_api">Payments App APIa</string>
     <string name="payments_app_instances">Payments App instantziak</string>
     <string name="payments_app_not_boarded">Payments App konfiguratu gabe</string>

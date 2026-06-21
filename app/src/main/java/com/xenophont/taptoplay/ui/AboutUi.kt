@@ -41,11 +41,13 @@ import com.xenophont.taptoplay.R
 
 @Composable
 internal fun AboutPanel(
+    selectedLanguage: AppLanguage,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val aboutMessage = stringResource(R.string.about_message)
     val noEmailMessage = stringResource(R.string.status_no_email_beta_access)
+    val noBrowserMessage = stringResource(R.string.status_no_browser_transaction_game)
     var showGameBetaDialog by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
@@ -108,11 +110,20 @@ internal fun AboutPanel(
     }
     if (showGameBetaDialog) {
         ClosedBetaAccessDialog(
+            selectedLanguage = selectedLanguage,
             onRequestAccess = {
                 try {
                     context.startActivity(TransactionGame.betaEmailIntent())
                 } catch (_: RuntimeException) {
                     Toast.makeText(context, noEmailMessage, Toast.LENGTH_LONG).show()
+                }
+                showGameBetaDialog = false
+            },
+            onPlayOnSteam = {
+                try {
+                    context.startActivity(TransactionGame.steamIntent())
+                } catch (_: RuntimeException) {
+                    Toast.makeText(context, noBrowserMessage, Toast.LENGTH_LONG).show()
                 }
                 showGameBetaDialog = false
             },
@@ -123,29 +134,46 @@ internal fun AboutPanel(
 
 @Composable
 private fun ClosedBetaAccessDialog(
+    selectedLanguage: AppLanguage,
     onRequestAccess: () -> Unit,
+    onPlayOnSteam: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            Button(onClick = onRequestAccess) {
-                Text(stringResource(R.string.request_beta_access_here))
+            ProvideLocalizedResources(selectedLanguage) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = onRequestAccess, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.request_beta_access_here))
+                    }
+                    OutlinedButton(onClick = onPlayOnSteam, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.play_on_steam))
+                    }
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            ProvideLocalizedResources(selectedLanguage) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            }
         },
-        title = { Text(stringResource(R.string.game_beta_title)) },
+        title = {
+            ProvideLocalizedResources(selectedLanguage) {
+                Text(stringResource(R.string.game_beta_title))
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.game_beta_body))
-                Text(
-                    stringResource(R.string.game_beta_coming_soon),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+            ProvideLocalizedResources(selectedLanguage) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.game_beta_body))
+                    Text(
+                        stringResource(R.string.game_beta_coming_soon),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         },
     )
@@ -173,11 +201,17 @@ internal fun PrivacyPolicyStickyButton(
 
 private object TransactionGame {
     private const val EMAIL = "xenophont.dev@gmail.com"
+    private const val STEAM_URL = "https://store.steampowered.com/app/4738940/Authorisation_Engine/"
 
     fun betaEmailIntent(): Intent =
         Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$EMAIL")).apply {
             putExtra(Intent.EXTRA_SUBJECT, "Authorisation Engine closed beta access request")
             putExtra(Intent.EXTRA_TEXT, "Hi Javier,\n\nI would like access to the closed beta of Authorisation Engine on Google Play.\n\nThanks!")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+    fun steamIntent(): Intent =
+        Intent(Intent.ACTION_VIEW, Uri.parse(STEAM_URL)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 }

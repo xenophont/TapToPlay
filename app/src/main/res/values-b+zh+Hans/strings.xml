@@ -142,6 +142,7 @@
     <string name="payment_approved">支付已批准</string>
     <string name="payment_profile">支付配置</string>
     <string name="payment_refused">支付已拒绝</string>
+    <string name="play_on_steam">立即在 Steam 上游玩</string>
     <string name="payments_app_api">Payments App API</string>
     <string name="payments_app_instances">Payments App 实例</string>
     <string name="payments_app_not_boarded">Payments App 尚未配置</string>

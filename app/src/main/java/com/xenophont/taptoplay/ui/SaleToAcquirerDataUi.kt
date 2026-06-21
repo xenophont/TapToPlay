@@ -48,6 +48,7 @@ import kotlinx.serialization.json.longOrNull
 @Composable
 internal fun SaleToAcquirerDataDialog(
     config: SaleToAcquirerDataConfig,
+    selectedLanguage: AppLanguage,
     onEdit: (List<String>, String) -> Unit,
     onAdd: (String, String) -> Unit,
     onRemove: (List<String>) -> Unit,
@@ -57,57 +58,59 @@ internal fun SaleToAcquirerDataDialog(
 ) {
     var showAddField by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(620.dp),
-        ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Column(Modifier.fillMaxWidth()) {
-                        Text("SaleToAcquirerData", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            stringResource(
-                                R.string.sale_to_acquirer_data_summary,
-                                config.displayName,
-                                pluralStringResource(R.plurals.field_count, config.fieldCount, config.fieldCount),
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+        ProvideLocalizedResources(selectedLanguage) {
+            Card(
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(620.dp),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column(Modifier.fillMaxWidth()) {
+                            Text("SaleToAcquirerData", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                stringResource(
+                                    R.string.sale_to_acquirer_data_summary,
+                                    config.displayName,
+                                    pluralStringResource(R.plurals.field_count, config.fieldCount, config.fieldCount),
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            item {
+                                OutlinedButton(onClick = onSaveFavorite) { Text(stringResource(R.string.save), maxLines = 1) }
+                            }
+                            item {
+                                OutlinedButton(onClick = { showAddField = true }) { Text(stringResource(R.string.add_field), maxLines = 1) }
+                            }
+                            item {
+                                OutlinedButton(onClick = onApply) { Text(stringResource(R.string.apply), maxLines = 1) }
+                            }
+                            item {
+                                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), maxLines = 1) }
+                            }
+                        }
                     }
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        item {
-                            OutlinedButton(onClick = onSaveFavorite) { Text(stringResource(R.string.save), maxLines = 1) }
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
+                        items(config.data.entries.toList()) { (key, value) ->
+                            JsonNodeRow(
+                                name = key,
+                                value = value,
+                                depth = 0,
+                                path = listOf(key),
+                                editable = true,
+                                onEdit = onEdit,
+                                onRemove = onRemove,
+                            )
                         }
-                        item {
-                            OutlinedButton(onClick = { showAddField = true }) { Text(stringResource(R.string.add_field), maxLines = 1) }
-                        }
-                        item {
-                            OutlinedButton(onClick = onApply) { Text(stringResource(R.string.apply), maxLines = 1) }
-                        }
-                        item {
-                            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), maxLines = 1) }
-                        }
-                    }
-                }
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
-                    items(config.data.entries.toList()) { (key, value) ->
-                        JsonNodeRow(
-                            name = key,
-                            value = value,
-                            depth = 0,
-                            path = listOf(key),
-                            editable = true,
-                            onEdit = onEdit,
-                            onRemove = onRemove,
-                        )
                     }
                 }
             }
@@ -115,6 +118,7 @@ internal fun SaleToAcquirerDataDialog(
     }
     if (showAddField) {
         AddJsonFieldDialog(
+            selectedLanguage = selectedLanguage,
             onAdd = { path, value ->
                 onAdd(path, value)
                 showAddField = false
@@ -126,6 +130,7 @@ internal fun SaleToAcquirerDataDialog(
 
 @Composable
 private fun AddJsonFieldDialog(
+    selectedLanguage: AppLanguage,
     onAdd: (String, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -134,37 +139,47 @@ private fun AddJsonFieldDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            Button(onClick = { onAdd(path, value) }, enabled = path.isNotBlank()) {
-                Text(stringResource(R.string.add))
+            ProvideLocalizedResources(selectedLanguage) {
+                Button(onClick = { onAdd(path, value) }, enabled = path.isNotBlank()) {
+                    Text(stringResource(R.string.add))
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            ProvideLocalizedResources(selectedLanguage) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            }
         },
-        title = { Text(stringResource(R.string.add_json_field)) },
+        title = {
+            ProvideLocalizedResources(selectedLanguage) {
+                Text(stringResource(R.string.add_json_field))
+            }
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = path,
-                    onValueChange = { path = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.field_path)) },
-                    placeholder = { Text("metadata.experiment") },
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { value = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.value)) },
-                    placeholder = { Text("TapToPlay") },
-                    minLines = 3,
-                )
-                Text(
-                    stringResource(R.string.add_json_field_hint),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+            ProvideLocalizedResources(selectedLanguage) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = path,
+                        onValueChange = { path = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.field_path)) },
+                        placeholder = { Text("metadata.experiment") },
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { value = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.value)) },
+                        placeholder = { Text("TapToPlay") },
+                        minLines = 3,
+                    )
+                    Text(
+                        stringResource(R.string.add_json_field_hint),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         },
     )

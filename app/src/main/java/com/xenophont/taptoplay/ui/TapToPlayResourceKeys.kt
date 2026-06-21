@@ -140,6 +140,7 @@ internal val TapToPlayTextResources: Map<String, Int> = mapOf(
         "payment_profile" to R.string.payment_profile,
         "payment_refused" to R.string.payment_refused,
         "payments_app_api" to R.string.payments_app_api,
+        "play_on_steam" to R.string.play_on_steam,
         "payments_app_instances" to R.string.payments_app_instances,
         "payments_app_not_boarded" to R.string.payments_app_not_boarded,
         "payments_app_not_boarded_body" to R.string.payments_app_not_boarded_body,

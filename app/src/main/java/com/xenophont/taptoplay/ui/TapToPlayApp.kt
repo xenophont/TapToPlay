@@ -288,6 +288,7 @@ internal fun TapToPlayApp(
                                     totalMinor = cart.totalMinor(),
                                     activeProfile = activeProfile,
                                     installationId = installationId,
+                                    selectedLanguage = selectedLanguage,
                                     saleToAcquirerDataConfig = saleToAcquirerDataConfig,
                                     saleToAcquirerDataFavorites = saleToAcquirerDataFavorites,
                                     saleToAcquirerDataDefaults = saleToAcquirerDataDefaults,
@@ -386,7 +387,7 @@ internal fun TapToPlayApp(
                         }
                         AppScreen.About -> {
                             item {
-                                AboutPanel()
+                                AboutPanel(selectedLanguage = selectedLanguage)
                             }
                         }
                     }
@@ -479,6 +480,7 @@ internal fun TapToPlayApp(
     if (showSaleToAcquirerData) {
         SaleToAcquirerDataDialog(
             config = editableSaleToAcquirerData,
+            selectedLanguage = selectedLanguage,
             onEdit = { path, value ->
                 editableSaleToAcquirerData = SaleToAcquirerDataEditor.update(editableSaleToAcquirerData, path, value)
             },
@@ -502,6 +504,7 @@ internal fun TapToPlayApp(
     inspectedTransaction?.let { record ->
         TransactionDialog(
             record = record,
+            selectedLanguage = selectedLanguage,
             onRefund = { onRefund(record) },
             onDismiss = { inspectedTransaction = null },
         )
