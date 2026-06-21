@@ -143,19 +143,7 @@ private fun ClosedBetaAccessDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             ProvideLocalizedResources(selectedLanguage) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    Button(onClick = onRequestAccess, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.request_beta_access_here))
-                    }
-                    OutlinedButton(onClick = onPlayOnSteam, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.play_on_steam))
-                    }
-                }
-            }
-        },
-        dismissButton = {
-            ProvideLocalizedResources(selectedLanguage) {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
             }
         },
         title = {
@@ -165,7 +153,7 @@ private fun ClosedBetaAccessDialog(
         },
         text = {
             ProvideLocalizedResources(selectedLanguage) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(stringResource(R.string.game_beta_body))
                     Text(
                         stringResource(R.string.game_beta_coming_soon),
@@ -173,6 +161,12 @@ private fun ClosedBetaAccessDialog(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                     )
+                    Button(onClick = onRequestAccess, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.request_beta_access_here))
+                    }
+                    OutlinedButton(onClick = onPlayOnSteam, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.play_on_steam))
+                    }
                 }
             }
         },
