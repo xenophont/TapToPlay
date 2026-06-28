@@ -11,6 +11,10 @@ object AdyenLinks {
     private const val LIVE_PAYMENTS_APP_PACKAGE = "com.adyen.ipp.mobile.companion.live"
     private const val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id="
 
+    /**
+     * Boarding follows Adyen's check -> token exchange -> finish sequence:
+     * https://docs.adyen.com/point-of-sale/mobile-android/build/payments-app/
+     */
     fun boarded(profile: AdyenProfile): String = withParams(
         base(profile.environment, "boarded"),
         "returnUrl" to RETURN_URL,
@@ -28,6 +32,10 @@ object AdyenLinks {
         "boardingToken" to boardingToken.base64Url(),
     )
 
+    /**
+     * The Payments App requires the encrypted Base64URL Nexo envelope in the documented `request`
+     * query parameter.
+     */
     fun nexo(profile: AdyenProfile, encodedRequest: String): String = withParams(
         base(profile.environment, "nexo"),
         "returnUrl" to RETURN_URL,

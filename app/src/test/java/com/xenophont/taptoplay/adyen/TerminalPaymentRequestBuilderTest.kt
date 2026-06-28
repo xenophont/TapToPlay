@@ -25,8 +25,9 @@ class TerminalPaymentRequestBuilderTest {
             totalMinor = 12900,
         )
 
-        val insight = TerminalApiRequestInspector.inspect(request.json)
-        val saleToPoi = Json.parseToJsonElement(request.json).jsonObject["SaleToPOIRequest"]!!.jsonObject
+        val requestJson = request.payload.decodeToString()
+        val insight = TerminalApiRequestInspector.inspect(requestJson)
+        val saleToPoi = Json.parseToJsonElement(requestJson).jsonObject["SaleToPOIRequest"]!!.jsonObject
         val amount = saleToPoi["PaymentRequest"]!!
             .jsonObject["PaymentTransaction"]!!
             .jsonObject["AmountsReq"]!!
@@ -170,11 +171,8 @@ class TerminalPaymentRequestBuilderTest {
         displayName = "Demo",
         environment = PaymentEnvironment.TEST,
         merchantId = "merchant",
-        apiKey = "api",
-        clientKey = "client",
         terminalKeyIdentifier = "key",
         terminalKeyVersion = 1,
-        terminalPassphrase = "passphrase",
         currency = "EUR",
         countryCode = "ES",
     )

@@ -125,9 +125,15 @@ internal fun ProfilePanel(
                         activeProfile.storeName?.let { KeyValueLine(stringResource(R.string.store_name), it) }
                         activeProfile.storeId?.let { KeyValueLine(stringResource(R.string.store_id), it) }
                         KeyValueLine(stringResource(R.string.environment), activeProfile.environment.localizedLabel())
-                        KeyValueLine(stringResource(R.string.api_key), secretMask(activeProfile.apiKey))
+                        KeyValueLine(
+                            stringResource(R.string.api_key),
+                            passphraseMask(if (activeProfile.credentialsConfigured) "set" else ""),
+                        )
                         KeyValueLine(stringResource(R.string.terminal_key), "${activeProfile.terminalKeyIdentifier} v${activeProfile.terminalKeyVersion}")
-                        KeyValueLine(stringResource(R.string.passphrase), passphraseMask(activeProfile.terminalPassphrase))
+                        KeyValueLine(
+                            stringResource(R.string.passphrase),
+                            passphraseMask(if (activeProfile.credentialsConfigured) "set" else ""),
+                        )
                         KeyValueLine(stringResource(R.string.installation), installationId ?: stringResource(R.string.installation_not_returned_yet))
                         KeyValueLine(
                             stringResource(R.string.boarding_request_token),

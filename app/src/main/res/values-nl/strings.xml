@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Payments App-instanties vernieuwen...</string>
     <string name="status_refund_missing_installation">Kan niet terugbetalen: er is geen installation ID beschikbaar voor de Payments app.</string>
     <string name="status_refund_missing_profile">Kan niet terugbetalen: selecteer het Adyen-profiel van de oorspronkelijke betaling.</string>
+    <string name="status_profile_secrets_unavailable">De referenties van het geselecteerde profiel zijn niet beschikbaar. Importeer het profiel opnieuw.</string>
     <string name="status_refund_missing_transaction">Kan nog niet terugbetalen: de Adyen-transactie-ID ontbreekt.</string>
     <string name="status_requesting_boarding_token">Adyen boarding token aanvragen...</string>
     <string name="status_resolving_store">Adyen-winkelnaam ophalen voor %1$s...</string>

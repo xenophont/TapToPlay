@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Freskatzen Payments App instances...</string>
     <string name="status_refund_missing_installation">Ezin da itzuli: no installation ID is available for the Payments app.</string>
     <string name="status_refund_missing_profile">Ezin da itzuli: select the Adyen profile used for the original payment.</string>
+    <string name="status_profile_secrets_unavailable">Hautatutako profilaren kredentzialak ez daude erabilgarri. Inportatu profila berriro.</string>
     <string name="status_refund_missing_transaction">Ezin da itzuli yet: the Adyen transaction identifier is missing.</string>
     <string name="status_requesting_boarding_token">Eskaeraing Adyen konfigurazioa tokena...</string>
     <string name="status_resolving_store">%1$s-rako Adyen dendaren izena ebazten...</string>

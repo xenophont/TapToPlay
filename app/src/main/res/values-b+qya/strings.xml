@@ -297,6 +297,7 @@
     <string name="status_refreshing_payments_instances">Rëfrëshíng Páymënts Ápp ínstáncës...</string>
     <string name="status_refund_missing_installation">Cánnót rëfúnd: nó ínstállátíón ÍD ís áváíláblë fór thë Páymënts ápp.</string>
     <string name="status_refund_missing_profile">Cánnót rëfúnd: sëlëct thë Ádyën prófílë úsëd fór thë órígínál páymënt.</string>
+    <string name="status_profile_secrets_unavailable">Thë sëlëctëd prófílë crëdëntíáls árë únáváíláblë. Ímpórt thë prófílë ágáín.</string>
     <string name="status_refund_missing_transaction">Cánnót rëfúnd yët: thë Ádyën tránsáctíón ídëntífíër ís míssíng.</string>
     <string name="status_requesting_boarding_token">Rëqúëstíng Ádyën bóárdíng tókën...</string>
     <string name="status_resolving_store">Rësólvíng Ádyën stórë námë fór %1$s...</string>

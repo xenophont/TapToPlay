@@ -2,6 +2,7 @@ package com.xenophont.taptoplay.adyen
 
 import com.xenophont.taptoplay.profiles.AdyenProfile
 import com.xenophont.taptoplay.profiles.PaymentEnvironment
+import com.xenophont.taptoplay.profiles.ProfileSecrets
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -22,7 +23,11 @@ class PaymentsAppApiClient(
     private val callFactory: Call.Factory = OkHttpClient(),
     private val baseUrlOverride: String? = null,
 ) {
-    fun createBoardingToken(profile: AdyenProfile, boardingRequestToken: String): Result<BoardingTokenResponse> =
+    fun createBoardingToken(
+        profile: AdyenProfile,
+        secrets: ProfileSecrets,
+        boardingRequestToken: String,
+    ): Result<BoardingTokenResponse> =
         runCatching {
             val body = json.encodeToString(
                 JsonObject.serializer(),
@@ -33,7 +38,7 @@ class PaymentsAppApiClient(
             val responseBody = execute(
                 Request.Builder()
                     .url(scopedPaymentsAppUrl(profile, "generatePaymentsAppBoardingToken"))
-                    .addHeader("X-API-Key", profile.apiKey)
+                    .addHeader("X-API-Key", secrets.apiKeyString())
                     .post(body.toRequestBody(JSON_MEDIA_TYPE))
                     .build(),
             )
@@ -45,7 +50,7 @@ class PaymentsAppApiClient(
             )
         }
 
-    fun listPaymentsApps(profile: AdyenProfile): Result<List<PaymentsAppInstance>> = runCatching {
+    fun listPaymentsApps(profile: AdyenProfile, secrets: ProfileSecrets): Result<List<PaymentsAppInstance>> = runCatching {
         val responseBody = execute(
             Request.Builder()
                 .url(
@@ -54,7 +59,7 @@ class PaymentsAppApiClient(
                         .addQueryParameter("limit", "100")
                         .build(),
                 )
-                .addHeader("X-API-Key", profile.apiKey)
+                .addHeader("X-API-Key", secrets.apiKeyString())
                 .get()
                 .build(),
         )
@@ -73,11 +78,15 @@ class PaymentsAppApiClient(
             .orEmpty()
     }
 
-    fun revokePaymentsApp(profile: AdyenProfile, installationId: String): Result<Unit> = runCatching {
+    fun revokePaymentsApp(
+        profile: AdyenProfile,
+        secrets: ProfileSecrets,
+        installationId: String,
+    ): Result<Unit> = runCatching {
         execute(
             Request.Builder()
                 .url(merchantPaymentsAppUrl(profile, "paymentsApps", installationId, "revoke"))
-                .addHeader("X-API-Key", profile.apiKey)
+                .addHeader("X-API-Key", secrets.apiKeyString())
                 .post(ByteArray(0).toRequestBody(null))
                 .build(),
         )

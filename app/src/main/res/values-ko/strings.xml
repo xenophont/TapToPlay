@@ -297,6 +297,7 @@
     <string name="status_refreshing_payments_instances">Payments App 인스턴스를 새로고침하는 중...</string>
     <string name="status_refund_missing_installation">환불할 수 없음: Payments app의 installation ID가 없습니다.</string>
     <string name="status_refund_missing_profile">환불할 수 없음: 원래 결제에 사용한 Adyen 프로필을 선택하세요.</string>
+    <string name="status_profile_secrets_unavailable">선택한 프로필의 자격 증명을 사용할 수 없습니다. 프로필을 다시 가져오세요.</string>
     <string name="status_refund_missing_transaction">아직 환불할 수 없음: Adyen 거래 ID가 없습니다.</string>
     <string name="status_requesting_boarding_token">Adyen 설정 토큰을 요청하는 중...</string>
     <string name="status_resolving_store">%1$s의 Adyen 매장 이름을 확인하는 중...</string>

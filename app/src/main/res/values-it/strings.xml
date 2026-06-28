@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Aggiornamento Payments App instances...</string>
     <string name="status_refund_missing_installation">Impossibile rimborsare: nessun installation ID disponibile per Payments app.</string>
     <string name="status_refund_missing_profile">Impossibile rimborsare: seleziona il profilo Adyen del pagamento originale.</string>
+    <string name="status_profile_secrets_unavailable">Le credenziali del profilo selezionato non sono disponibili. Importa nuovamente il profilo.</string>
     <string name="status_refund_missing_transaction">Impossibile rimborsare: manca l\'identificatore transazione Adyen.</string>
     <string name="status_requesting_boarding_token">Richiesta token boarding ad Adyen...</string>
     <string name="status_resolving_store">Risoluzione del nome negozio Adyen per %1$s...</string>

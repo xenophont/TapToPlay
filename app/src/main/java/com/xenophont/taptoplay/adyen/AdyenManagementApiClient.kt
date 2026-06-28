@@ -2,6 +2,7 @@ package com.xenophont.taptoplay.adyen
 
 import com.xenophont.taptoplay.profiles.AdyenProfile
 import com.xenophont.taptoplay.profiles.PaymentEnvironment
+import com.xenophont.taptoplay.profiles.ProfileSecrets
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -17,12 +18,12 @@ class AdyenManagementApiClient(
     private val callFactory: Call.Factory = OkHttpClient(),
     private val baseUrlOverride: String? = null,
 ) {
-    fun findStoreForProfile(profile: AdyenProfile): Result<AdyenStore?> = runCatching {
+    fun findStoreForProfile(profile: AdyenProfile, secrets: ProfileSecrets): Result<AdyenStore?> = runCatching {
         val storeId = profile.storeId?.takeIf { it.isNotBlank() } ?: return@runCatching null
         var pageNumber = 1
         var pagesTotal = 1
         do {
-            val root = json.parseToJsonElement(execute(storesRequest(profile, pageNumber))).jsonObject
+            val root = json.parseToJsonElement(execute(storesRequest(profile, secrets, pageNumber))).jsonObject
             stores(root).firstOrNull { store ->
                 store.id == storeId && (store.merchantId == null || store.merchantId == profile.merchantId)
             }?.let { return@runCatching it }
@@ -32,7 +33,7 @@ class AdyenManagementApiClient(
         null
     }
 
-    private fun storesRequest(profile: AdyenProfile, pageNumber: Int): Request {
+    private fun storesRequest(profile: AdyenProfile, secrets: ProfileSecrets, pageNumber: Int): Request {
         val url = managementBase(profile.environment)
             .toHttpUrl()
             .newBuilder()
@@ -44,7 +45,9 @@ class AdyenManagementApiClient(
             .build()
         return Request.Builder()
             .url(url)
-            .addHeader("X-API-Key", profile.apiKey)
+            // OkHttp requires an immutable String header; keep this unavoidable copy scoped to
+            // request construction and never retain it in profile/UI state.
+            .addHeader("X-API-Key", secrets.apiKeyString())
             .get()
             .build()
     }

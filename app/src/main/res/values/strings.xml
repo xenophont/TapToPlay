@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Refreshing Payments App instances...</string>
     <string name="status_refund_missing_installation">Cannot refund: no installation ID is available for the Payments app.</string>
     <string name="status_refund_missing_profile">Cannot refund: select the Adyen profile used for the original payment.</string>
+    <string name="status_profile_secrets_unavailable">The selected profile credentials are unavailable. Import the profile again.</string>
     <string name="status_refund_missing_transaction">Cannot refund yet: the Adyen transaction identifier is missing.</string>
     <string name="status_requesting_boarding_token">Requesting Adyen boarding token...</string>
     <string name="status_resolving_store">Resolving Adyen store name for %1$s...</string>

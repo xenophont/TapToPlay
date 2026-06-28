@@ -87,7 +87,10 @@ internal fun DiagnosticsPanel(
                 KeyValueLine(stringResource(R.string.merchant), it.merchantId)
                 it.storeName?.let { storeName -> KeyValueLine(stringResource(R.string.store_name), storeName) }
                 it.storeId?.let { store -> KeyValueLine(stringResource(R.string.store), store) }
-                KeyValueLine(stringResource(R.string.api_key), secretMask(it.apiKey))
+                KeyValueLine(
+                    stringResource(R.string.api_key),
+                    passphraseMask(if (it.credentialsConfigured) "set" else ""),
+                )
                 KeyValueLine(stringResource(R.string.terminal_key), "${it.terminalKeyIdentifier} v${it.terminalKeyVersion}")
             }
             KeyValueLine(stringResource(R.string.installation), installationId?.maskForDisplay() ?: stringResource(R.string.installation_not_returned_yet))

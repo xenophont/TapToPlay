@@ -2,12 +2,14 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="adyen_profiles.xml" />
+        <exclude domain="sharedpref" path="adyen_profile_secret_vault.xml" />
         <exclude domain="sharedpref" path="adyen_boarding_state.xml" />
         <exclude domain="sharedpref" path="adyen_transactions.xml" />
         <exclude domain="sharedpref" path="adyen_sale_to_acquirer_favorites.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="adyen_profiles.xml" />
+        <exclude domain="sharedpref" path="adyen_profile_secret_vault.xml" />
         <exclude domain="sharedpref" path="adyen_boarding_state.xml" />
         <exclude domain="sharedpref" path="adyen_transactions.xml" />
         <exclude domain="sharedpref" path="adyen_sale_to_acquirer_favorites.xml" />

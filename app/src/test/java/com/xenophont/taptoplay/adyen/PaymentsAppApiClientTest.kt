@@ -2,6 +2,7 @@ package com.xenophont.taptoplay.adyen
 
 import com.xenophont.taptoplay.profiles.AdyenProfile
 import com.xenophont.taptoplay.profiles.PaymentEnvironment
+import com.xenophont.taptoplay.profiles.ProfileSecrets
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -23,7 +24,7 @@ class PaymentsAppApiClientTest {
         )
         val client = PaymentsAppApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val response = client.createBoardingToken(profile(storeId = "store-1"), "request-token").getOrThrow()
+        val response = client.createBoardingToken(profile(storeId = "store-1"), secrets(), "request-token").getOrThrow()
 
         assertEquals("install-1", response.installationId)
         assertEquals("token-1", response.boardingToken)
@@ -50,7 +51,7 @@ class PaymentsAppApiClientTest {
         )
         val client = PaymentsAppApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val instances = client.listPaymentsApps(profile(storeId = "store")).getOrThrow()
+        val instances = client.listPaymentsApps(profile(storeId = "store"), secrets()).getOrThrow()
 
         assertEquals(1, instances.size)
         assertEquals(PaymentsAppStatus.BOARDED, instances.first().status)
@@ -63,7 +64,7 @@ class PaymentsAppApiClientTest {
         val factory = FakeCallFactory(code = 200, body = "{}")
         val client = PaymentsAppApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        client.revokePaymentsApp(profile(storeId = "store"), "install-1").getOrThrow()
+        client.revokePaymentsApp(profile(storeId = "store"), secrets(), "install-1").getOrThrow()
 
         assertEquals("/v1/merchants/merchant/paymentsApps/install-1/revoke", factory.request.url.encodedPath)
         assertEquals("POST", factory.request.method)
@@ -77,7 +78,7 @@ class PaymentsAppApiClientTest {
         )
         val client = PaymentsAppApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val result = client.listPaymentsApps(profile())
+        val result = client.listPaymentsApps(profile(), secrets())
 
         assertTrue(result.isFailure)
         val error = (result.exceptionOrNull() as AdyenApiException).error
@@ -91,14 +92,13 @@ class PaymentsAppApiClientTest {
         environment = PaymentEnvironment.TEST,
         merchantId = "merchant",
         storeId = storeId,
-        apiKey = "api",
-        clientKey = "client",
         terminalKeyIdentifier = "key",
         terminalKeyVersion = 1,
-        terminalPassphrase = "passphrase",
         currency = "EUR",
         countryCode = "ES",
     )
+
+    private fun secrets() = ProfileSecrets.fromStrings("api", "client", "passphrase")
 }
 
 private class FakeCallFactory(

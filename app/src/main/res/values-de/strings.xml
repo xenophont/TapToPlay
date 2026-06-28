@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Aktualisiere Payments App instances...</string>
     <string name="status_refund_missing_installation">Erstattung nicht möglich: no installation ID is available for the Payments app.</string>
     <string name="status_refund_missing_profile">Erstattung nicht möglich: select the Adyen profile used for the original payment.</string>
+    <string name="status_profile_secrets_unavailable">Die Anmeldedaten des ausgewählten Profils sind nicht verfügbar. Importiere das Profil erneut.</string>
     <string name="status_refund_missing_transaction">Erstattung nicht möglich yet: the Adyen transaction identifier is missing.</string>
     <string name="status_requesting_boarding_token">Anfrageing Adyen Einrichtung Token...</string>
     <string name="status_resolving_store">Adyen Store-Name für %1$s wird aufgelöst...</string>

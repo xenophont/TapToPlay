@@ -297,6 +297,7 @@
     <string name="status_refreshing_payments_instances">正在刷新 Payments App 实例...</string>
     <string name="status_refund_missing_installation">无法退款: 没有 Payments app 的 installation ID。</string>
     <string name="status_refund_missing_profile">无法退款: 请选择原始付款使用的 Adyen 配置。</string>
+    <string name="status_profile_secrets_unavailable">所选配置的凭据不可用。请重新导入该配置。</string>
     <string name="status_refund_missing_transaction">暂时无法退款: 缺少 Adyen 交易 ID。</string>
     <string name="status_requesting_boarding_token">正在请求 Adyen 配置令牌...</string>
     <string name="status_resolving_store">正在解析 %1$s 的 Adyen 门店名称...</string>

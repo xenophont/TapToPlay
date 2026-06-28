@@ -297,6 +297,7 @@
     <string name="status_refreshing_payments_instances">Payments App インスタンスを更新しています...</string>
     <string name="status_refund_missing_installation">返金できません: Payments app の installation ID がありません。</string>
     <string name="status_refund_missing_profile">返金できません: 元の決済で使った Adyen プロファイルを選択してください。</string>
+    <string name="status_profile_secrets_unavailable">選択したプロファイルの認証情報を使用できません。プロファイルを再度インポートしてください。</string>
     <string name="status_refund_missing_transaction">まだ返金できません: Adyen 取引 ID がありません。</string>
     <string name="status_requesting_boarding_token">Adyen 設定トークンをリクエストしています...</string>
     <string name="status_resolving_store">%1$s の Adyen 店舗名を解決しています...</string>

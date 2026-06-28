@@ -62,25 +62,27 @@ class ProfileSelectionTest {
         displayName = name,
         environment = environment,
         merchantId = "merchant",
-        apiKey = "api",
-        clientKey = "client",
         terminalKeyIdentifier = "key",
         terminalKeyVersion = 1,
-        terminalPassphrase = "passphrase",
         currency = "EUR",
         countryCode = "ES",
     )
 }
 
-private class MemoryProfileStore : ProfileStore {
+private class MemoryProfileStore : ProfileRepository {
     private val profiles = mutableListOf<AdyenProfile>()
+    private val secrets = mutableMapOf<String, ProfileSecrets>()
     private var active: String? = null
 
     override fun profiles(): List<AdyenProfile> = profiles
     override fun activeProfileId(): String? = active
-    override fun save(profile: AdyenProfile) {
+    override fun save(profile: AdyenProfile, secrets: ProfileSecrets?) {
         profiles.removeAll { it.id == profile.id }
         profiles.add(profile)
+        secrets?.let {
+            this.secrets.remove(profile.id)?.close()
+            this.secrets[profile.id] = it.copy()
+        }
     }
 
     override fun setActive(profileId: String) {
@@ -90,6 +92,10 @@ private class MemoryProfileStore : ProfileStore {
 
     override fun remove(profileId: String) {
         profiles.removeAll { it.id == profileId }
+        secrets.remove(profileId)?.close()
         if (active == profileId) active = profiles.firstOrNull()?.id
     }
+
+    override fun <T> withSecrets(profileId: String, block: (ProfileSecrets) -> T): T? =
+        secrets[profileId]?.copy()?.use(block)
 }

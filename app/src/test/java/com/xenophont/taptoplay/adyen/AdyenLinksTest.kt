@@ -55,11 +55,8 @@ class AdyenLinksTest {
         displayName = "Profile",
         environment = environment,
         merchantId = "merchant",
-        apiKey = "api",
-        clientKey = "client",
         terminalKeyIdentifier = "key",
         terminalKeyVersion = 1,
-        terminalPassphrase = "passphrase",
         currency = "EUR",
         countryCode = "ES",
     )

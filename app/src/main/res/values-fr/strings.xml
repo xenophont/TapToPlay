@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Actualisation Payments App instances...</string>
     <string name="status_refund_missing_installation">Remboursement impossible: no installation ID is available for the Payments app.</string>
     <string name="status_refund_missing_profile">Remboursement impossible: select the Adyen profile used for the original payment.</string>
+    <string name="status_profile_secrets_unavailable">Les identifiants du profil sélectionné sont indisponibles. Importez à nouveau le profil.</string>
     <string name="status_refund_missing_transaction">Remboursement impossible yet: the Adyen transaction identifier is missing.</string>
     <string name="status_requesting_boarding_token">Requêteing Adyen configuration token...</string>
     <string name="status_resolving_store">Résolution du nom de boutique Adyen pour %1$s...</string>

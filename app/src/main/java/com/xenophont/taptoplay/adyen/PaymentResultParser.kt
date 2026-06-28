@@ -67,16 +67,26 @@ object PaymentResultParser {
         return parseParams(params, profile = null, crypto = null)
     }
 
-    fun parse(rawUri: String, profile: AdyenProfile?, crypto: NexoCrypto): PaymentResult? {
-        val parsed = runCatching { java.net.URI(rawUri) }.getOrNull() ?: return null
-        if (parsed.scheme != "taptoplay" || parsed.host != "adyen-return") return null
-        val params = parseQuery(parsed.rawQuery.orEmpty())
-        return parseParams(params, profile, crypto)
+    fun parse(
+        rawUri: String,
+        profile: AdyenProfile?,
+        terminalPassphrase: CharArray?,
+        crypto: NexoCrypto,
+    ): PaymentResult? {
+        return try {
+            val parsed = runCatching { java.net.URI(rawUri) }.getOrNull() ?: return null
+            if (parsed.scheme != "taptoplay" || parsed.host != "adyen-return") return null
+            val params = parseQuery(parsed.rawQuery.orEmpty())
+            parseParams(params, profile, terminalPassphrase, crypto)
+        } finally {
+            terminalPassphrase?.fill('\u0000')
+        }
     }
 
     private fun parseParams(
         params: Map<String, String>,
         profile: AdyenProfile?,
+        terminalPassphrase: CharArray? = null,
         crypto: NexoCrypto?,
     ): PaymentResult {
         val boarded = params["boarded"]
@@ -99,7 +109,7 @@ object PaymentResultParser {
             )
         }
 
-        terminalApiResponse(params, profile, crypto)?.let { return it }
+        terminalApiResponse(params, profile, terminalPassphrase, crypto)?.let { return it }
 
         params["error"]?.let { error ->
             val advice = adyenAppLinkAdvice(error)
@@ -122,6 +132,7 @@ object PaymentResultParser {
     private fun terminalApiResponse(
         params: Map<String, String>,
         profile: AdyenProfile?,
+        terminalPassphrase: CharArray?,
         crypto: NexoCrypto?,
     ): PaymentResult? {
         val preferredKeys = listOf("response", "nexoResponse", "terminalApiResponse", "payload", "data")
@@ -136,8 +147,20 @@ object PaymentResultParser {
         candidates.forEach { candidate ->
             val decoded = decodeBase64(candidate) ?: return@forEach
             val responseJson = when {
-                decoded.contains("\"NexoBlob\"") && profile != null && crypto != null ->
-                    runCatching { crypto.decrypt(profile, decoded) }.getOrNull() ?: decoded
+                decoded.contains("\"NexoBlob\"") &&
+                    profile != null &&
+                    terminalPassphrase != null &&
+                    crypto != null -> {
+                    val plaintext = runCatching {
+                        crypto.decrypt(profile, terminalPassphrase.copyOf(), decoded)
+                    }.getOrNull()
+                        ?: return@forEach
+                    try {
+                        plaintext.decodeToString()
+                    } finally {
+                        plaintext.fill(0)
+                    }
+                }
                 else -> decoded
             }
             parseTerminalApiResponse(responseJson)?.let { return it }
@@ -245,6 +268,11 @@ object PaymentResultParser {
     private val json = Json { ignoreUnknownKeys = true }
 }
 
+/**
+ * Maps Android Payments app App Link error codes to concise operator guidance.
+ *
+ * Source: https://docs.adyen.com/point-of-sale/mobile-android/troubleshooting
+ */
 fun adyenAppLinkAdvice(error: String?): String? = when {
     error.isNullOrBlank() -> null
     error.contains("03_013") || error.contains("03_014") ->

@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Actualizando instancias de Payments App...</string>
     <string name="status_refund_missing_installation">No se puede reembolsar: no hay Installation ID disponible para Payments App.</string>
     <string name="status_refund_missing_profile">No se puede reembolsar: selecciona el perfil de Adyen usado en el pago original.</string>
+    <string name="status_profile_secrets_unavailable">Las credenciales del perfil seleccionado no están disponibles. Importa de nuevo el perfil.</string>
     <string name="status_refund_missing_transaction">Aún no se puede reembolsar: falta el identificador de transacción de Adyen.</string>
     <string name="status_requesting_boarding_token">Solicitando token de configuración a Adyen...</string>
     <string name="status_resolving_store">Resolviendo el nombre de tienda Adyen para %1$s...</string>

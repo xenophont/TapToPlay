@@ -45,8 +45,11 @@ import com.xenophont.taptoplay.cart.CartLine
 import com.xenophont.taptoplay.profiles.AndroidProfileStore
 import com.xenophont.taptoplay.profiles.AdyenProfile
 import com.xenophont.taptoplay.profiles.CredentialQrDocumentation
+import com.xenophont.taptoplay.profiles.ImportedAdyenProfile
 import com.xenophont.taptoplay.profiles.LocalProfileBootstrap
+import com.xenophont.taptoplay.profiles.OcrJsonObjectExtractor
 import com.xenophont.taptoplay.profiles.ProfileQrParser
+import com.xenophont.taptoplay.profiles.ProfileRepository
 import com.xenophont.taptoplay.ui.AppScreen
 import com.xenophont.taptoplay.ui.AppLanguage
 import com.xenophont.taptoplay.ui.AppLanguageStore
@@ -76,7 +79,7 @@ import java.util.Locale
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
-    private lateinit var profileStore: AndroidProfileStore
+    private lateinit var profileStore: ProfileRepository
     private lateinit var transactionStore: AndroidTransactionStore
     private lateinit var boardingStateStore: AndroidBoardingStateStore
     private lateinit var saleToAcquirerDataFavoriteStore: SaleToAcquirerDataFavoriteStore
@@ -116,7 +119,7 @@ class MainActivity : ComponentActivity() {
         selectScreen(AppScreen.PaymentsApp)
         val contents = result.contents ?: return@registerForActivityResult
         qrParser.parse(contents)
-            .onSuccess { profile -> importScannedProfile(profile) }
+            .onSuccess(::importScannedProfile)
             .onFailure { statusState = strings.format("status_qr_rejected", it.message.orEmpty()) }
     }
 
@@ -166,9 +169,14 @@ class MainActivity : ComponentActivity() {
         selectedLanguageState = languageStore.selected()
         statusState = strings["status_ready"]
         paymentsAppStatusState = strings["status_payments_instances_not_loaded"]
-        LocalProfileBootstrap.profileOrNull()?.let { bootstrap ->
-            if (profileStore.profiles().none { it.id == bootstrap.id }) profileStore.save(bootstrap)
-            if (profileStore.activeProfileId() == null) profileStore.setActive(bootstrap.id)
+        LocalProfileBootstrap.profileOrNull()?.use { bootstrap ->
+            val hasSecrets = runCatching {
+                profileStore.withSecrets(bootstrap.profile.id) { true } == true
+            }.getOrDefault(false)
+            if (profileStore.profiles().none { it.id == bootstrap.profile.id } || !hasSecrets) {
+                profileStore.save(bootstrap.profile, bootstrap.secrets)
+            }
+            if (profileStore.activeProfileId() == null) profileStore.setActive(bootstrap.profile.id)
         }
         reloadProfiles()
         reloadBoardingState()
@@ -456,18 +464,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun parseImportedProfile(rawPayload: String, fromOcr: Boolean) {
-        val payload = if (fromOcr) rawPayload.extractJsonObject() else rawPayload
+        val payload = if (fromOcr) OcrJsonObjectExtractor.extract(rawPayload) else rawPayload
         if (payload.isNullOrBlank()) {
             statusState = strings["status_ocr_no_json"]
             return
         }
         qrParser.parse(payload)
-            .onSuccess { profile -> importScannedProfile(profile) }
+            .onSuccess(::importScannedProfile)
             .onFailure { statusState = strings.format("status_qr_rejected", it.message.orEmpty()) }
     }
 
     private fun parseImportedSaleToAcquirerData(rawPayload: String, fromOcr: Boolean) {
-        val payload = if (fromOcr) rawPayload.extractJsonObject() else rawPayload
+        val payload = if (fromOcr) OcrJsonObjectExtractor.extract(rawPayload) else rawPayload
         if (payload.isNullOrBlank()) {
             statusState = strings["status_ocr_no_json"]
             return
@@ -515,35 +523,54 @@ class MainActivity : ComponentActivity() {
         }.decode(binaryBitmap).text
     }.getOrNull()
 
-    private fun importScannedProfile(profile: AdyenProfile) {
+    private fun importScannedProfile(imported: ImportedAdyenProfile) {
+        val profile = imported.profile
         if (profile.storeId.isNullOrBlank()) {
-            saveImportedProfile(profile, strings.format("status_profile_active_updated", profile.profileName))
+            saveImportedProfile(
+                profile,
+                imported,
+                strings.format("status_profile_active_updated", profile.profileName),
+            )
             return
         }
         statusState = strings.format("status_resolving_store", profile.storeId.orEmpty())
         lifecycleScope.launch {
-            val storeResult = withContext(Dispatchers.IO) { managementApiClient.findStoreForProfile(profile) }
-            val resolvedProfile = storeResult.getOrNull()
-                ?.takeIf { it.profileName.isNotBlank() }
-                ?.let { profile.copy(storeName = it.profileName) }
-                ?: profile
-            val statusMessage = storeResult.fold(
-                onSuccess = { store ->
-                    when (store) {
-                        null -> strings.format("status_store_not_found", profile.profileName, profile.storeId.orEmpty(), profile.merchantId)
-                        else -> strings.format("status_store_resolved", resolvedProfile.profileName)
-                    }
-                },
-                onFailure = { error ->
-                    strings.format("status_store_lookup_failed", profile.profileName, error.message.orEmpty())
-                },
-            )
-            saveImportedProfile(resolvedProfile, statusMessage)
+            try {
+                val storeResult = withContext(Dispatchers.IO) {
+                    managementApiClient.findStoreForProfile(profile, imported.secrets)
+                }
+                val resolvedProfile = storeResult.getOrNull()
+                    ?.takeIf { it.profileName.isNotBlank() }
+                    ?.let { profile.copy(storeName = it.profileName) }
+                    ?: profile
+                val statusMessage = storeResult.fold(
+                    onSuccess = { store ->
+                        when (store) {
+                            null -> strings.format("status_store_not_found", profile.profileName, profile.storeId.orEmpty(), profile.merchantId)
+                            else -> strings.format("status_store_resolved", resolvedProfile.profileName)
+                        }
+                    },
+                    onFailure = { error ->
+                        strings.format("status_store_lookup_failed", profile.profileName, error.message.orEmpty())
+                    },
+                )
+                saveImportedProfile(resolvedProfile, imported, statusMessage)
+            } finally {
+                imported.close()
+            }
         }
     }
 
-    private fun saveImportedProfile(profile: AdyenProfile, statusMessage: String) {
-        profileStore.save(profile)
+    private fun saveImportedProfile(
+        profile: AdyenProfile,
+        imported: ImportedAdyenProfile,
+        statusMessage: String,
+    ) {
+        try {
+            profileStore.save(profile, imported.secrets)
+        } finally {
+            imported.close()
+        }
         profileStore.setActive(profile.id)
         reloadProfiles()
         reloadBoardingState()
@@ -573,7 +600,11 @@ class MainActivity : ComponentActivity() {
         statusState = strings["status_requesting_boarding_token"]
         boardingTokenIssuedState = false
         lifecycleScope.launch {
-            val tokenResult = withContext(Dispatchers.IO) { paymentsAppApiClient.createBoardingToken(profile, requestToken) }
+            val tokenResult = withContext(Dispatchers.IO) {
+                profileStore.withSecrets(profile.id) {
+                    paymentsAppApiClient.createBoardingToken(profile, it, requestToken)
+                } ?: Result.failure(IllegalStateException("Profile secrets are unavailable"))
+            }
             tokenResult
                 .onSuccess { response ->
                     installationIdState = response.installationId ?: installationIdState
@@ -604,7 +635,11 @@ class MainActivity : ComponentActivity() {
     private fun refreshPaymentsApps(profile: AdyenProfile) {
         paymentsAppStatusState = strings["status_refreshing_payments_instances"]
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) { paymentsAppApiClient.listPaymentsApps(profile) }
+            val result = withContext(Dispatchers.IO) {
+                profileStore.withSecrets(profile.id) {
+                    paymentsAppApiClient.listPaymentsApps(profile, it)
+                } ?: Result.failure(IllegalStateException("Profile secrets are unavailable"))
+            }
             result
                 .onSuccess { instances ->
                     paymentsAppInstancesState = instances
@@ -625,7 +660,9 @@ class MainActivity : ComponentActivity() {
         setPaymentsAppStatus(strings.format("status_revoking_instance", instance.installationId.maskForDisplay()))
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                paymentsAppApiClient.revokePaymentsApp(profile, instance.installationId)
+                profileStore.withSecrets(profile.id) {
+                    paymentsAppApiClient.revokePaymentsApp(profile, it, instance.installationId)
+                } ?: Result.failure(IllegalStateException("Profile secrets are unavailable"))
             }
             result
                 .onSuccess {
@@ -668,27 +705,39 @@ class MainActivity : ComponentActivity() {
             totalMinor = totalMinor,
             saleToAcquirerDataConfig = saleToAcquirerDataConfigState,
         )
-        val transactionId = UUID.randomUUID().toString()
-        val record = TransactionRecord(
-            id = transactionId,
-            createdAt = Instant.now().toString(),
-            amountLabel = formatMoney(totalMinor),
-            amountMinor = totalMinor,
-            itemCount = lines.sumOf { it.quantity },
-            saleToAcquirerDataName = saleToAcquirerDataConfigState.displayName,
-            requestJson = request.json,
-            serviceId = request.serviceId,
-            saleTransactionId = request.saleTransactionId,
-            messageCategory = request.messageCategory,
-            profileId = profile.id,
-            installationId = installationId,
-        )
-        transactionStore.save(record)
-        pendingTransactionIdState = transactionId
-        reloadTransactions()
-        val encoded = nexoCrypto.encryptToBase64Url(profile, request.json)
-        statusState = strings["status_opening_payment_app"]
-        launchLink(AdyenLinks.nexo(profile, encoded), AppScreen.Transactions)
+        try {
+            val transactionId = UUID.randomUUID().toString()
+            // This String copy is intentional: transaction diagnostics are retained in encrypted
+            // storage. The mutable crypto input is still consumed and wiped immediately afterwards.
+            val requestJsonForDiagnostics = request.payload.decodeToString()
+            val record = TransactionRecord(
+                id = transactionId,
+                createdAt = Instant.now().toString(),
+                amountLabel = formatMoney(totalMinor),
+                amountMinor = totalMinor,
+                itemCount = lines.sumOf { it.quantity },
+                saleToAcquirerDataName = saleToAcquirerDataConfigState.displayName,
+                requestJson = requestJsonForDiagnostics,
+                serviceId = request.serviceId,
+                saleTransactionId = request.saleTransactionId,
+                messageCategory = request.messageCategory,
+                profileId = profile.id,
+                installationId = installationId,
+            )
+            transactionStore.save(record)
+            pendingTransactionIdState = transactionId
+            reloadTransactions()
+            val encoded = profileStore.withSecrets(profile.id) { secrets ->
+                nexoCrypto.encryptToBase64Url(profile, secrets.terminalPassphraseCopy(), request.payload)
+            } ?: run {
+                statusState = strings["status_profile_secrets_unavailable"]
+                return
+            }
+            statusState = strings["status_opening_payment_app"]
+            launchLink(AdyenLinks.nexo(profile, encoded), AppScreen.Transactions)
+        } finally {
+            request.payload.fill(0)
+        }
     }
 
     private fun launchPaymentsAppLink(profile: AdyenProfile, rawUrl: String, returnScreen: AppScreen) {
@@ -743,31 +792,42 @@ class MainActivity : ComponentActivity() {
             originalTransactionId = originalTransactionId,
             originalTimestamp = record.createdAt,
         )
-        val refundRecordId = UUID.randomUUID().toString()
-        transactionStore.save(
-            TransactionRecord(
-                id = refundRecordId,
-                createdAt = Instant.now().toString(),
-                amountLabel = record.amountLabel,
-                amountMinor = record.amountMinor,
-                itemCount = record.itemCount,
-                saleToAcquirerDataName = strings["refund"],
-                requestJson = request.json,
-                serviceId = request.serviceId,
-                saleTransactionId = request.saleTransactionId,
-                messageCategory = request.messageCategory,
-                profileId = profile.id,
-                installationId = installationId,
-                adyenTransactionId = originalTransactionId,
-                refundOfTransactionId = record.id,
-                status = TransactionStatus.REFUND_LAUNCHED,
-            ),
-        )
-        pendingTransactionIdState = refundRecordId
-        reloadTransactions()
-        val encoded = nexoCrypto.encryptToBase64Url(profile, request.json)
-        statusState = strings["status_opening_refund"]
-        launchLink(AdyenLinks.nexo(profile, encoded), AppScreen.Transactions)
+        try {
+            val refundRecordId = UUID.randomUUID().toString()
+            // See pay(): encrypted-at-rest diagnostics intentionally retain this immutable copy.
+            val requestJsonForDiagnostics = request.payload.decodeToString()
+            transactionStore.save(
+                TransactionRecord(
+                    id = refundRecordId,
+                    createdAt = Instant.now().toString(),
+                    amountLabel = record.amountLabel,
+                    amountMinor = record.amountMinor,
+                    itemCount = record.itemCount,
+                    saleToAcquirerDataName = strings["refund"],
+                    requestJson = requestJsonForDiagnostics,
+                    serviceId = request.serviceId,
+                    saleTransactionId = request.saleTransactionId,
+                    messageCategory = request.messageCategory,
+                    profileId = profile.id,
+                    installationId = installationId,
+                    adyenTransactionId = originalTransactionId,
+                    refundOfTransactionId = record.id,
+                    status = TransactionStatus.REFUND_LAUNCHED,
+                ),
+            )
+            pendingTransactionIdState = refundRecordId
+            reloadTransactions()
+            val encoded = profileStore.withSecrets(profile.id) { secrets ->
+                nexoCrypto.encryptToBase64Url(profile, secrets.terminalPassphraseCopy(), request.payload)
+            } ?: run {
+                statusState = strings["status_profile_secrets_unavailable"]
+                return
+            }
+            statusState = strings["status_opening_refund"]
+            launchLink(AdyenLinks.nexo(profile, encoded), AppScreen.Transactions)
+        } finally {
+            request.payload.fill(0)
+        }
     }
 
     private fun launchLink(rawUrl: String, returnScreen: AppScreen) {
@@ -786,7 +846,19 @@ class MainActivity : ComponentActivity() {
     private fun handleReturnIntent(intent: Intent?) {
         val rawUri = intent?.data?.toString()
         val activeProfile = profilesState.firstOrNull { it.id == activeProfileIdState }
-        val parsed = PaymentResultParser.parse(rawUri ?: return, activeProfile, nexoCrypto) ?: return
+        val returnUri = rawUri ?: return
+        val parsed = if (activeProfile == null) {
+            PaymentResultParser.parse(returnUri)
+        } else {
+            profileStore.withSecrets(activeProfile.id) { secrets ->
+                PaymentResultParser.parse(
+                    returnUri,
+                    activeProfile,
+                    secrets.terminalPassphraseCopy(),
+                    nexoCrypto,
+                )
+            } ?: PaymentResultParser.parse(returnUri)
+        } ?: return
         selectScreen(pendingReturnScreenState ?: screenForAdyenReturn(parsed))
         pendingReturnScreenState = null
         if (parsed is PaymentResult.BoardingStatus) {
@@ -889,25 +961,3 @@ private fun Bundle.screen(key: String): AppScreen? =
     getString(key)?.let { name ->
         AppScreen.entries.firstOrNull { it.name == name }
     }
-
-private fun String.extractJsonObject(): String? {
-    val start = indexOf('{')
-    if (start < 0) return null
-    var depth = 0
-    var inString = false
-    var escaped = false
-    for (index in start until length) {
-        val char = this[index]
-        when {
-            escaped -> escaped = false
-            char == '\\' && inString -> escaped = true
-            char == '"' -> inString = !inString
-            !inString && char == '{' -> depth++
-            !inString && char == '}' -> {
-                depth--
-                if (depth == 0) return substring(start, index + 1)
-            }
-        }
-    }
-    return null
-}

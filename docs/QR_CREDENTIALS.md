@@ -83,7 +83,7 @@ For production-like demos, generate separate QR codes for test and live profiles
 
 ## Credential Lifecycle
 
-TapToPlay stores scanned profiles in encrypted preferences and masks secrets in the UI. The `Payments App` tab includes:
+TapToPlay stores profile metadata separately from credentials and masks secrets in the UI. Credentials are envelope-encrypted with a non-exportable Android Keystore AES-GCM key. They are decrypted only for the immediate Adyen operation and mutable plaintext buffers are wiped afterwards. Scanner, JSON, and HTTP APIs can still create short-lived immutable JVM strings, so this is best-effort hardening rather than a guarantee that plaintext never enters managed memory. The `Payments App` tab includes:
 
 - `Remove`: deletes the local profile and clears saved local boarding state for that profile.
 - `Refresh`: lists Adyen Payments App instances using the selected profile API key.
@@ -222,7 +222,7 @@ Para demos similares a producción, genera códigos QR separados para perfiles t
 
 ## Ciclo de vida de credenciales
 
-TapToPlay guarda los perfiles escaneados en preferencias cifradas y enmascara los secretos en la interfaz. La pestaña `Payments App` incluye:
+TapToPlay separa los metadatos del perfil de sus credenciales y enmascara los secretos en la interfaz. Las credenciales se cifran con AES-GCM mediante una clave no exportable de Android Keystore. Solo se descifran durante la operación inmediata con Adyen y después se borran los buffers mutables. Las API de escaneo, JSON y HTTP aún pueden crear Strings inmutables de vida corta en la JVM, por lo que este refuerzo es de mejor esfuerzo y no garantiza que el texto nunca entre en memoria gestionada. La pestaña `Payments App` incluye:
 
 - `Remove`: elimina el perfil local y borra el estado local de boarding guardado para ese perfil.
 - `Refresh`: lista las instancias de Adyen Payments App usando la API key del perfil seleccionado.

@@ -1,25 +1,57 @@
 package com.xenophont.taptoplay.profiles
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+/**
+ * Decodes the public `taptoplay.adyen.profile.v1` QR schema into metadata plus short-lived
+ * credentials. kotlinx.serialization and scanner APIs necessarily create temporary Strings; the
+ * returned metadata does not retain those secret values.
+ */
 class ProfileQrParser(
     private val json: Json = Json {
         ignoreUnknownKeys = false
         explicitNulls = false
     },
 ) {
-    fun parse(payload: String): Result<AdyenProfile> = runCatching {
+    fun parse(payload: String): Result<ImportedAdyenProfile> = runCatching {
         require(payload.length <= MAX_PAYLOAD_CHARS) { "QR credential payload is too large" }
-        val profile = json.decodeFromString<AdyenProfile>(payload)
-        validate(profile)
-        profile
+        val wire = json.decodeFromString<AdyenProfileQrPayload>(payload)
+        validate(wire)
+        wire.toImportedProfile()
     }.recoverCatching { error ->
         throw IllegalArgumentException(error.message ?: "Invalid QR credential payload", error)
     }
 
-    fun encode(profile: AdyenProfile): String = json.encodeToString(AdyenProfile.serializer(), profile)
+    fun encode(imported: ImportedAdyenProfile): String {
+        val profile = imported.profile
+        val secrets = imported.secrets
+        val passphrase = secrets.terminalPassphraseCopy()
+        return try {
+            json.encodeToString(
+                AdyenProfileQrPayload.serializer(),
+                AdyenProfileQrPayload(
+                    schema = profile.schema,
+                    displayName = profile.displayName,
+                    environment = profile.environment,
+                    merchantId = profile.merchantId,
+                    storeId = profile.storeId,
+                    storeName = profile.storeName,
+                    apiKey = secrets.apiKeyString(),
+                    clientKey = secrets.clientKeyString(),
+                    terminalKeyIdentifier = profile.terminalKeyIdentifier,
+                    terminalKeyVersion = profile.terminalKeyVersion,
+                    terminalPassphrase = String(passphrase),
+                    currency = profile.currency,
+                    countryCode = profile.countryCode,
+                ),
+            )
+        } finally {
+            passphrase.fill('\u0000')
+        }
+    }
 
-    private fun validate(profile: AdyenProfile) {
+    private fun validate(profile: AdyenProfileQrPayload) {
         require(profile.schema == AdyenProfile.SCHEMA) { "Unsupported schema: ${profile.schema}" }
         require(profile.displayName.isNotBlank()) { "displayName is required" }
         require(profile.displayName.length <= MAX_DISPLAY_NAME_CHARS) { "displayName is too long" }
@@ -41,6 +73,22 @@ class ProfileQrParser(
         require(profile.countryCode.matches(Regex("[A-Z]{2}"))) { "countryCode must be ISO 3166-1 alpha-2 uppercase code" }
     }
 
+    private fun AdyenProfileQrPayload.toImportedProfile() = ImportedAdyenProfile(
+        profile = AdyenProfile(
+            schema = schema,
+            displayName = displayName,
+            environment = environment,
+            merchantId = merchantId,
+            storeId = storeId,
+            storeName = storeName,
+            terminalKeyIdentifier = terminalKeyIdentifier,
+            terminalKeyVersion = terminalKeyVersion,
+            currency = currency,
+            countryCode = countryCode,
+        ),
+        secrets = ProfileSecrets.fromStrings(apiKey, clientKey, terminalPassphrase),
+    )
+
     private companion object {
         const val MAX_PAYLOAD_CHARS = 8_192
         const val MAX_DISPLAY_NAME_CHARS = 80
@@ -49,3 +97,20 @@ class ProfileQrParser(
         const val MAX_SECRET_CHARS = 512
     }
 }
+
+@Serializable
+internal data class AdyenProfileQrPayload(
+    val schema: String = AdyenProfile.SCHEMA,
+    val displayName: String,
+    val environment: PaymentEnvironment,
+    val merchantId: String,
+    val storeId: String? = null,
+    val storeName: String? = null,
+    val apiKey: String,
+    val clientKey: String,
+    val terminalKeyIdentifier: String,
+    val terminalKeyVersion: Int,
+    val terminalPassphrase: String,
+    val currency: String,
+    val countryCode: String,
+)

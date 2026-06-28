@@ -12,6 +12,7 @@ TapToPlay hardens the demo model where practical:
 
 - `local.properties` is gitignored and release builds receive blank Adyen bootstrap values.
 - Scanned profiles, boarding state, transaction records, and SaleToAcquirerData favorites are stored with encrypted Android preferences.
+- Profile metadata is kept separate from credentials. API keys, client keys, and Terminal API passphrases are envelope-encrypted with an Android Keystore key and decrypted only inside short-lived callback scopes.
 - Android backup is disabled, and sensitive encrypted preference files are also excluded from backup and device transfer rules.
 - Secrets are masked in the UI.
 - Live payments require a per-charge confirmation dialog.
@@ -194,7 +195,7 @@ For test payments, install the Adyen Payments Test app on the same device. For l
 
 ## Current Payment Boundary
 
-The app builds real Adyen App Links for test/live environments and performs Management API calls from the demo app. Terminal API payload construction lives in the `adyen` package, and encryption stays isolated in `adyen/NexoCrypto.kt`. Payment App Links use the documented `request` query parameter with a Base64URL-encoded encrypted Nexo envelope.
+The app builds real Adyen App Links for test/live environments and performs Management API calls from the demo app. Terminal API payload construction lives in the `adyen` package, and encryption stays isolated in `adyen/NexoCrypto.kt`. Payment App Links use the documented `request` query parameter with a Base64URL-encoded encrypted Nexo envelope. The Adyen-defined format uses AES-CBC for confidentiality and HMAC-SHA256 for integrity; authenticated responses also require matching inner and outer `MessageHeader` values.
 
 This is still a demo security model because credentials live on-device. For production, move credential storage and token/session work to a backend or hardened secure component.
 
@@ -219,6 +220,7 @@ TapToPlay refuerza el modelo de demo donde resulta práctico:
 
 - `local.properties` está ignorado por git y las builds release reciben valores de arranque de Adyen en blanco.
 - Los perfiles escaneados, el estado de boarding, los registros de transacciones y los favoritos de SaleToAcquirerData se guardan con preferencias cifradas de Android.
+- Los metadatos de perfil se separan de las credenciales. Las claves API, client keys y passphrases de Terminal API se cifran con una clave de Android Keystore y solo se descifran dentro de bloques de uso breve.
 - La copia de seguridad de Android está desactivada, y los archivos sensibles de preferencias cifradas también se excluyen de las reglas de backup y transferencia de dispositivo.
 - Los secretos se muestran enmascarados en la UI.
 - Los pagos live requieren un diálogo de confirmación por cada cobro.
@@ -395,7 +397,7 @@ Para pagos test, instala la app Adyen Payments Test en el mismo dispositivo. Par
 
 ## Límite actual de pagos
 
-La app construye App Links reales de Adyen para entornos test/live y realiza llamadas a Management API desde la app de demo. La construcción de payloads de Terminal API vive en el paquete `adyen`, y el cifrado permanece aislado en `adyen/NexoCrypto.kt`. Los App Links de pago usan el parámetro documentado `request` con un sobre Nexo cifrado y codificado en Base64URL.
+La app construye App Links reales de Adyen para entornos test/live y realiza llamadas a Management API desde la app de demo. La construcción de payloads de Terminal API vive en el paquete `adyen`, y el cifrado permanece aislado en `adyen/NexoCrypto.kt`. Los App Links de pago usan el parámetro documentado `request` con un sobre Nexo cifrado y codificado en Base64URL. El formato definido por Adyen usa AES-CBC para confidencialidad y HMAC-SHA256 para integridad; las respuestas autenticadas también exigen que coincidan los `MessageHeader` interior y exterior.
 
 Este sigue siendo un modelo de seguridad de demo porque las credenciales viven en el dispositivo. Para producción, mueve el almacenamiento de credenciales y el trabajo de tokens/sesiones a un backend o a un componente seguro reforzado.
 

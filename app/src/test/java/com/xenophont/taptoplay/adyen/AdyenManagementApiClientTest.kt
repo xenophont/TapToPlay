@@ -2,6 +2,7 @@ package com.xenophont.taptoplay.adyen
 
 import com.xenophont.taptoplay.profiles.AdyenProfile
 import com.xenophont.taptoplay.profiles.PaymentEnvironment
+import com.xenophont.taptoplay.profiles.ProfileSecrets
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -36,7 +37,7 @@ class AdyenManagementApiClientTest {
         )
         val client = AdyenManagementApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val store = client.findStoreForProfile(profile(storeId = "ST322LJ223223K5F")).getOrThrow()
+        val store = client.findStoreForProfile(profile(storeId = "ST322LJ223223K5F"), secrets()).getOrThrow()
 
         assertEquals("Boutique Centro", store?.profileName)
         assertEquals("/v3/stores", factory.requests.single().url.encodedPath)
@@ -66,7 +67,7 @@ class AdyenManagementApiClientTest {
         )
         val client = AdyenManagementApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val store = client.findStoreForProfile(profile(storeId = "ST322LJ223223K5F")).getOrThrow()
+        val store = client.findStoreForProfile(profile(storeId = "ST322LJ223223K5F"), secrets()).getOrThrow()
 
         assertEquals("Real Store Name", store?.profileName)
     }
@@ -93,7 +94,7 @@ class AdyenManagementApiClientTest {
         )
         val client = AdyenManagementApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val store = client.findStoreForProfile(profile(storeId = "ST-target")).getOrThrow()
+        val store = client.findStoreForProfile(profile(storeId = "ST-target"), secrets()).getOrThrow()
 
         assertEquals("Second Page Store", store?.profileName)
         assertEquals(2, factory.requests.size)
@@ -106,7 +107,7 @@ class AdyenManagementApiClientTest {
         val factory = ManagementFakeCallFactory()
         val client = AdyenManagementApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val store = client.findStoreForProfile(profile(storeId = null)).getOrThrow()
+        val store = client.findStoreForProfile(profile(storeId = null), secrets()).getOrThrow()
 
         assertNull(store)
         assertTrue(factory.requests.isEmpty())
@@ -119,7 +120,7 @@ class AdyenManagementApiClientTest {
         )
         val client = AdyenManagementApiClient(factory, baseUrlOverride = "https://management-test.adyen.com")
 
-        val result = client.findStoreForProfile(profile(storeId = "ST-target"))
+        val result = client.findStoreForProfile(profile(storeId = "ST-target"), secrets())
 
         assertTrue(result.isFailure)
         val error = (result.exceptionOrNull() as AdyenApiException).error
@@ -133,14 +134,13 @@ class AdyenManagementApiClientTest {
         environment = PaymentEnvironment.TEST,
         merchantId = "merchant",
         storeId = storeId,
-        apiKey = "api",
-        clientKey = "client",
         terminalKeyIdentifier = "key",
         terminalKeyVersion = 1,
-        terminalPassphrase = "passphrase",
         currency = "EUR",
         countryCode = "ES",
     )
+
+    private fun secrets() = ProfileSecrets.fromStrings("api", "client", "passphrase")
 }
 
 private class ManagementFakeCallFactory(

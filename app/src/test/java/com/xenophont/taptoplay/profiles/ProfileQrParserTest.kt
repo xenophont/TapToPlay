@@ -9,7 +9,8 @@ class ProfileQrParserTest {
 
     @Test
     fun parsesValidTestProfile() {
-        val profile = parser.parse(validPayload()).getOrThrow()
+        val imported = parser.parse(validPayload()).getOrThrow()
+        val profile = imported.profile
 
         assertEquals("Demo Store TEST", profile.displayName)
         assertEquals(PaymentEnvironment.TEST, profile.environment)
@@ -26,7 +27,8 @@ class ProfileQrParserTest {
             "\"storeId\": \"ST322LJ223223K5F\",\n          \"storeName\": \"Boutique Centro\",",
         )
 
-        val profile = parser.parse(payload).getOrThrow()
+        val imported = parser.parse(payload).getOrThrow()
+        val profile = imported.profile
 
         assertEquals("Boutique Centro", profile.storeName)
         assertEquals("Demo Store TEST", profile.profileName)
@@ -36,7 +38,8 @@ class ProfileQrParserTest {
     fun usesMerchantIdAsProfileNameForMerchantScopedProfiles() {
         val payload = validPayload().replace("\"storeId\": \"ST322LJ223223K5F\",", "")
 
-        val profile = parser.parse(payload).getOrThrow()
+        val imported = parser.parse(payload).getOrThrow()
+        val profile = imported.profile
 
         assertEquals(null, profile.storeId)
         assertEquals("Demo Store TEST", profile.profileName)

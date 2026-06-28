@@ -6,6 +6,10 @@ import androidx.security.crypto.MasterKey
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
+/**
+ * Encrypted local diagnostics history. Full Terminal API request/response payloads are retained
+ * intentionally for this demo's inspector, so this store must not be replaced with plain prefs.
+ */
 class AndroidTransactionStore(context: Context) {
     private val json = Json { ignoreUnknownKeys = true }
     private val prefs = EncryptedSharedPreferences.create(

@@ -12,7 +12,11 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 data class TerminalPaymentRequest(
-    val json: String,
+    /**
+     * UTF-8 Terminal API JSON. The payment launcher deliberately consumes and wipes this buffer
+     * after taking the encrypted-at-rest diagnostics copy.
+     */
+    val payload: ByteArray,
     val serviceId: String,
     val saleTransactionId: String?,
     val messageCategory: String,
@@ -53,7 +57,7 @@ object TerminalPaymentRequestBuilder {
             })
         }
         return TerminalPaymentRequest(
-            json = json.encodeToString(JsonObject.serializer(), request),
+            payload = json.encodeToString(JsonObject.serializer(), request).encodeToByteArray(),
             serviceId = serviceId,
             saleTransactionId = saleTransactionId,
             messageCategory = "Payment",
@@ -72,7 +76,7 @@ object TerminalPaymentRequestBuilder {
         lines = lines,
         totalMinor = totalMinor,
         saleToAcquirerDataConfig = saleToAcquirerDataConfig,
-    ).json
+    ).payload.decodeToString()
 
     fun buildReferencedRefundPaymentRequest(
         installationId: String,
@@ -95,7 +99,7 @@ object TerminalPaymentRequestBuilder {
             })
         }
         return TerminalPaymentRequest(
-            json = json.encodeToString(JsonObject.serializer(), request),
+            payload = json.encodeToString(JsonObject.serializer(), request).encodeToByteArray(),
             serviceId = serviceId,
             saleTransactionId = null,
             messageCategory = "Reversal",
@@ -110,7 +114,7 @@ object TerminalPaymentRequestBuilder {
         installationId = installationId,
         originalTransactionId = originalTransactionId,
         originalTimestamp = originalTimestamp,
-    ).json
+    ).payload.decodeToString()
 
     private fun messageHeader(messageCategory: String, serviceId: String, installationId: String) =
         buildJsonObject {

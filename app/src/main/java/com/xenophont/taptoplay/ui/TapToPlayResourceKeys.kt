@@ -296,6 +296,7 @@ internal val TapToPlayTextResources: Map<String, Int> = mapOf(
         "status_refreshing_payments_instances" to R.string.status_refreshing_payments_instances,
         "status_refund_missing_installation" to R.string.status_refund_missing_installation,
         "status_refund_missing_profile" to R.string.status_refund_missing_profile,
+        "status_profile_secrets_unavailable" to R.string.status_profile_secrets_unavailable,
         "status_refund_missing_transaction" to R.string.status_refund_missing_transaction,
         "status_requesting_boarding_token" to R.string.status_requesting_boarding_token,
         "status_resolving_store" to R.string.status_resolving_store,

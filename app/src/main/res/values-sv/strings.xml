@@ -292,6 +292,7 @@
     <string name="status_refreshing_payments_instances">Uppdaterar Payments App instances...</string>
     <string name="status_refund_missing_installation">Kan inte aterbetala: installation ID saknas for Payments app.</string>
     <string name="status_refund_missing_profile">Kan inte aterbetala: valj Adyen-profilen fran originalbetalningen.</string>
+    <string name="status_profile_secrets_unavailable">Autentiseringsuppgifterna för den valda profilen är inte tillgängliga. Importera profilen igen.</string>
     <string name="status_refund_missing_transaction">Kan inte aterbetala: Adyen-transaktions-ID saknas.</string>
     <string name="status_requesting_boarding_token">Begär boarding token fran Adyen...</string>
     <string name="status_resolving_store">Löser Adyen-butiksnamn för %1$s...</string>
